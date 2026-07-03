@@ -440,8 +440,8 @@ function applyCustomerTheme(theme) {
     plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
   };
 
-  document.documentElement.style.setProperty('--accent', safeTheme.accent);
-  document.documentElement.style.setProperty('--accent-soft', lightenHex(safeTheme.accent, 20));
+  document.body.style.setProperty('--accent', safeTheme.accent);
+  document.body.style.setProperty('--accent-soft', lightenHex(safeTheme.accent, 20));
 
   document.body.classList.remove(...customerStyleClasses);
   document.body.classList.add(`theme-style-${safeTheme.style}`);

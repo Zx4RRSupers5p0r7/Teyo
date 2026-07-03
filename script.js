@@ -639,7 +639,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
                + `<circle cx="41" cy="36" r="2" fill="${wh}"/><circle cx="65" cy="36" r="2" fill="${wh}"/>`;
   const mouth = `<path d="M43,58 Q50,64 57,58" stroke="${dk}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
   const wrap = (inner) => `<svg class="pet-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 6px 14px rgba(0,0,0,0.38))">${inner}</svg>`;
-  switch (type) {
+
   if (type === 'star') {
     return wrap(
       `<polygon class="pet-body" points="50,8 62,35 92,35 68,54 77,82 50,64 23,82 32,54 8,35 38,35" fill="${c}"/>`

@@ -1142,6 +1142,7 @@ function renderProduct(product) {
   `;
 
   renderStores(stores);
+  updateMapForProduct(stores);
 }
 
 function renderStores(stores) {
@@ -1157,6 +1158,96 @@ function renderStores(stores) {
     entry.innerHTML = `<strong>${escapeHtml(store)}</strong><p>Pickup and in-store availability near your selected area.</p>`;
     storeList.appendChild(entry);
   });
+}
+
+// ── Leaflet map ──────────────────────────────────────────────────────
+let _leafletMap = null;
+let _userMarker = null;
+let _storeMarkers = [];
+let _storeFlyTimer = null;
+
+function initMap() {
+  const mapEl = document.getElementById('mapLeaflet');
+  if (!mapEl || typeof L === 'undefined') return;
+  if (_leafletMap) return;
+
+  _leafletMap = L.map('mapLeaflet', { zoomControl: true }).setView([43.65, -79.38], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(_leafletMap);
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        _leafletMap.setView([coords.latitude, coords.longitude], 13);
+        if (_userMarker) _userMarker.remove();
+        _userMarker = L.circleMarker([coords.latitude, coords.longitude], {
+          radius: 10, fillColor: '#7c7cff', color: '#fff', weight: 2.5, fillOpacity: 0.9
+        }).addTo(_leafletMap).bindPopup('📍 You are here').openPopup();
+      },
+      () => {}
+    );
+  }
+}
+
+async function _geocodeStore(name) {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'Teyo-marketplace/1.0' } }
+    );
+    const data = await res.json();
+    if (data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {}
+  return null;
+}
+
+async function updateMapForProduct(stores) {
+  if (!_leafletMap) return;
+  _storeMarkers.forEach((m) => m.remove());
+  _storeMarkers = [];
+  if (_storeFlyTimer) { clearInterval(_storeFlyTimer); _storeFlyTimer = null; }
+
+  const real = stores.filter((s) => s.length > 6 && !s.toLowerCase().includes('confirmed by the brand'));
+  if (!real.length) return;
+
+  const mapStatus = document.getElementById('mapLeaflet');
+  if (mapStatus) mapStatus.title = 'Finding stores on map…';
+
+  const coords = [];
+  for (const store of real.slice(0, 5)) {
+    const pos = await _geocodeStore(store);
+    if (pos) coords.push({ ...pos, name: store });
+    await new Promise((r) => setTimeout(r, 350));
+  }
+
+  coords.forEach(({ lat, lng, name }) => {
+    const m = L.marker([lat, lng])
+      .addTo(_leafletMap)
+      .bindPopup(`<strong>${escapeHtml(name)}</strong><br>Nearby store with matching items`);
+    _storeMarkers.push(m);
+  });
+
+  const allPts = coords.map((c) => [c.lat, c.lng]);
+  if (_userMarker) allPts.push([_userMarker.getLatLng().lat, _userMarker.getLatLng().lng]);
+
+  if (allPts.length > 1) {
+    _leafletMap.fitBounds(allPts, { padding: [50, 50], maxZoom: 14 });
+  } else if (coords.length) {
+    _leafletMap.flyTo([coords[0].lat, coords[0].lng], 14);
+  }
+
+  if (coords.length > 1) {
+    let idx = 0;
+    _storeFlyTimer = setInterval(() => {
+      idx = (idx + 1) % coords.length;
+      _leafletMap.flyTo([coords[idx].lat, coords[idx].lng], 15, { duration: 1.8 });
+      _storeMarkers[idx].openPopup();
+    }, 4500);
+  } else if (_storeMarkers.length === 1) {
+    _storeMarkers[0].openPopup();
+  }
 }
 
 function renderAds() {
@@ -1678,3 +1769,4 @@ async function initializeMarketplace() {
 initializeMarketplace();
 initializeCustomerTheme();
 syncOwnerOnlyVisibility();
+if (document.getElementById('mapLeaflet')) initMap();

@@ -55,11 +55,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+      scriptSrc: ["'self'", 'https://unpkg.com'],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'https:', 'data:'],
-      connectSrc: ["'self'", 'https://api.stripe.com'],
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://nominatim.openstreetmap.org'],
       frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],

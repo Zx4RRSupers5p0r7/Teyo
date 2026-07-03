@@ -20,6 +20,11 @@ const adminPartnerList = document.getElementById('adminPartnerList');
 const adminSetKeyBtn = document.getElementById('adminSetKeyBtn');
 const adminClearKeyBtn = document.getElementById('adminClearKeyBtn');
 const adminAccessMessage = document.getElementById('adminAccessMessage');
+const ownerEmailInput = document.getElementById('ownerEmailInput');
+const ownerKeyInput = document.getElementById('ownerKeyInput');
+const ownerSetKeyBtn = document.getElementById('ownerSetKeyBtn');
+const ownerClearKeyBtn = document.getElementById('ownerClearKeyBtn');
+const ownerAccessMessage = document.getElementById('ownerAccessMessage');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -45,6 +50,8 @@ const tabPanels = document.querySelectorAll('.tab-panel');
 
 const customerThemeStorageKey = 'teyoCustomerThemeV1';
 const customerThemeUnlockedKey = 'teyoCustomerThemeUnlockedV1';
+const ownerEmailStorageKey = 'teyoOwnerEmailV1';
+const ownerKeyStorageKey = 'teyoOwnerKeyV1';
 const customerStyleClasses = [
   'theme-style-midnight',
   'theme-style-graphite',
@@ -116,9 +123,62 @@ function getAdminKey() {
   return sessionStorage.getItem('teyoAdminKey') || '';
 }
 
+function getOwnerEmail() {
+  return sessionStorage.getItem(ownerEmailStorageKey) || '';
+}
+
+function getOwnerKey() {
+  return sessionStorage.getItem(ownerKeyStorageKey) || '';
+}
+
+function hasOwnerSession() {
+  return Boolean(getOwnerEmail() && getOwnerKey());
+}
+
 function getAdminHeaders() {
+  if (hasOwnerSession()) {
+    return {
+      'x-owner-email': getOwnerEmail(),
+      'x-owner-key': getOwnerKey()
+    };
+  }
+
   const key = getAdminKey();
   return key ? { 'x-admin-key': key } : {};
+}
+
+function getOwnerHeaders() {
+  if (!hasOwnerSession()) {
+    return {};
+  }
+
+  return {
+    'x-owner-email': getOwnerEmail(),
+    'x-owner-key': getOwnerKey()
+  };
+}
+
+function attachOwnerAuth(payload = {}) {
+  return hasOwnerSession()
+    ? { ...payload, ownerEmail: getOwnerEmail(), ownerKey: getOwnerKey() }
+    : payload;
+}
+
+function requestAndStoreOwnerKey() {
+  const email = String(ownerEmailInput?.value || '').trim();
+  const key = String(ownerKeyInput?.value || '').trim();
+  if (!email || !key) {
+    return false;
+  }
+
+  sessionStorage.setItem(ownerEmailStorageKey, email);
+  sessionStorage.setItem(ownerKeyStorageKey, key);
+  return true;
+}
+
+function clearOwnerAccess() {
+  sessionStorage.removeItem(ownerEmailStorageKey);
+  sessionStorage.removeItem(ownerKeyStorageKey);
 }
 
 function requestAndStoreAdminKey() {
@@ -140,6 +200,12 @@ function setAdminAccessMessage(text) {
 async function ensureAdminAccess() {
   if (!isAdminPage()) {
     adminAccessGranted = false;
+    return true;
+  }
+
+  if (hasOwnerSession()) {
+    adminAccessGranted = true;
+    setAdminAccessMessage('Owner access verified. All approval controls are enabled.');
     return true;
   }
 
@@ -174,6 +240,49 @@ async function ensureAdminAccess() {
   } catch (error) {
     adminAccessGranted = false;
     setAdminAccessMessage('Unable to verify admin key right now.');
+    return false;
+  }
+}
+
+async function verifyOwnerAccess() {
+  const email = String(ownerEmailInput?.value || '').trim();
+  const key = String(ownerKeyInput?.value || '').trim();
+
+  if (!email || !key) {
+    if (ownerAccessMessage) {
+      ownerAccessMessage.textContent = 'Enter both your owner email and owner key.';
+    }
+    return false;
+  }
+
+  try {
+    const response = await fetch('/api/owner/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ownerEmail: email, ownerKey: key })
+    });
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      clearOwnerAccess();
+      adminAccessGranted = false;
+      if (ownerAccessMessage) {
+        ownerAccessMessage.textContent = result.message || 'Owner access was rejected.';
+      }
+      return false;
+    }
+
+    requestAndStoreOwnerKey();
+    adminAccessGranted = true;
+    if (ownerAccessMessage) {
+      ownerAccessMessage.textContent = 'Owner access unlocked. You now have the full privileged role.';
+    }
+    setAdminAccessMessage('Owner access verified. Approval controls are enabled.');
+    return true;
+  } catch (error) {
+    if (ownerAccessMessage) {
+      ownerAccessMessage.textContent = 'Unable to verify owner access right now.';
+    }
     return false;
   }
 }
@@ -459,8 +568,12 @@ function initializeCustomerTheme() {
   const unlocked = isCustomerThemeUnlocked();
   const savedTheme = readCustomerTheme();
 
+  if (hasOwnerSession()) {
+    setCustomerThemeUnlocked(true);
+  }
+
   applyCustomerTheme(savedTheme);
-  setCustomerThemePanelState(unlocked);
+  setCustomerThemePanelState(unlocked || hasOwnerSession());
 
   if (customerPresetButtons) {
     customerPresetButtons.forEach((button) => {
@@ -499,7 +612,7 @@ function initializeCustomerTheme() {
         const response = await fetch('/api/customer/theme-access', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ customerEmail })
+          body: JSON.stringify(attachOwnerAuth({ customerEmail }))
         });
         const result = await response.json();
         if (!response.ok || !result.success) {
@@ -808,7 +921,7 @@ function renderAds() {
 
 async function loadMarketplaceData() {
   try {
-    const sharedHeaders = isAdminPage() ? getAdminHeaders() : {};
+    const sharedHeaders = hasOwnerSession() || isAdminPage() ? getAdminHeaders() : {};
     const [partnersResponse, adsResponse, productsResponse] = await Promise.all([
       fetch('/api/partners', { headers: sharedHeaders }),
       fetch('/api/ads', { headers: sharedHeaders }),
@@ -912,7 +1025,7 @@ if (partnerForm) {
       const response = await fetch('/api/partner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+          body: JSON.stringify(attachOwnerAuth(payload))
       });
 
       const result = await response.json();
@@ -944,7 +1057,7 @@ if (productForm) {
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(attachOwnerAuth(payload))
       });
       const result = await response.json();
       productFormMessage.textContent = result.message || 'Your product submission is pending review.';
@@ -1011,7 +1124,7 @@ if (adForm) {
       const response = await fetch('/api/ads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(adPayload)
+        body: JSON.stringify(attachOwnerAuth(adPayload))
       });
       const result = await response.json();
       adFormMessage.textContent = result.message || 'Your sponsor ad is pending review.';
@@ -1047,7 +1160,7 @@ async function startCustomerCheckout(plan) {
     const response = await fetch('/api/create-customer-checkout-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ plan, customerEmail })
+      body: JSON.stringify(attachOwnerAuth({ plan, customerEmail }))
     });
     const result = await response.json();
     if (result.success && result.url) {
@@ -1074,8 +1187,8 @@ async function startStripeCheckout(plan) {
   }
 
   const payload = plan === 'placement'
-    ? { plan, companyName: placementCompanyName, ownerEmail: placementOwnerEmail }
-    : { plan, companyName: adCompanyName, ownerEmail: adOwnerEmail, adId: lastSubmittedAdId };
+    ? attachOwnerAuth({ plan, companyName: placementCompanyName, ownerEmail: placementOwnerEmail })
+    : attachOwnerAuth({ plan, companyName: adCompanyName, ownerEmail: adOwnerEmail, adId: lastSubmittedAdId });
 
   try {
     const response = await fetch('/api/create-checkout-session', {
@@ -1121,6 +1234,29 @@ if (adminSetKeyBtn) {
       return;
     }
     await initializeMarketplace();
+  });
+}
+
+if (ownerSetKeyBtn) {
+  ownerSetKeyBtn.addEventListener('click', async () => {
+    const verified = await verifyOwnerAccess();
+    if (verified) {
+      await initializeMarketplace();
+      initializeCustomerTheme();
+    }
+  });
+}
+
+if (ownerClearKeyBtn) {
+  ownerClearKeyBtn.addEventListener('click', async () => {
+    clearOwnerAccess();
+    adminAccessGranted = false;
+    if (ownerAccessMessage) {
+      ownerAccessMessage.textContent = 'Owner access cleared. The site is back to the default public role.';
+    }
+    setAdminAccessMessage('View-only mode enabled. Enter admin key to approve requests.');
+    await initializeMarketplace();
+    initializeCustomerTheme();
   });
 }
 

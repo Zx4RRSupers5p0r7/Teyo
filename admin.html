@@ -45,6 +45,26 @@
             </div>
           </div>
 
+          <div class="partner-form-card owner-access-card">
+            <div>
+              <h3>Owner access controls</h3>
+              <p>This is the only role that can unlock everything on the site. Both the email and the owner key must match the server settings.</p>
+            </div>
+            <div class="partner-form">
+              <label>
+                Owner email
+                <input id="ownerEmailInput" type="email" placeholder="you@yourdomain.com" />
+              </label>
+              <label>
+                Owner key
+                <input id="ownerKeyInput" type="password" placeholder="Owner access key" />
+              </label>
+              <button id="ownerSetKeyBtn" class="btn btn-primary" type="button">Unlock owner access</button>
+              <button id="ownerClearKeyBtn" class="btn btn-secondary" type="button">Clear owner access</button>
+              <p id="ownerAccessMessage" class="form-message" aria-live="polite"></p>
+            </div>
+          </div>
+
           <div class="partner-form-card">
             <div>
               <h3>Partner approvals</h3>

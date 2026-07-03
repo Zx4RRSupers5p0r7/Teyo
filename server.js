@@ -21,6 +21,7 @@ const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
 const adminApiKey = String(process.env.ADMIN_API_KEY || '').trim();
 const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
+const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
@@ -112,7 +113,7 @@ function requireAdmin(req, res, next) {
     return res.status(503).json({ success: false, message: 'Admin protection is not configured.' });
   }
 
-  if (!hasValidAdminHeader(req)) {
+  if (!hasPrivilegedAccess(req)) {
     return res.status(401).json({ success: false, message: 'Unauthorized admin request.' });
   }
 
@@ -190,6 +191,24 @@ function isBusinessOwnerSubmission(companyName, websiteUrl) {
 function hasOwnerAccess(customerEmail) {
   const email = sanitizeEmail(customerEmail);
   return Boolean(ownerEmail && email && normalizeName(email) === normalizeName(ownerEmail));
+}
+
+function hasOwnerKeyAccess(customerEmail, accessKey = '') {
+  return hasOwnerAccess(customerEmail) && Boolean(ownerAccessKey && secureEquals(String(accessKey || '').trim(), ownerAccessKey));
+}
+
+function isOwnerConfigured() {
+  return Boolean(ownerEmail && ownerAccessKey && ownerEmail.length > 0 && ownerAccessKey.length >= 32);
+}
+
+function hasOwnerHeader(req) {
+  const providedEmail = sanitizeEmail(req.headers['x-owner-email']);
+  const providedKey = String(req.headers['x-owner-key'] || '').trim();
+  return hasOwnerKeyAccess(providedEmail, providedKey);
+}
+
+function hasPrivilegedAccess(req) {
+  return hasValidAdminHeader(req) || hasOwnerHeader(req);
 }
 
 function sanitizeCreative(creative) {
@@ -694,6 +713,7 @@ app.get('/api/health', (req, res) => {
 
 app.get('/api/ready', (req, res) => {
   const adminConfigured = Boolean(adminApiKey && adminApiKey.length >= 32);
+  const ownerConfigured = isOwnerConfigured();
   const stripeConfigured = Boolean(validStripeKey);
   const storageReady = Boolean(dbPool || storageMode === 'file');
   const ready = Boolean(stripeConfigured && adminConfigured && storageReady);
@@ -702,6 +722,7 @@ app.get('/api/ready', (req, res) => {
     status: ready ? 'ready' : 'not-ready',
     stripeConfigured,
     adminConfigured,
+    ownerConfigured,
     storageMode,
     storageReady
   });
@@ -711,12 +732,28 @@ app.post('/api/admin/verify', adminLimiter, requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/owner/verify', adminLimiter, (req, res) => {
+  if (!isOwnerConfigured()) {
+    return res.status(503).json({ success: false, message: 'Owner protection is not configured.' });
+  }
+
+  const providedEmail = sanitizeEmail(req.body.ownerEmail);
+  const providedKey = String(req.body.ownerKey || '').trim();
+
+  if (!hasOwnerKeyAccess(providedEmail, providedKey)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized owner request.' });
+  }
+
+  res.json({ success: true, owner: true });
+});
+
 app.post('/api/partner', (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
   const details = sanitizePlainText(req.body.details, 4000);
   const paymentConfirmed = req.body.paymentConfirmed;
+  const ownerKey = String(req.body.ownerKey || '').trim();
   const normalizedWebsite = normalizeWebsite(websiteUrl);
 
   if (!companyName || !ownerEmail || !normalizedWebsite || !isBusinessOwnerSubmission(companyName, normalizedWebsite)) {
@@ -739,7 +776,7 @@ app.post('/api/partner', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  if (hasOwnerAccess(ownerEmail)) {
+  if (hasOwnerKeyAccess(ownerEmail, ownerKey)) {
     entry.paymentConfirmed = true;
     entry.paid = true;
     entry.activeListing = true;
@@ -756,7 +793,7 @@ app.post('/api/partner', (req, res) => {
 
 app.get('/api/partners', (req, res) => {
   const data = loadData();
-  if (hasValidAdminHeader(req)) {
+  if (hasPrivilegedAccess(req)) {
     return res.json(data.partners);
   }
   res.json(data.partners.map(serializePublicPartner));
@@ -781,6 +818,7 @@ app.post('/api/partners/:id/approve', requireAdmin, (req, res) => {
 app.post('/api/ads', (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
+  const ownerKey = String(req.body.ownerKey || '').trim();
   const headline = sanitizePlainText(req.body.headline, 180);
   const description = sanitizePlainText(req.body.description, 2000);
   const link = sanitizePlainText(req.body.link, 2048);
@@ -808,7 +846,7 @@ app.post('/api/ads', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
-  if (hasOwnerAccess(ownerEmail)) {
+  if (hasOwnerKeyAccess(ownerEmail, ownerKey)) {
     entry.paid = true;
     entry.active = true;
     entry.subscriptionStatus = 'active';
@@ -826,7 +864,7 @@ app.post('/api/ads', (req, res) => {
 
 app.get('/api/ads', (req, res) => {
   const data = loadData();
-  if (hasValidAdminHeader(req)) {
+  if (hasPrivilegedAccess(req)) {
     return res.json(data.ads);
   }
   res.json(data.ads.map(serializePublicAd));
@@ -836,6 +874,7 @@ app.post('/api/products', (req, res) => {
   const productName = sanitizePlainText(req.body.productName, 180);
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
+  const ownerKey = String(req.body.ownerKey || '').trim();
   const category = sanitizePlainText(req.body.category, 80);
   const price = sanitizePlainText(req.body.price, 80);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
@@ -858,7 +897,7 @@ app.post('/api/products', (req, res) => {
 
   const data = loadData();
   const partnerMatch = data.partners.find((partner) => normalizeName(partner.companyName) === normalizeName(companyName));
-  const ownerOverride = hasOwnerAccess(ownerEmail);
+  const ownerOverride = hasOwnerKeyAccess(ownerEmail, ownerKey);
 
   if (ownerOverride) {
     const ownerPartner = ensurePartnerRecord(companyName, ownerEmail);
@@ -907,7 +946,7 @@ app.post('/api/products', (req, res) => {
 
 app.get('/api/products', (req, res) => {
   const data = loadData();
-  if (hasValidAdminHeader(req)) {
+  if (hasPrivilegedAccess(req)) {
     return res.json(data.products);
   }
   res.json(data.products.map(serializePublicProduct));
@@ -1112,11 +1151,12 @@ app.post('/api/create-customer-checkout-session', async (req, res) => {
 
 app.post('/api/customer/theme-access', (req, res) => {
   const customerEmail = sanitizeEmail(req.body.customerEmail);
+  const ownerKey = String(req.body.ownerKey || '').trim();
   if (!customerEmail) {
     return res.status(400).json({ success: false, message: 'A valid customer email is required.' });
   }
 
-  if (hasOwnerAccess(customerEmail)) {
+  if (hasOwnerKeyAccess(customerEmail, ownerKey)) {
     return res.json({ success: true, owner: true, message: 'Owner access verified. Private theme controls are now unlocked.' });
   }
 

@@ -725,6 +725,116 @@ article { padding: 24px; }
   --accent-soft: #e8dbff;
   --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
 }
+.theme-style-rosegold {
+  --bg: #fff5f0;
+  --surface: #fffaf8;
+  --surface-2: #fce8e0;
+  --text: #4a2520;
+  --muted: #9a7060;
+  --line: #f0c4b8;
+  --accent: #d4956a;
+  --accent-soft: #ead4c4;
+  --shadow: 0 18px 55px rgba(212, 149, 106, 0.18);
+}
+.theme-style-peach {
+  --bg: #fff8f0;
+  --surface: #fffcf8;
+  --surface-2: #ffeedd;
+  --text: #4a2e1a;
+  --muted: #9a7060;
+  --line: #f0d0b0;
+  --accent: #ff8c50;
+  --accent-soft: #ffd4b8;
+  --shadow: 0 18px 55px rgba(255, 140, 80, 0.16);
+}
+.theme-style-boba {
+  --bg: #fdf8f3;
+  --surface: #fefcf9;
+  --surface-2: #f5e8dc;
+  --text: #3a2a1f;
+  --muted: #8a7060;
+  --line: #dfc8b0;
+  --accent: #c8956a;
+  --accent-soft: #ead8c0;
+  --shadow: 0 18px 55px rgba(200, 149, 106, 0.16);
+}
+.theme-style-aurora {
+  --bg: #090e18;
+  --surface: #0f1628;
+  --surface-2: #172038;
+  --text: #e8f4f0;
+  --muted: #88b8b8;
+  --line: #2a4858;
+  --accent: #4fffd4;
+  --accent-soft: #a0ffe8;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+}
+.theme-style-neon {
+  --bg: #08010f;
+  --surface: #130820;
+  --surface-2: #1e1030;
+  --text: #f0e0ff;
+  --muted: #b888d8;
+  --line: #3a1860;
+  --accent: #e040fb;
+  --accent-soft: #f0a0ff;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+}
+.theme-style-matcha {
+  --bg: #f4faf0;
+  --surface: #f9fcf8;
+  --surface-2: #e8f5e2;
+  --text: #1e3820;
+  --muted: #5e8060;
+  --line: #b8d8b0;
+  --accent: #5aae44;
+  --accent-soft: #c0e0b8;
+  --shadow: 0 18px 55px rgba(90, 174, 68, 0.16);
+}
+.theme-style-bubblegum {
+  --bg: #fff0fa;
+  --surface: #fff8fd;
+  --surface-2: #ffddf5;
+  --text: #4a1040;
+  --muted: #9a6090;
+  --line: #f0b0e0;
+  --accent: #ff2ec8;
+  --accent-soft: #ff90e8;
+  --shadow: 0 18px 55px rgba(255, 46, 200, 0.18);
+}
+.theme-style-lemon {
+  --bg: #fffdf0;
+  --surface: #fffef8;
+  --surface-2: #fff8cc;
+  --text: #38300a;
+  --muted: #787000;
+  --line: #e0d870;
+  --accent: #d8b800;
+  --accent-soft: #f0e890;
+  --shadow: 0 18px 55px rgba(216, 184, 0, 0.14);
+}
+.theme-style-ocean {
+  --bg: #080f1a;
+  --surface: #0f1a2e;
+  --surface-2: #162540;
+  --text: #d8f0f8;
+  --muted: #78a8c0;
+  --line: #1e4060;
+  --accent: #40b8f8;
+  --accent-soft: #a0d8f8;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
+}
+.theme-style-sunset {
+  --bg: #fff6f0;
+  --surface: #fffaf8;
+  --surface-2: #ffe8d8;
+  --text: #4a1a08;
+  --muted: #9a5840;
+  --line: #f0c0a0;
+  --accent: #ff5a1e;
+  --accent-soft: #ffb890;
+  --shadow: 0 18px 55px rgba(255, 90, 30, 0.18);
+}
 .ad-card {
   padding: 16px;
   border: 1px solid var(--line);

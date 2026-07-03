@@ -60,7 +60,17 @@ const customerStyleClasses = [
   'theme-style-cloud',
   'theme-style-cotton',
   'theme-style-berry',
-  'theme-style-night'
+  'theme-style-night',
+  'theme-style-rosegold',
+  'theme-style-peach',
+  'theme-style-boba',
+  'theme-style-aurora',
+  'theme-style-neon',
+  'theme-style-matcha',
+  'theme-style-bubblegum',
+  'theme-style-lemon',
+  'theme-style-ocean',
+  'theme-style-sunset'
 ];
 const customerPresetClasses = [
   'theme-preset-kawaii',
@@ -70,7 +80,17 @@ const customerPresetClasses = [
   'theme-preset-mint',
   'theme-preset-cotton',
   'theme-preset-berry',
-  'theme-preset-night'
+  'theme-preset-night',
+  'theme-preset-rosegold',
+  'theme-preset-peach',
+  'theme-preset-boba',
+  'theme-preset-aurora',
+  'theme-preset-neon',
+  'theme-preset-matcha',
+  'theme-preset-bubblegum',
+  'theme-preset-lemon',
+  'theme-preset-ocean',
+  'theme-preset-sunset'
 ];
 const plushieSymbols = {
   bunny: '🐰',
@@ -87,7 +107,17 @@ const customerCuteThemes = {
   mint: { accent: '#8be6c4', style: 'mint', plushie: 'frog' },
   cotton: { accent: '#ffb2f0', style: 'cotton', plushie: 'bear' },
   berry: { accent: '#ff7b93', style: 'berry', plushie: 'cat' },
-  night: { accent: '#d8c6ff', style: 'night', plushie: 'star' }
+  night: { accent: '#d8c6ff', style: 'night', plushie: 'star' },
+  rosegold: { accent: '#d4956a', style: 'rosegold', plushie: 'bear' },
+  peach: { accent: '#ff8c50', style: 'peach', plushie: 'bunny' },
+  boba: { accent: '#c8956a', style: 'boba', plushie: 'bunny' },
+  aurora: { accent: '#4fffd4', style: 'aurora', plushie: 'star' },
+  neon: { accent: '#e040fb', style: 'neon', plushie: 'cat' },
+  matcha: { accent: '#5aae44', style: 'matcha', plushie: 'frog' },
+  bubblegum: { accent: '#ff2ec8', style: 'bubblegum', plushie: 'bunny' },
+  lemon: { accent: '#d8b800', style: 'lemon', plushie: 'star' },
+  ocean: { accent: '#40b8f8', style: 'ocean', plushie: 'frog' },
+  sunset: { accent: '#ff5a1e', style: 'sunset', plushie: 'bear' }
 };
 
 let marketplaceState = {

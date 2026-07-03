@@ -775,11 +775,14 @@ article { padding: 24px; }
 
 /* =====================================================
    CUTE THEME CARD CORNER STICKERS
-   Each cute theme places a matching emoji badge at the
-   top-left and top-right corners of every content card.
+   All 4 corners of every card get a matching emoji badge.
+   Card ::before/::after = top-left / top-right.
+   Card heading ::before/::after = bottom-left / bottom-right
+   (position: absolute on a static child anchors to the
+   nearest positioned ancestor — the card itself).
    ===================================================== */
 
-/* Make cards overflow-visible so stickers can peek out */
+/* Cards: position:relative + overflow:visible so stickers can show */
 .theme-style-kawaii .plan-card,   .theme-style-kawaii .hero-card,   .theme-style-kawaii .offer-card,   .theme-style-kawaii .detail-card,
 .theme-style-sakura .plan-card,   .theme-style-sakura .hero-card,   .theme-style-sakura .offer-card,   .theme-style-sakura .detail-card,
 .theme-style-lavender .plan-card, .theme-style-lavender .hero-card, .theme-style-lavender .offer-card, .theme-style-lavender .detail-card,
@@ -793,43 +796,80 @@ article { padding: 24px; }
   overflow: visible;
 }
 
-/* Base sticker badge shared by all cute themes */
+/* Shared badge style — top corners (card ::before / ::after)
+   and bottom corners (heading ::before / ::after) */
 .theme-style-kawaii .plan-card::before,   .theme-style-kawaii .plan-card::after,
 .theme-style-kawaii .hero-card::before,   .theme-style-kawaii .hero-card::after,
 .theme-style-kawaii .offer-card::before,  .theme-style-kawaii .offer-card::after,
 .theme-style-kawaii .detail-card::before, .theme-style-kawaii .detail-card::after,
+.theme-style-kawaii .plan-card h3::before,   .theme-style-kawaii .plan-card h3::after,
+.theme-style-kawaii .hero-card h2::before,   .theme-style-kawaii .hero-card h2::after,
+.theme-style-kawaii .offer-card h3::before,  .theme-style-kawaii .offer-card h3::after,
+.theme-style-kawaii .detail-card h3::before, .theme-style-kawaii .detail-card h3::after,
 .theme-style-sakura .plan-card::before,   .theme-style-sakura .plan-card::after,
 .theme-style-sakura .hero-card::before,   .theme-style-sakura .hero-card::after,
 .theme-style-sakura .offer-card::before,  .theme-style-sakura .offer-card::after,
 .theme-style-sakura .detail-card::before, .theme-style-sakura .detail-card::after,
+.theme-style-sakura .plan-card h3::before,   .theme-style-sakura .plan-card h3::after,
+.theme-style-sakura .hero-card h2::before,   .theme-style-sakura .hero-card h2::after,
+.theme-style-sakura .offer-card h3::before,  .theme-style-sakura .offer-card h3::after,
+.theme-style-sakura .detail-card h3::before, .theme-style-sakura .detail-card h3::after,
 .theme-style-lavender .plan-card::before,   .theme-style-lavender .plan-card::after,
 .theme-style-lavender .hero-card::before,   .theme-style-lavender .hero-card::after,
 .theme-style-lavender .offer-card::before,  .theme-style-lavender .offer-card::after,
 .theme-style-lavender .detail-card::before, .theme-style-lavender .detail-card::after,
+.theme-style-lavender .plan-card h3::before,   .theme-style-lavender .plan-card h3::after,
+.theme-style-lavender .hero-card h2::before,   .theme-style-lavender .hero-card h2::after,
+.theme-style-lavender .offer-card h3::before,  .theme-style-lavender .offer-card h3::after,
+.theme-style-lavender .detail-card h3::before, .theme-style-lavender .detail-card h3::after,
 .theme-style-mint .plan-card::before,   .theme-style-mint .plan-card::after,
 .theme-style-mint .hero-card::before,   .theme-style-mint .hero-card::after,
 .theme-style-mint .offer-card::before,  .theme-style-mint .offer-card::after,
 .theme-style-mint .detail-card::before, .theme-style-mint .detail-card::after,
+.theme-style-mint .plan-card h3::before,   .theme-style-mint .plan-card h3::after,
+.theme-style-mint .hero-card h2::before,   .theme-style-mint .hero-card h2::after,
+.theme-style-mint .offer-card h3::before,  .theme-style-mint .offer-card h3::after,
+.theme-style-mint .detail-card h3::before, .theme-style-mint .detail-card h3::after,
 .theme-style-strawberry .plan-card::before,   .theme-style-strawberry .plan-card::after,
 .theme-style-strawberry .hero-card::before,   .theme-style-strawberry .hero-card::after,
 .theme-style-strawberry .offer-card::before,  .theme-style-strawberry .offer-card::after,
 .theme-style-strawberry .detail-card::before, .theme-style-strawberry .detail-card::after,
+.theme-style-strawberry .plan-card h3::before,   .theme-style-strawberry .plan-card h3::after,
+.theme-style-strawberry .hero-card h2::before,   .theme-style-strawberry .hero-card h2::after,
+.theme-style-strawberry .offer-card h3::before,  .theme-style-strawberry .offer-card h3::after,
+.theme-style-strawberry .detail-card h3::before, .theme-style-strawberry .detail-card h3::after,
 .theme-style-cloud .plan-card::before,   .theme-style-cloud .plan-card::after,
 .theme-style-cloud .hero-card::before,   .theme-style-cloud .hero-card::after,
 .theme-style-cloud .offer-card::before,  .theme-style-cloud .offer-card::after,
 .theme-style-cloud .detail-card::before, .theme-style-cloud .detail-card::after,
+.theme-style-cloud .plan-card h3::before,   .theme-style-cloud .plan-card h3::after,
+.theme-style-cloud .hero-card h2::before,   .theme-style-cloud .hero-card h2::after,
+.theme-style-cloud .offer-card h3::before,  .theme-style-cloud .offer-card h3::after,
+.theme-style-cloud .detail-card h3::before, .theme-style-cloud .detail-card h3::after,
 .theme-style-cotton .plan-card::before,   .theme-style-cotton .plan-card::after,
 .theme-style-cotton .hero-card::before,   .theme-style-cotton .hero-card::after,
 .theme-style-cotton .offer-card::before,  .theme-style-cotton .offer-card::after,
 .theme-style-cotton .detail-card::before, .theme-style-cotton .detail-card::after,
+.theme-style-cotton .plan-card h3::before,   .theme-style-cotton .plan-card h3::after,
+.theme-style-cotton .hero-card h2::before,   .theme-style-cotton .hero-card h2::after,
+.theme-style-cotton .offer-card h3::before,  .theme-style-cotton .offer-card h3::after,
+.theme-style-cotton .detail-card h3::before, .theme-style-cotton .detail-card h3::after,
 .theme-style-berry .plan-card::before,   .theme-style-berry .plan-card::after,
 .theme-style-berry .hero-card::before,   .theme-style-berry .hero-card::after,
 .theme-style-berry .offer-card::before,  .theme-style-berry .offer-card::after,
 .theme-style-berry .detail-card::before, .theme-style-berry .detail-card::after,
+.theme-style-berry .plan-card h3::before,   .theme-style-berry .plan-card h3::after,
+.theme-style-berry .hero-card h2::before,   .theme-style-berry .hero-card h2::after,
+.theme-style-berry .offer-card h3::before,  .theme-style-berry .offer-card h3::after,
+.theme-style-berry .detail-card h3::before, .theme-style-berry .detail-card h3::after,
 .theme-style-night .plan-card::before,   .theme-style-night .plan-card::after,
 .theme-style-night .hero-card::before,   .theme-style-night .hero-card::after,
 .theme-style-night .offer-card::before,  .theme-style-night .offer-card::after,
-.theme-style-night .detail-card::before, .theme-style-night .detail-card::after {
+.theme-style-night .detail-card::before, .theme-style-night .detail-card::after,
+.theme-style-night .plan-card h3::before,   .theme-style-night .plan-card h3::after,
+.theme-style-night .hero-card h2::before,   .theme-style-night .hero-card h2::after,
+.theme-style-night .offer-card h3::before,  .theme-style-night .offer-card h3::after,
+.theme-style-night .detail-card h3::before, .theme-style-night .detail-card h3::after {
   position: absolute;
   width: 34px;
   height: 34px;
@@ -844,7 +884,7 @@ article { padding: 24px; }
   pointer-events: none;
 }
 
-/* ::before = top-left corner */
+/* TOP-LEFT corner — card ::before */
 .theme-style-kawaii .plan-card::before,   .theme-style-kawaii .hero-card::before,   .theme-style-kawaii .offer-card::before,   .theme-style-kawaii .detail-card::before,
 .theme-style-sakura .plan-card::before,   .theme-style-sakura .hero-card::before,   .theme-style-sakura .offer-card::before,   .theme-style-sakura .detail-card::before,
 .theme-style-lavender .plan-card::before, .theme-style-lavender .hero-card::before, .theme-style-lavender .offer-card::before, .theme-style-lavender .detail-card::before,
@@ -857,7 +897,7 @@ article { padding: 24px; }
   top: -15px; left: -15px;
 }
 
-/* ::after = top-right corner */
+/* TOP-RIGHT corner — card ::after */
 .theme-style-kawaii .plan-card::after,   .theme-style-kawaii .hero-card::after,   .theme-style-kawaii .offer-card::after,   .theme-style-kawaii .detail-card::after,
 .theme-style-sakura .plan-card::after,   .theme-style-sakura .hero-card::after,   .theme-style-sakura .offer-card::after,   .theme-style-sakura .detail-card::after,
 .theme-style-lavender .plan-card::after, .theme-style-lavender .hero-card::after, .theme-style-lavender .offer-card::after, .theme-style-lavender .detail-card::after,
@@ -870,60 +910,140 @@ article { padding: 24px; }
   top: -15px; right: -15px;
 }
 
-/* --- Per-theme sticker characters (left :: right) --- */
-/* kawaii: bow :: sparkle */
+/* BOTTOM-LEFT corner — heading ::before (positions relative to card) */
+.theme-style-kawaii .plan-card h3::before,   .theme-style-kawaii .hero-card h2::before,
+.theme-style-kawaii .offer-card h3::before,  .theme-style-kawaii .detail-card h3::before,
+.theme-style-sakura .plan-card h3::before,   .theme-style-sakura .hero-card h2::before,
+.theme-style-sakura .offer-card h3::before,  .theme-style-sakura .detail-card h3::before,
+.theme-style-lavender .plan-card h3::before, .theme-style-lavender .hero-card h2::before,
+.theme-style-lavender .offer-card h3::before,.theme-style-lavender .detail-card h3::before,
+.theme-style-mint .plan-card h3::before,     .theme-style-mint .hero-card h2::before,
+.theme-style-mint .offer-card h3::before,    .theme-style-mint .detail-card h3::before,
+.theme-style-strawberry .plan-card h3::before,.theme-style-strawberry .hero-card h2::before,
+.theme-style-strawberry .offer-card h3::before,.theme-style-strawberry .detail-card h3::before,
+.theme-style-cloud .plan-card h3::before,    .theme-style-cloud .hero-card h2::before,
+.theme-style-cloud .offer-card h3::before,   .theme-style-cloud .detail-card h3::before,
+.theme-style-cotton .plan-card h3::before,   .theme-style-cotton .hero-card h2::before,
+.theme-style-cotton .offer-card h3::before,  .theme-style-cotton .detail-card h3::before,
+.theme-style-berry .plan-card h3::before,    .theme-style-berry .hero-card h2::before,
+.theme-style-berry .offer-card h3::before,   .theme-style-berry .detail-card h3::before,
+.theme-style-night .plan-card h3::before,    .theme-style-night .hero-card h2::before,
+.theme-style-night .offer-card h3::before,   .theme-style-night .detail-card h3::before {
+  bottom: -15px; left: -15px;
+}
+
+/* BOTTOM-RIGHT corner — heading ::after (positions relative to card) */
+.theme-style-kawaii .plan-card h3::after,   .theme-style-kawaii .hero-card h2::after,
+.theme-style-kawaii .offer-card h3::after,  .theme-style-kawaii .detail-card h3::after,
+.theme-style-sakura .plan-card h3::after,   .theme-style-sakura .hero-card h2::after,
+.theme-style-sakura .offer-card h3::after,  .theme-style-sakura .detail-card h3::after,
+.theme-style-lavender .plan-card h3::after, .theme-style-lavender .hero-card h2::after,
+.theme-style-lavender .offer-card h3::after,.theme-style-lavender .detail-card h3::after,
+.theme-style-mint .plan-card h3::after,     .theme-style-mint .hero-card h2::after,
+.theme-style-mint .offer-card h3::after,    .theme-style-mint .detail-card h3::after,
+.theme-style-strawberry .plan-card h3::after,.theme-style-strawberry .hero-card h2::after,
+.theme-style-strawberry .offer-card h3::after,.theme-style-strawberry .detail-card h3::after,
+.theme-style-cloud .plan-card h3::after,    .theme-style-cloud .hero-card h2::after,
+.theme-style-cloud .offer-card h3::after,   .theme-style-cloud .detail-card h3::after,
+.theme-style-cotton .plan-card h3::after,   .theme-style-cotton .hero-card h2::after,
+.theme-style-cotton .offer-card h3::after,  .theme-style-cotton .detail-card h3::after,
+.theme-style-berry .plan-card h3::after,    .theme-style-berry .hero-card h2::after,
+.theme-style-berry .offer-card h3::after,   .theme-style-berry .detail-card h3::after,
+.theme-style-night .plan-card h3::after,    .theme-style-night .hero-card h2::after,
+.theme-style-night .offer-card h3::after,   .theme-style-night .detail-card h3::after {
+  bottom: -15px; right: -15px;
+}
+
+/* --- Per-theme sticker emoji (top-left / top-right :: bottom mirrors) --- */
+/* kawaii: bow top-left & bottom-right, sparkle top-right & bottom-left */
 .theme-style-kawaii .plan-card::before, .theme-style-kawaii .hero-card::before,
-.theme-style-kawaii .offer-card::before, .theme-style-kawaii .detail-card::before { content: '🎀'; }
+.theme-style-kawaii .offer-card::before, .theme-style-kawaii .detail-card::before,
+.theme-style-kawaii .plan-card h3::after, .theme-style-kawaii .hero-card h2::after,
+.theme-style-kawaii .offer-card h3::after, .theme-style-kawaii .detail-card h3::after { content: '🎀'; }
 .theme-style-kawaii .plan-card::after, .theme-style-kawaii .hero-card::after,
-.theme-style-kawaii .offer-card::after, .theme-style-kawaii .detail-card::after  { content: '✧'; }
+.theme-style-kawaii .offer-card::after, .theme-style-kawaii .detail-card::after,
+.theme-style-kawaii .plan-card h3::before, .theme-style-kawaii .hero-card h2::before,
+.theme-style-kawaii .offer-card h3::before, .theme-style-kawaii .detail-card h3::before { content: '✧'; }
 
-/* sakura: cherry blossom :: flower */
+/* sakura */
 .theme-style-sakura .plan-card::before, .theme-style-sakura .hero-card::before,
-.theme-style-sakura .offer-card::before, .theme-style-sakura .detail-card::before { content: '🌸'; }
+.theme-style-sakura .offer-card::before, .theme-style-sakura .detail-card::before,
+.theme-style-sakura .plan-card h3::after, .theme-style-sakura .hero-card h2::after,
+.theme-style-sakura .offer-card h3::after, .theme-style-sakura .detail-card h3::after { content: '🌸'; }
 .theme-style-sakura .plan-card::after, .theme-style-sakura .hero-card::after,
-.theme-style-sakura .offer-card::after, .theme-style-sakura .detail-card::after  { content: '✿'; }
+.theme-style-sakura .offer-card::after, .theme-style-sakura .detail-card::after,
+.theme-style-sakura .plan-card h3::before, .theme-style-sakura .hero-card h2::before,
+.theme-style-sakura .offer-card h3::before, .theme-style-sakura .detail-card h3::before { content: '✿'; }
 
-/* lavender: moon :: star */
+/* lavender */
 .theme-style-lavender .plan-card::before, .theme-style-lavender .hero-card::before,
-.theme-style-lavender .offer-card::before, .theme-style-lavender .detail-card::before { content: '🌙'; }
+.theme-style-lavender .offer-card::before, .theme-style-lavender .detail-card::before,
+.theme-style-lavender .plan-card h3::after, .theme-style-lavender .hero-card h2::after,
+.theme-style-lavender .offer-card h3::after, .theme-style-lavender .detail-card h3::after { content: '🌙'; }
 .theme-style-lavender .plan-card::after, .theme-style-lavender .hero-card::after,
-.theme-style-lavender .offer-card::after, .theme-style-lavender .detail-card::after  { content: '✦'; }
+.theme-style-lavender .offer-card::after, .theme-style-lavender .detail-card::after,
+.theme-style-lavender .plan-card h3::before, .theme-style-lavender .hero-card h2::before,
+.theme-style-lavender .offer-card h3::before, .theme-style-lavender .detail-card h3::before { content: '✦'; }
 
-/* mint: herb :: sparkle */
+/* mint */
 .theme-style-mint .plan-card::before, .theme-style-mint .hero-card::before,
-.theme-style-mint .offer-card::before, .theme-style-mint .detail-card::before { content: '🌿'; }
+.theme-style-mint .offer-card::before, .theme-style-mint .detail-card::before,
+.theme-style-mint .plan-card h3::after, .theme-style-mint .hero-card h2::after,
+.theme-style-mint .offer-card h3::after, .theme-style-mint .detail-card h3::after { content: '🌿'; }
 .theme-style-mint .plan-card::after, .theme-style-mint .hero-card::after,
-.theme-style-mint .offer-card::after, .theme-style-mint .detail-card::after  { content: '✧'; }
+.theme-style-mint .offer-card::after, .theme-style-mint .detail-card::after,
+.theme-style-mint .plan-card h3::before, .theme-style-mint .hero-card h2::before,
+.theme-style-mint .offer-card h3::before, .theme-style-mint .detail-card h3::before { content: '✧'; }
 
-/* strawberry: strawberry :: heart */
+/* strawberry */
 .theme-style-strawberry .plan-card::before, .theme-style-strawberry .hero-card::before,
-.theme-style-strawberry .offer-card::before, .theme-style-strawberry .detail-card::before { content: '🍓'; }
+.theme-style-strawberry .offer-card::before, .theme-style-strawberry .detail-card::before,
+.theme-style-strawberry .plan-card h3::after, .theme-style-strawberry .hero-card h2::after,
+.theme-style-strawberry .offer-card h3::after, .theme-style-strawberry .detail-card h3::after { content: '🍓'; }
 .theme-style-strawberry .plan-card::after, .theme-style-strawberry .hero-card::after,
-.theme-style-strawberry .offer-card::after, .theme-style-strawberry .detail-card::after  { content: '♡'; }
+.theme-style-strawberry .offer-card::after, .theme-style-strawberry .detail-card::after,
+.theme-style-strawberry .plan-card h3::before, .theme-style-strawberry .hero-card h2::before,
+.theme-style-strawberry .offer-card h3::before, .theme-style-strawberry .detail-card h3::before { content: '♡'; }
 
-/* cloud: cloud :: star */
+/* cloud */
 .theme-style-cloud .plan-card::before, .theme-style-cloud .hero-card::before,
-.theme-style-cloud .offer-card::before, .theme-style-cloud .detail-card::before { content: '☁'; }
+.theme-style-cloud .offer-card::before, .theme-style-cloud .detail-card::before,
+.theme-style-cloud .plan-card h3::after, .theme-style-cloud .hero-card h2::after,
+.theme-style-cloud .offer-card h3::after, .theme-style-cloud .detail-card h3::after { content: '☁'; }
 .theme-style-cloud .plan-card::after, .theme-style-cloud .hero-card::after,
-.theme-style-cloud .offer-card::after, .theme-style-cloud .detail-card::after  { content: '✦'; }
+.theme-style-cloud .offer-card::after, .theme-style-cloud .detail-card::after,
+.theme-style-cloud .plan-card h3::before, .theme-style-cloud .hero-card h2::before,
+.theme-style-cloud .offer-card h3::before, .theme-style-cloud .detail-card h3::before { content: '✦'; }
 
-/* cotton: bow :: heart */
+/* cotton */
 .theme-style-cotton .plan-card::before, .theme-style-cotton .hero-card::before,
-.theme-style-cotton .offer-card::before, .theme-style-cotton .detail-card::before { content: '🎀'; }
+.theme-style-cotton .offer-card::before, .theme-style-cotton .detail-card::before,
+.theme-style-cotton .plan-card h3::after, .theme-style-cotton .hero-card h2::after,
+.theme-style-cotton .offer-card h3::after, .theme-style-cotton .detail-card h3::after { content: '🎀'; }
 .theme-style-cotton .plan-card::after, .theme-style-cotton .hero-card::after,
-.theme-style-cotton .offer-card::after, .theme-style-cotton .detail-card::after  { content: '♡'; }
+.theme-style-cotton .offer-card::after, .theme-style-cotton .detail-card::after,
+.theme-style-cotton .plan-card h3::before, .theme-style-cotton .hero-card h2::before,
+.theme-style-cotton .offer-card h3::before, .theme-style-cotton .detail-card h3::before { content: '♡'; }
 
-/* berry: cherry :: sparkle */
+/* berry */
 .theme-style-berry .plan-card::before, .theme-style-berry .hero-card::before,
-.theme-style-berry .offer-card::before, .theme-style-berry .detail-card::before { content: '🍒'; }
+.theme-style-berry .offer-card::before, .theme-style-berry .detail-card::before,
+.theme-style-berry .plan-card h3::after, .theme-style-berry .hero-card h2::after,
+.theme-style-berry .offer-card h3::after, .theme-style-berry .detail-card h3::after { content: '🍒'; }
 .theme-style-berry .plan-card::after, .theme-style-berry .hero-card::after,
-.theme-style-berry .offer-card::after, .theme-style-berry .detail-card::after  { content: '✦'; }
+.theme-style-berry .offer-card::after, .theme-style-berry .detail-card::after,
+.theme-style-berry .plan-card h3::before, .theme-style-berry .hero-card h2::before,
+.theme-style-berry .offer-card h3::before, .theme-style-berry .detail-card h3::before { content: '✦'; }
 
-/* night: moon :: star */
+/* night */
 .theme-style-night .plan-card::before, .theme-style-night .hero-card::before,
-.theme-style-night .offer-card::before, .theme-style-night .detail-card::before { content: '☾'; }
+.theme-style-night .offer-card::before, .theme-style-night .detail-card::before,
+.theme-style-night .plan-card h3::after, .theme-style-night .hero-card h2::after,
+.theme-style-night .offer-card h3::after, .theme-style-night .detail-card h3::after { content: '☾'; }
 .theme-style-night .plan-card::after, .theme-style-night .hero-card::after,
-.theme-style-night .offer-card::after, .theme-style-night .detail-card::after  { content: '✦'; }
+.theme-style-night .offer-card::after, .theme-style-night .detail-card::after,
+.theme-style-night .plan-card h3::before, .theme-style-night .hero-card h2::before,
+.theme-style-night .offer-card h3::before, .theme-style-night .detail-card h3::before { content: '✦'; }
 .partner-form-card { padding: 24px; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start; margin-top: 18px; }
 .partner-form { display: flex; flex-direction: column; gap: 10px; }
 .partner-form textarea { resize: vertical; }

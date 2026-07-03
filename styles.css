@@ -268,15 +268,20 @@ article { padding: 24px; }
 .search-toolbar select,
 .partner-form input,
 .partner-form textarea {
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--line);
   border-radius: 14px;
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-2);
   color: var(--text);
   padding: 12px 14px;
   font-size: 1rem;
 }
 .search-toolbar input { flex: 1; min-width: 240px; }
 .search-toolbar select { min-width: 180px; }
+.search-toolbar select option,
+.search-toolbar select optgroup {
+  background: var(--surface-2, #1a1a1a);
+  color: var(--text, #f2f2f2);
+}
 
 .search-grid {
   display: grid;

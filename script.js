@@ -508,6 +508,19 @@ function updateCuteDecorLayer(theme) {
 }
 
 function initializeCustomerTheme() {
+  const unlocked = isCustomerThemeUnlocked();
+  const savedTheme = readCustomerTheme();
+
+  if (hasOwnerSession()) {
+    setCustomerThemeUnlocked(true);
+  }
+
+  // Apply saved theme on EVERY page when the user has active access
+  if (unlocked || hasOwnerSession()) {
+    applyCustomerTheme(savedTheme);
+  }
+
+  // Everything below is marketplace-panel-only setup
   if (!customerThemePanel) {
     return;
   }
@@ -520,14 +533,11 @@ function initializeCustomerTheme() {
     customerCheckoutMessage.textContent = 'Checkout was cancelled. You can restart anytime.';
   }
 
-  const unlocked = isCustomerThemeUnlocked();
-  const savedTheme = readCustomerTheme();
-
-  if (hasOwnerSession()) {
-    setCustomerThemeUnlocked(true);
+  // Also apply for preview on the marketplace page even if not yet unlocked
+  if (!(unlocked || hasOwnerSession())) {
+    applyCustomerTheme(savedTheme);
   }
 
-  applyCustomerTheme(savedTheme);
   setCustomerThemePanelState(unlocked || hasOwnerSession());
 
   if (customerPresetButtons) {

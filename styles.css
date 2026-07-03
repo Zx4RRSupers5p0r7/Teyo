@@ -659,7 +659,11 @@ article { padding: 24px; }
 .pet-type-dog.pet-action-b .pet-body,
 .pet-type-dog.pet-action-b .pet-head,
 .pet-type-dog.pet-action-b .pet-ear-l,
-.pet-type-dog.pet-action-b .pet-ear-r { animation: pet-body-hop 0.75s ease-in-out; }
+.pet-type-dog.pet-action-b .pet-ear-r,
+.pet-type-dog.pet-action-b .pet-paw-l,
+.pet-type-dog.pet-action-b .pet-paw-r,
+.pet-type-dog.pet-action-b .pet-leg-l,
+.pet-type-dog.pet-action-b .pet-leg-r { animation: pet-body-hop 0.75s ease-in-out; }
 
 /* ── BUNNY ── */
 .pet-type-bunny .pet-ear-l { animation: pet-ear-twitch-l 4.2s ease-in-out infinite; transform-origin: bottom center; }
@@ -667,7 +671,11 @@ article { padding: 24px; }
 .pet-type-bunny.pet-action-a .pet-body,
 .pet-type-bunny.pet-action-a .pet-head,
 .pet-type-bunny.pet-action-a .pet-ear-l,
-.pet-type-bunny.pet-action-a .pet-ear-r { animation: pet-body-hop 0.9s ease-in-out; }
+.pet-type-bunny.pet-action-a .pet-ear-r,
+.pet-type-bunny.pet-action-a .pet-paw-l,
+.pet-type-bunny.pet-action-a .pet-paw-r,
+.pet-type-bunny.pet-action-a .pet-leg-l,
+.pet-type-bunny.pet-action-a .pet-leg-r { animation: pet-body-hop 0.9s ease-in-out; }
 .pet-type-bunny.pet-action-b .pet-head  { animation: pet-head-tilt 0.25s ease-in-out 4; }
 
 /* ── BEAR ── */
@@ -679,13 +687,19 @@ article { padding: 24px; }
 .pet-type-frog.pet-action-a .pet-body,
 .pet-type-frog.pet-action-a .pet-head,
 .pet-type-frog.pet-action-a .pet-paw-l,
-.pet-type-frog.pet-action-a .pet-paw-r { animation: pet-frog-jump 0.85s ease-in-out; }
+.pet-type-frog.pet-action-a .pet-paw-r,
+.pet-type-frog.pet-action-a .pet-leg-l,
+.pet-type-frog.pet-action-a .pet-leg-r { animation: pet-frog-jump 0.85s ease-in-out; }
 .pet-type-frog.pet-action-b .pet-body  { animation: pet-frog-puff 0.6s ease-in-out 2; }
 
 /* ── HAMSTER ── */
 .pet-type-hamster .pet-body { animation: pet-breathe 1.4s ease-in-out infinite; }
 .pet-type-hamster.pet-action-a .pet-body,
-.pet-type-hamster.pet-action-a .pet-head { animation: pet-hamster-spin 0.65s ease-in-out; }
+.pet-type-hamster.pet-action-a .pet-head,
+.pet-type-hamster.pet-action-a .pet-paw-l,
+.pet-type-hamster.pet-action-a .pet-paw-r,
+.pet-type-hamster.pet-action-a .pet-leg-l,
+.pet-type-hamster.pet-action-a .pet-leg-r { animation: pet-hamster-spin 0.65s ease-in-out; }
 .pet-type-hamster.pet-action-b .pet-head  { animation: pet-cheek-stuff 0.5s ease-in-out 2; }
 
 /* ── PANDA (same as bear) ── */

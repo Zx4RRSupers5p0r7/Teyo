@@ -40,7 +40,10 @@ const customerOneTimePlanBtn = document.getElementById('customerOneTimePlanBtn')
 const customerPlusPlanBtn = document.getElementById('customerPlusPlanBtn');
 const customerPresetButtons = document.querySelectorAll('.customer-preset-btn');
 const customerPlushieSelect = document.getElementById('customerPlushieSelect');
+const customerPetNameInput = document.getElementById('customerPetNameInput');
+const customerPetColorInput = document.getElementById('customerPetColorInput');
 const customerPlushiePreview = document.getElementById('customerPlushiePreview');
+const customerPlushieCaption = document.getElementById('customerPlushieCaption');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
 
@@ -97,7 +100,12 @@ const plushieSymbols = {
   bear: '🧸',
   cat: '🐱',
   frog: '🐸',
-  star: '⭐'
+  star: '⭐',
+  dog: '🐶',
+  hamster: '🐹',
+  panda: '🐼',
+  fox: '🦊',
+  duck: '🐥'
 };
 const customerCuteThemes = {
   kawaii: { accent: '#ff9ad5', style: 'kawaii', plushie: 'bear' },
@@ -374,7 +382,9 @@ function getDefaultCustomerTheme() {
     accent: preset.accent,
     style: preset.style,
     preset: 'kawaii',
-    plushie: preset.plushie
+    plushie: preset.plushie,
+    petName: '',
+    petColor: preset.accent
   };
 }
 
@@ -392,7 +402,9 @@ function getDefaultCustomerTheme() {
     accent: '#ffffff',
     style: 'midnight',
     preset: 'kawaii',
-    plushie: 'bear'
+    plushie: 'bear',
+    petName: '',
+    petColor: '#ff9ad5'
   };
 }
 
@@ -411,7 +423,9 @@ function readCustomerTheme() {
       accent: normalizeHexColor(parsed.accent, presetTheme.accent),
       style,
       preset,
-      plushie: normalizeThemeField(parsed.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
+      plushie: normalizeThemeField(parsed.plushie, Object.keys(plushieSymbols), presetTheme.plushie),
+      petName: String(parsed.petName || '').trim().slice(0, 16),
+      petColor: normalizeHexColor(parsed.petColor, presetTheme.accent)
     };
   } catch (error) {
     return getDefaultCustomerTheme();
@@ -437,7 +451,9 @@ function applyCustomerTheme(theme) {
     accent: normalizeHexColor(theme.accent, presetTheme.accent),
     style: normalizeThemeField(theme.style, customerStyleClasses.map((className) => className.replace('theme-style-', '')), presetTheme.style),
     preset: presetName,
-    plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
+    plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), presetTheme.plushie),
+    petName: String(theme.petName || '').trim().slice(0, 16),
+    petColor: normalizeHexColor(theme.petColor, presetTheme.accent)
   };
 
   document.body.style.setProperty('--accent', safeTheme.accent);
@@ -457,8 +473,17 @@ function applyCustomerTheme(theme) {
   if (customerPlushieSelect) {
     customerPlushieSelect.value = safeTheme.plushie;
   }
+  if (customerPetNameInput) {
+    customerPetNameInput.value = safeTheme.petName;
+  }
+  if (customerPetColorInput) {
+    customerPetColorInput.value = safeTheme.petColor;
+  }
   if (customerPlushiePreview) {
     customerPlushiePreview.textContent = getPlushieSymbol(safeTheme.plushie);
+  }
+  if (customerPlushieCaption && safeTheme.petName) {
+    customerPlushieCaption.textContent = `${escapeHtml(safeTheme.petName)} will float at the bottom of every page after you verify your paid access.`;
   }
 
   updateCuteDecorLayer(safeTheme);
@@ -491,19 +516,72 @@ function ensureCuteDecorLayer() {
   return layer;
 }
 
+/* ── Pet animation system ─────────────────────────────────────────────── */
+const petActionSeq = {
+  cat:     [{em:'🐱',a:'pet-bob',ms:2200},{em:'😸',a:'pet-lick',ms:1400},{em:'🐱',a:'pet-stretch',ms:1800},{em:'😴',a:'pet-bob',ms:3200},{em:'😼',a:'pet-shake',ms:900}],
+  dog:     [{em:'🐶',a:'pet-wag',ms:1000},{em:'😋',a:'pet-bounce',ms:900},{em:'🐶',a:'pet-wag',ms:1200},{em:'🐶',a:'pet-hop',ms:800}],
+  bunny:   [{em:'🐰',a:'pet-bob',ms:1600},{em:'🐇',a:'pet-hop',ms:900},{em:'🐰',a:'pet-bob',ms:2000},{em:'🐰',a:'pet-shake',ms:600}],
+  bear:    [{em:'🧸',a:'pet-sway',ms:2200},{em:'🧸',a:'pet-bounce',ms:1400},{em:'🧸',a:'pet-sway',ms:3000}],
+  frog:    [{em:'🐸',a:'pet-bob',ms:2000},{em:'🐸',a:'pet-hop',ms:700},{em:'🐸',a:'pet-bob',ms:2400},{em:'🐸',a:'pet-shake',ms:500}],
+  hamster: [{em:'🐹',a:'pet-spin',ms:700},{em:'🐹',a:'pet-shake',ms:500},{em:'🐹',a:'pet-bob',ms:1400},{em:'🐹',a:'pet-spin',ms:600}],
+  panda:   [{em:'🐼',a:'pet-sway',ms:2500},{em:'🐼',a:'pet-bounce',ms:1400},{em:'🐼',a:'pet-sway',ms:3000}],
+  fox:     [{em:'🦊',a:'pet-bob',ms:1800},{em:'🦊',a:'pet-hop',ms:900},{em:'🦊',a:'pet-wag',ms:1100},{em:'🦊',a:'pet-bob',ms:2000}],
+  duck:    [{em:'🐥',a:'pet-wag',ms:900},{em:'🐤',a:'pet-bounce',ms:800},{em:'🐥',a:'pet-bob',ms:1800},{em:'🐤',a:'pet-wag',ms:1000}],
+  star:    [{em:'⭐',a:'pet-spin',ms:900},{em:'🌟',a:'pet-twinkle',ms:1400},{em:'✨',a:'pet-spin',ms:700},{em:'⭐',a:'pet-twinkle',ms:1200}]
+};
+
+let _petTimer = null;
+let _petSeqIdx = 0;
+let _petCurrentType = '';
+
+function startPetAnimation(petType) {
+  if (_petTimer) clearTimeout(_petTimer);
+  if (_petCurrentType !== petType) { _petSeqIdx = 0; _petCurrentType = petType; }
+  _runNextPetFrame();
+}
+
+function stopPetAnimation() {
+  if (_petTimer) clearTimeout(_petTimer);
+  _petTimer = null;
+}
+
+function _runNextPetFrame() {
+  const seq = petActionSeq[_petCurrentType] || petActionSeq.bear;
+  const frame = seq[_petSeqIdx % seq.length];
+  _petSeqIdx++;
+
+  const layer = document.getElementById('customerCuteDecorLayer');
+  if (!layer || layer.hidden) return;
+  const emojiEl = layer.querySelector('.pet-emoji');
+  if (!emojiEl) return;
+
+  emojiEl.textContent = frame.em;
+  emojiEl.style.animation = 'none';
+  void emojiEl.offsetHeight; // force reflow to restart animation
+  emojiEl.style.animation = `${frame.a} ${frame.ms}ms ease-in-out`;
+
+  _petTimer = setTimeout(_runNextPetFrame, frame.ms + 200);
+}
+/* ─────────────────────────────────────────────────────────────────────── */
+
 function updateCuteDecorLayer(theme) {
   const layer = ensureCuteDecorLayer();
   const unlocked = isCustomerThemeUnlocked();
-  layer.hidden = !unlocked;
+  layer.hidden = !unlocked && !hasOwnerSession();
   const safeTheme = {
     plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), 'bear'),
-    preset: normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii')
+    preset: normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii'),
+    petName: String(theme.petName || '').trim().slice(0, 16),
+    petColor: normalizeHexColor(theme.petColor, getPresetTheme(normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii')).accent)
   };
 
   const plushie = layer.querySelector('[data-slot="plushie"]');
   if (plushie) {
-    plushie.innerHTML = `<span>${getPlushieSymbol(safeTheme.plushie)}</span><small>Plushie pal</small>`;
-    plushie.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
+    const label = safeTheme.petName ? escapeHtml(safeTheme.petName) : 'Pet pal';
+    plushie.innerHTML = `<span class="pet-emoji">${getPlushieSymbol(safeTheme.plushie)}</span><small class="pet-name">${label}</small>`;
+    plushie.style.background = `color-mix(in srgb, ${safeTheme.petColor} 28%, rgba(0,0,0,0.55))`;
+    plushie.style.borderColor = `color-mix(in srgb, ${safeTheme.petColor} 50%, transparent)`;
+    startPetAnimation(safeTheme.plushie);
   }
 }
 
@@ -635,6 +713,34 @@ function initializeCustomerTheme() {
       const nextTheme = {
         ...readCustomerTheme(),
         plushie: normalizeThemeField(customerPlushieSelect.value, Object.keys(plushieSymbols), 'bear')
+      };
+      saveCustomerTheme(nextTheme);
+      applyCustomerTheme(nextTheme);
+    });
+  }
+
+  if (customerPetNameInput) {
+    customerPetNameInput.addEventListener('input', () => {
+      if (!isCustomerThemeUnlocked()) {
+        return;
+      }
+      const nextTheme = {
+        ...readCustomerTheme(),
+        petName: customerPetNameInput.value.trim().slice(0, 16)
+      };
+      saveCustomerTheme(nextTheme);
+      applyCustomerTheme(nextTheme);
+    });
+  }
+
+  if (customerPetColorInput) {
+    customerPetColorInput.addEventListener('input', () => {
+      if (!isCustomerThemeUnlocked()) {
+        return;
+      }
+      const nextTheme = {
+        ...readCustomerTheme(),
+        petColor: normalizeHexColor(customerPetColorInput.value, '#ff9ad5')
       };
       saveCustomerTheme(nextTheme);
       applyCustomerTheme(nextTheme);

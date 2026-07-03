@@ -571,25 +571,44 @@ article { padding: 24px; }
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 72px;
-  padding: 8px 10px;
-  border-radius: 18px;
+  min-width: 80px;
+  padding: 10px 12px;
+  border-radius: 20px;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
-  color: var(--text);
-  backdrop-filter: blur(10px);
+  color: #f2f2f2;
+  backdrop-filter: blur(14px);
   box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+  transition: background 0.4s, border-color 0.4s;
 }
-.customer-cute-badge span {
-  font-size: 1.5rem;
+.pet-emoji {
+  font-size: 1.8rem;
   line-height: 1;
+  display: block;
+  transform-origin: center bottom;
+  will-change: transform;
 }
-.customer-cute-badge small {
-  font-size: 0.68rem;
-  color: var(--muted);
+.pet-name {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.7);
   text-transform: uppercase;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+/* Pet keyframe animations */
+@keyframes pet-bob     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+@keyframes pet-lick    { 0%,100%{transform:rotate(0) scale(1)} 25%{transform:rotate(-14deg) scale(1.18)} 55%{transform:rotate(10deg) scale(1.12)} 80%{transform:rotate(-6deg) scale(1.06)} }
+@keyframes pet-stretch { 0%,100%{transform:scaleX(1) scaleY(1)} 35%{transform:scaleX(1.55) scaleY(0.68) translateY(5px)} 65%{transform:scaleX(0.85) scaleY(1.22)} }
+@keyframes pet-hop     { 0%,100%{transform:translateY(0) scaleY(1)} 25%{transform:translateY(-12px) scaleY(1.1)} 45%{transform:translateY(0) scaleY(0.82)} 55%{transform:translateY(0) scaleY(1)} }
+@keyframes pet-bounce  { 0%,100%{transform:translateY(0) scaleY(1)} 40%{transform:translateY(-9px) scaleY(1.08)} 65%{transform:translateY(0) scaleY(0.9)} }
+@keyframes pet-wag     { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-10deg)} 60%{transform:rotate(10deg)} 80%{transform:rotate(-5deg)} }
+@keyframes pet-spin    { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+@keyframes pet-shake   { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
+@keyframes pet-sway    { 0%,100%{transform:rotate(0)} 33%{transform:rotate(-6deg)} 66%{transform:rotate(6deg)} }
+@keyframes pet-twinkle { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.35) rotate(18deg)} 50%{transform:scale(0.88) rotate(-12deg)} 75%{transform:scale(1.25) rotate(6deg)} }
 .customer-cute-plushie { left: 50%; bottom: 18px; transform: translateX(-50%); }
 .customer-cute-active .page-shell {
   position: relative;

@@ -375,7 +375,7 @@ article { padding: 24px; }
   position: relative;
   overflow: hidden;
 }
-#mapLeaflet { z-index: 0; background: #1a1a1a; }
+#mapLeaflet { z-index: 0; background: #1a1a1a; filter: grayscale(1) contrast(1.1) brightness(0.85); }
 .leaflet-control-attribution { font-size: 10px !important; }
 
 .grayscale-map {

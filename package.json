@@ -1,0 +1,20 @@
+{
+  "name": "teyo-site",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "check": "node --check server.js && node --check script.js && node --check scripts/smoke.js",
+    "smoke": "node scripts/smoke.js",
+    "ci": "npm run check && npm run smoke"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^7.1.0",
+    "pg": "^8.22.0",
+    "sanitize-html": "^2.13.0",
+    "stripe": "^17.3.0"
+  }
+}

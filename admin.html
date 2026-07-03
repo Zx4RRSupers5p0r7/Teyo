@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teyo.ca | Admin</title>
+    <meta name="description" content="Manage premium brand campaigns, verified listings, and sponsor ads for Teyo.ca." />
+    <meta name="keywords" content="Teyo.ca admin, sponsor ads, brand campaigns" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a href="index.html" class="brand" aria-label="Teyo home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span class="brand-text">Teyo</span>
+        </a>
+      </header>
+
+      <main>
+        <section class="section">
+          <div class="section-heading">
+            <p class="eyebrow">Admin dashboard</p>
+            <h2>Approve paid placements, sponsor campaigns, and custom creatives for Teyo.ca.</h2>
+          </div>
+
+          <div class="partner-form-card admin-access-card">
+            <div>
+              <h3>Admin access controls</h3>
+              <p>Use your admin key to enable approval buttons. Without a key, this page stays in view-only mode.</p>
+            </div>
+            <div class="partner-form">
+              <button id="adminSetKeyBtn" class="btn btn-primary" type="button">Enter or update admin key</button>
+              <button id="adminClearKeyBtn" class="btn btn-secondary" type="button">Clear saved admin key</button>
+              <p id="adminAccessMessage" class="form-message" aria-live="polite"></p>
+            </div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Partner approvals</h3>
+              <p>Approve new company listings once the $2,500 placement fee is confirmed. Only approved companies appear in search results.</p>
+            </div>
+            <div id="adminPartnerList" class="ad-list"></div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Product review queue</h3>
+              <p>Approve submitted products only after the company has paid the placement fee and the product information has been reviewed.</p>
+            </div>
+            <div id="adminProductList" class="ad-list"></div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Live ad manager</h3>
+              <p>Approve monthly sponsor placements and publish custom ad creatives after payment is confirmed.</p>
+            </div>
+            <div id="adminAdsList" class="ad-list"></div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav-links bottom-nav" aria-label="Site navigation">
+        <a href="index.html">Home</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="partners.html">Partners</a>
+        <a href="admin.html" class="active">Admin</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+
+      <footer class="footer">
+        <p>© 2026 Teyo.ca — Premium admin control for company-driven growth.</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teyo.ca | Marketplace</title>
+    <meta name="description" content="Search verified products, compare trusted brands, and find nearby inventory on Teyo.ca." />
+    <meta name="keywords" content="Teyo.ca marketplace, product search, compare products, nearby inventory, brand discovery" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a href="index.html" class="brand" aria-label="Teyo home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span class="brand-text">Teyo</span>
+        </a>
+      </header>
+
+      <main>
+        <section class="section search-section" id="marketplace-search">
+          <div class="section-heading">
+            <p class="eyebrow">Marketplace</p>
+            <h2>Search Teyo.ca for products from approved paid brand listings and find the right store or website instantly.</h2>
+          </div>
+          <p class="hero-text">A calm, simple shopping space for everyday discovery. Search a product and see premium brand results that have already paid for placement.</p>
+
+          <div class="search-toolbar">
+            <input id="searchInput" type="text" placeholder="Search Teyo.ca for shoes, laptops, baby gear, tools, home goods, and more" />
+            <select id="categorySelect">
+              <option value="all">All categories</option>
+              <option value="apparel">Apparel</option>
+              <option value="electronics">Electronics</option>
+              <option value="home">Home</option>
+              <option value="outdoor">Outdoor</option>
+              <option value="health">Health</option>
+              <option value="all">Any product</option>
+            </select>
+          </div>
+
+          <div class="search-grid">
+            <div id="resultsList" class="results-list"></div>
+            <div class="detail-panel">
+              <div id="selectedProduct" class="detail-card"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section customer-payment-section" id="customer-payment">
+          <div class="section-heading">
+            <p class="eyebrow">Customer value pass</p>
+            <h2>Pay once or go monthly to unlock smarter shopping, better protection, and faster deal wins.</h2>
+          </div>
+
+          <div class="offer-banner" role="note" aria-label="Launch offer">
+            <strong>Launch offer:</strong> First 30 days for $1.99, then $9.99/month. Cancel anytime.
+          </div>
+
+          <div class="customer-payment-actions">
+            <input id="customerEmailInput" type="email" placeholder="Enter your email for customer checkout" />
+            <button id="customerOneTimeCheckoutBtn" class="btn btn-primary" type="button">Buy one-time pass</button>
+            <button id="customerMonthlyCheckoutBtn" class="btn btn-secondary" type="button">Start 30-day customer offer</button>
+          </div>
+          <p id="customerCheckoutMessage" class="form-message" aria-live="polite"></p>
+
+          <div class="offer-grid">
+            <article class="plan-card offer-card featured-plan">
+              <h3>Smart checkout pass</h3>
+              <p class="price">$4.99 <span>one-time per purchase</span></p>
+              <p>Great for occasional buyers who want confidence before they pay.</p>
+              <ul class="value-points">
+                <li>Purchase confidence badge at checkout</li>
+                <li>48-hour issue support for order problems</li>
+                <li>Instant better-option suggestions before you pay</li>
+                <li>Private personal style controls saved only in your browser</li>
+              </ul>
+              <button class="btn btn-primary" type="button" id="customerOneTimePlanBtn">Unlock one-time pass</button>
+            </article>
+
+            <article class="plan-card offer-card">
+              <h3>Teyo Plus</h3>
+              <p class="price">$9.99 <span>per month</span></p>
+              <p>Best value for frequent shoppers who want ongoing savings and perks.</p>
+              <ul class="value-points">
+                <li>Automatic price-drop and stock alerts</li>
+                <li>Priority sponsor deals and weekly offer drops</li>
+                <li>Coverage and support across all monthly purchases</li>
+                <li>Private custom theme controls only visible to your account on this device</li>
+              </ul>
+              <button class="btn btn-secondary" type="button" id="customerPlusPlanBtn">Start 30-day launch offer</button>
+            </article>
+          </div>
+
+          <div class="customer-theme-panel is-locked" id="customerThemePanel">
+            <div class="customer-theme-copy">
+              <h3>Private personalization (members)</h3>
+              <p>After purchase, members can personalize color and style for their own shopping view only. This does not change the website for other visitors.</p>
+              <button id="customerVerifyAccessBtn" class="btn btn-primary" type="button">I have paid - verify and unlock</button>
+              <p id="customerPaymentMessage" class="form-message" aria-live="polite"></p>
+            </div>
+            <div class="customer-theme-controls" id="customerThemeControls">
+              <label>
+                Accent color
+                <input id="customerAccentColor" type="color" value="#ffffff" />
+              </label>
+              <label>
+                Visual style
+                <select id="customerStyleSelect">
+                  <option value="midnight">Midnight noir</option>
+                  <option value="graphite">Graphite steel</option>
+                  <option value="carbon">Carbon contrast</option>
+                </select>
+              </label>
+              <button id="customerResetThemeBtn" class="btn btn-secondary" type="button">Reset my private style</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="section map-section" id="map">
+          <div class="section-heading">
+            <p class="eyebrow">Location guided</p>
+            <h2>See what is available near you or buy online from the brand you choose.</h2>
+          </div>
+
+          <div class="map-grid">
+            <div class="map-card">
+              <iframe
+                class="map-embed grayscale-map"
+                src="https://www.google.com/maps?q=Toronto%20Canada&z=11&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                title="Google map for nearby inventory"
+              ></iframe>
+              <div id="storeList" class="store-list"></div>
+            </div>
+            <div class="info-card">
+              <h3>How it works</h3>
+              <ul>
+                <li>Explore online availability and shipping details.</li>
+                <li>Switch to better options when the first product is unavailable.</li>
+                <li>Find nearby retail stock and plan an in-store pickup.</li>
+              </ul>
+              <div class="info-note">
+                <strong>Safety-first:</strong> products with child-safety or performance concerns are shown with clear guidance and trusted evidence.
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav-links bottom-nav" aria-label="Site navigation">
+        <a href="index.html">Home</a>
+        <a href="marketplace.html" class="active">Marketplace</a>
+        <a href="partners.html">Partners</a>
+        <a href="admin.html">Admin</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+
+      <footer class="footer">
+        <p>© 2026 Teyo.ca — Built to connect buyers, brands, and local availability.</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teyo.ca | Partners</title>
+    <meta name="description" content="Partner with Teyo.ca to showcase products, attract buyers, and grow visibility with a trusted business marketplace." />
+    <meta name="keywords" content="Teyo.ca partners, company ads, marketplace advertising, brand placement" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a href="index.html" class="brand" aria-label="Teyo home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span class="brand-text">Teyo</span>
+        </a>
+      </header>
+
+      <main>
+        <section class="section">
+          <div class="section-heading">
+            <p class="eyebrow">For company owners</p>
+            <h2>Bring your products to buyers searching on Teyo.ca, then route them to your brand site or a nearby store.</h2>
+          </div>
+
+          <div class="partner-grid">
+            <div class="plan-card featured-plan">
+              <h3>Premium partner listing</h3>
+              <p class="price">$2,500 <span>one-time activation</span></p>
+              <p>One-time activation unlocks your company listing and lets you add unlimited products to Teyo.ca after approval.</p>
+              <ul>
+                <li>Featured visibility in search</li>
+                <li>Product comparison and brand routing</li>
+                <li>Store pickup visibility once approved</li>
+              </ul>
+            </div>
+            <div class="plan-card">
+              <h3>Monthly advertising</h3>
+              <p class="price">$129.99 <span>per month</span></p>
+              <p>Run sponsored campaigns and custom ad creatives with paid monthly access.</p>
+              <ul>
+                <li>Ad slots on key category pages</li>
+                <li>Custom creative builder and HTML paste support</li>
+                <li>Monthly approval and campaign control</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="partner-form-card" id="partner-request">
+            <div>
+              <h3>Request a paid brand listing</h3>
+              <p>New company listings stay hidden until the one-time $2,500 activation fee is approved. Once active, your company can add unlimited products and route buyers to your website or local stores.</p>
+            </div>
+            <form id="partnerForm" class="partner-form">
+              <input name="companyName" type="text" placeholder="Company name" required />
+              <input name="ownerEmail" type="email" placeholder="Owner email" required />
+              <input name="websiteUrl" type="text" placeholder="Company website URL" required />
+              <textarea name="details" rows="4" placeholder="Tell us what products or offers you want to feature"></textarea>
+              <label class="checkbox-row">
+                <input name="paymentConfirmed" type="checkbox" value="true" />
+                I understand that my listing will remain hidden until the $2,500 placement fee is approved.
+              </label>
+              <button class="btn btn-primary" type="submit">Request partnership</button>
+              <p id="formMessage" class="form-message" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Submit a product for review</h3>
+              <p>Only approved companies can submit products. Each listing is reviewed before it can appear publicly, and product images and safety notes are shown to shoppers.</p>
+            </div>
+            <form id="productForm" class="partner-form">
+              <input name="productName" type="text" placeholder="Product name" required />
+              <input name="companyName" type="text" placeholder="Company name" required />
+              <input name="category" type="text" placeholder="Category (for example: electronics)" />
+              <input name="price" type="text" placeholder="Price" required />
+              <input name="websiteUrl" type="text" placeholder="Company or product URL" required />
+              <input name="imageUrl" type="text" placeholder="Product image URL" />
+              <input name="stockStatus" type="text" placeholder="Stock status" />
+              <input name="rating" type="text" placeholder="Average rating (for example 4.8/5)" />
+              <input name="reviewCount" type="text" placeholder="Review count (for example 184 reviews)" />
+              <input name="verificationStatus" type="text" placeholder="Verification label (for example Verified seller)" />
+              <label class="checkbox-row">
+                <input name="verifiedSeller" type="checkbox" value="true" />
+                Mark this seller as verified for display
+              </label>
+              <textarea name="description" rows="4" placeholder="Describe the product and any key features"></textarea>
+              <textarea name="safetyNote" rows="3" placeholder="Add safety guidance or compliance note"></textarea>
+              <textarea name="trustSummary" rows="3" placeholder="Share your seller promise, shipping policy, or return confidence"></textarea>
+              <textarea name="stores" rows="2" placeholder="Nearby store names, separated by commas"></textarea>
+              <button class="btn btn-primary" type="submit">Submit product</button>
+              <p id="productFormMessage" class="form-message" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Launch a monthly ad campaign</h3>
+              <p>Companies can build their own sponsored creatives and paste in their own files or HTML snippets. Ads stay hidden until the $129.99/month sponsorship is approved.</p>
+            </div>
+            <form id="adForm" class="partner-form">
+              <input name="companyName" type="text" placeholder="Company name" required />
+              <input name="ownerEmail" type="email" placeholder="Owner email" required />
+              <input name="headline" type="text" placeholder="Ad headline" required />
+              <textarea name="description" rows="4" placeholder="Describe the offer or product you want to feature"></textarea>
+              <input name="link" type="text" placeholder="Business website link" required />
+              <input name="ctaLabel" type="text" placeholder="CTA label (for example: Shop now)" />
+              <div class="color-row">
+                <label>Accent<br /><input name="accentColor" type="color" value="#ffffff" /></label>
+                <label>Background<br /><input name="backgroundColor" type="color" value="#121212" /></label>
+                <label>Text<br /><input name="textColor" type="color" value="#ffffff" /></label>
+              </div>
+              <input name="sticker" type="text" placeholder="Sticker or emoji" />
+              <input name="imageUrl" type="text" placeholder="Image URL (optional)" />
+              <label>
+                Upload image or GIF<br />
+                <input name="creativeFile" type="file" accept="image/*,.gif" />
+              </label>
+              <p class="form-help">Tip: You can upload a downloaded ad image/GIF, paste an image URL, use emojis in Sticker, or paste full embed/HTML below.</p>
+              <textarea name="htmlSnippet" rows="3" placeholder="Paste an HTML snippet or media embed here"></textarea>
+              <button class="btn btn-primary" type="submit">Launch ad campaign</button>
+              <p id="adFormMessage" class="form-message" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Stripe checkout</h3>
+              <p>Use the secure Stripe checkout flow for your one-time company activation and monthly ad sponsorship.</p>
+            </div>
+            <div class="partner-form">
+              <button id="placementCheckoutBtn" class="btn btn-primary" type="button">Pay one-time $2,500 activation</button>
+              <button id="monthlyCheckoutBtn" class="btn btn-secondary" type="button">Pay $129.99/month sponsorship</button>
+              <p id="checkoutMessage" class="form-message" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav-links bottom-nav" aria-label="Site navigation">
+        <a href="index.html">Home</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="partners.html" class="active">Partners</a>
+        <a href="admin.html">Admin</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+
+      <footer class="footer">
+        <p>© 2026 Teyo.ca — Premium discovery for company owners and modern buyers.</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

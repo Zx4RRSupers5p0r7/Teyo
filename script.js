@@ -33,12 +33,70 @@ const customerOneTimeCheckoutBtn = document.getElementById('customerOneTimeCheck
 const customerMonthlyCheckoutBtn = document.getElementById('customerMonthlyCheckoutBtn');
 const customerOneTimePlanBtn = document.getElementById('customerOneTimePlanBtn');
 const customerPlusPlanBtn = document.getElementById('customerPlusPlanBtn');
+const customerPresetButtons = document.querySelectorAll('.customer-preset-btn');
+const customerLeftStickerSelect = document.getElementById('customerLeftStickerSelect');
+const customerRightStickerSelect = document.getElementById('customerRightStickerSelect');
+const customerPlushieSelect = document.getElementById('customerPlushieSelect');
+const customerPreviewLeft = document.getElementById('customerPreviewLeft');
+const customerPreviewRight = document.getElementById('customerPreviewRight');
+const customerPlushiePreview = document.getElementById('customerPlushiePreview');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
 
 const customerThemeStorageKey = 'teyoCustomerThemeV1';
 const customerThemeUnlockedKey = 'teyoCustomerThemeUnlockedV1';
-const customerStyleClasses = ['theme-style-midnight', 'theme-style-graphite', 'theme-style-carbon'];
+const customerStyleClasses = [
+  'theme-style-midnight',
+  'theme-style-graphite',
+  'theme-style-carbon',
+  'theme-style-kawaii',
+  'theme-style-sakura',
+  'theme-style-lavender',
+  'theme-style-mint',
+  'theme-style-strawberry',
+  'theme-style-cloud',
+  'theme-style-cotton',
+  'theme-style-berry',
+  'theme-style-night'
+];
+const customerPresetClasses = [
+  'theme-preset-kawaii',
+  'theme-preset-strawberry',
+  'theme-preset-cloud',
+  'theme-preset-lavender',
+  'theme-preset-mint',
+  'theme-preset-cotton',
+  'theme-preset-berry',
+  'theme-preset-night'
+];
+const cuteStickerSymbols = {
+  bow: '🎀',
+  heart: '♡',
+  star: '✦',
+  cloud: '☁',
+  flower: '✿',
+  bunny: '🐰',
+  sparkle: '✧',
+  moon: '☾',
+  pearl: '◌'
+};
+const plushieSymbols = {
+  bunny: '🐰',
+  bear: '🧸',
+  cat: '🐱',
+  frog: '🐸',
+  star: '⭐'
+};
+const customerCuteThemes = {
+  kawaii: { accent: '#ff9ad5', style: 'kawaii', leftSticker: 'bow', rightSticker: 'sparkle', plushie: 'bear' },
+  strawberry: { accent: '#ff6f8f', style: 'strawberry', leftSticker: 'heart', rightSticker: 'flower', plushie: 'bunny' },
+  cloud: { accent: '#9edcff', style: 'cloud', leftSticker: 'cloud', rightSticker: 'sparkle', plushie: 'star' },
+  lavender: { accent: '#c7a8ff', style: 'lavender', leftSticker: 'flower', rightSticker: 'moon', plushie: 'cat' },
+  mint: { accent: '#8be6c4', style: 'mint', leftSticker: 'sparkle', rightSticker: 'flower', plushie: 'frog' },
+  cotton: { accent: '#ffb2f0', style: 'cotton', leftSticker: 'bow', rightSticker: 'heart', plushie: 'bear' },
+  berry: { accent: '#ff7b93', style: 'berry', leftSticker: 'star', rightSticker: 'sparkle', plushie: 'cat' },
+  night: { accent: '#d8c6ff', style: 'night', leftSticker: 'moon', rightSticker: 'star', plushie: 'star' }
+};
 
 let marketplaceState = {
   partners: [],
@@ -195,6 +253,35 @@ function normalizeHexColor(value, fallback = '#ffffff') {
   return /^#[0-9a-fA-F]{6}$/.test(input) ? input.toLowerCase() : fallback;
 }
 
+function normalizeThemeField(value, allowed, fallback) {
+  const input = String(value || '').trim();
+  return allowed.includes(input) ? input : fallback;
+}
+
+function getCuteSymbol(name) {
+  return cuteStickerSymbols[name] || cuteStickerSymbols.star;
+}
+
+function getPlushieSymbol(name) {
+  return plushieSymbols[name] || plushieSymbols.bear;
+}
+
+function getPresetTheme(presetName) {
+  return customerCuteThemes[presetName] || customerCuteThemes.kawaii;
+}
+
+function getDefaultCustomerTheme() {
+  const preset = customerCuteThemes.kawaii;
+  return {
+    accent: preset.accent,
+    style: preset.style,
+    preset: 'kawaii',
+    leftSticker: preset.leftSticker,
+    rightSticker: preset.rightSticker,
+    plushie: preset.plushie
+  };
+}
+
 function lightenHex(hex, amount) {
   const color = normalizeHexColor(hex).replace('#', '');
   const clamp = (value) => Math.max(0, Math.min(255, value));
@@ -207,7 +294,11 @@ function lightenHex(hex, amount) {
 function getDefaultCustomerTheme() {
   return {
     accent: '#ffffff',
-    style: 'midnight'
+    style: 'midnight',
+    preset: 'kawaii',
+    leftSticker: 'bow',
+    rightSticker: 'star',
+    plushie: 'bear'
   };
 }
 
@@ -219,10 +310,16 @@ function readCustomerTheme() {
     }
 
     const parsed = JSON.parse(raw);
-    const style = ['midnight', 'graphite', 'carbon'].includes(parsed.style) ? parsed.style : 'midnight';
+    const preset = normalizeThemeField(parsed.preset, Object.keys(customerCuteThemes), getDefaultCustomerTheme().preset);
+    const presetTheme = getPresetTheme(preset);
+    const style = normalizeThemeField(parsed.style, customerStyleClasses.map((className) => className.replace('theme-style-', '')), presetTheme.style);
     return {
-      accent: normalizeHexColor(parsed.accent, '#ffffff'),
-      style
+      accent: normalizeHexColor(parsed.accent, presetTheme.accent),
+      style,
+      preset,
+      leftSticker: normalizeThemeField(parsed.leftSticker, Object.keys(cuteStickerSymbols), presetTheme.leftSticker),
+      rightSticker: normalizeThemeField(parsed.rightSticker, Object.keys(cuteStickerSymbols), presetTheme.rightSticker),
+      plushie: normalizeThemeField(parsed.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
     };
   } catch (error) {
     return getDefaultCustomerTheme();
@@ -242,9 +339,15 @@ function setCustomerThemeUnlocked(value) {
 }
 
 function applyCustomerTheme(theme) {
+  const presetName = normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), getDefaultCustomerTheme().preset);
+  const presetTheme = getPresetTheme(presetName);
   const safeTheme = {
-    accent: normalizeHexColor(theme.accent, '#ffffff'),
-    style: ['midnight', 'graphite', 'carbon'].includes(theme.style) ? theme.style : 'midnight'
+    accent: normalizeHexColor(theme.accent, presetTheme.accent),
+    style: normalizeThemeField(theme.style, customerStyleClasses.map((className) => className.replace('theme-style-', '')), presetTheme.style),
+    preset: presetName,
+    leftSticker: normalizeThemeField(theme.leftSticker, Object.keys(cuteStickerSymbols), presetTheme.leftSticker),
+    rightSticker: normalizeThemeField(theme.rightSticker, Object.keys(cuteStickerSymbols), presetTheme.rightSticker),
+    plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
   };
 
   document.documentElement.style.setProperty('--accent', safeTheme.accent);
@@ -252,6 +355,8 @@ function applyCustomerTheme(theme) {
 
   document.body.classList.remove(...customerStyleClasses);
   document.body.classList.add(`theme-style-${safeTheme.style}`);
+  document.body.classList.remove(...customerPresetClasses);
+  document.body.classList.add(`theme-preset-${safeTheme.preset}`);
 
   if (customerAccentColor) {
     customerAccentColor.value = safeTheme.accent;
@@ -259,6 +364,26 @@ function applyCustomerTheme(theme) {
   if (customerStyleSelect) {
     customerStyleSelect.value = safeTheme.style;
   }
+  if (customerLeftStickerSelect) {
+    customerLeftStickerSelect.value = safeTheme.leftSticker;
+  }
+  if (customerRightStickerSelect) {
+    customerRightStickerSelect.value = safeTheme.rightSticker;
+  }
+  if (customerPlushieSelect) {
+    customerPlushieSelect.value = safeTheme.plushie;
+  }
+  if (customerPreviewLeft) {
+    customerPreviewLeft.textContent = getCuteSymbol(safeTheme.leftSticker);
+  }
+  if (customerPreviewRight) {
+    customerPreviewRight.textContent = getCuteSymbol(safeTheme.rightSticker);
+  }
+  if (customerPlushiePreview) {
+    customerPlushiePreview.textContent = getPlushieSymbol(safeTheme.plushie);
+  }
+
+  updateCuteDecorLayer(safeTheme);
 }
 
 function setCustomerThemePanelState(unlocked) {
@@ -268,6 +393,54 @@ function setCustomerThemePanelState(unlocked) {
 
   customerThemePanel.classList.toggle('is-locked', !unlocked);
   customerThemeControls.toggleAttribute('hidden', !unlocked);
+  document.body.classList.toggle('customer-cute-active', unlocked);
+  updateCuteDecorLayer(readCustomerTheme());
+}
+
+function ensureCuteDecorLayer() {
+  let layer = document.getElementById('customerCuteDecorLayer');
+  if (layer) {
+    return layer;
+  }
+
+  layer = document.createElement('div');
+  layer.id = 'customerCuteDecorLayer';
+  layer.className = 'customer-cute-layer';
+  layer.innerHTML = `
+    <div class="customer-cute-badge customer-cute-badge-left" data-slot="left"></div>
+    <div class="customer-cute-badge customer-cute-badge-right" data-slot="right"></div>
+    <div class="customer-cute-badge customer-cute-plushie" data-slot="plushie"></div>
+  `;
+  document.body.appendChild(layer);
+  return layer;
+}
+
+function updateCuteDecorLayer(theme) {
+  const layer = ensureCuteDecorLayer();
+  const unlocked = isCustomerThemeUnlocked();
+  layer.hidden = !unlocked;
+  const safeTheme = {
+    leftSticker: normalizeThemeField(theme.leftSticker, Object.keys(cuteStickerSymbols), 'bow'),
+    rightSticker: normalizeThemeField(theme.rightSticker, Object.keys(cuteStickerSymbols), 'star'),
+    plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), 'bear'),
+    preset: normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii')
+  };
+
+  const left = layer.querySelector('[data-slot="left"]');
+  const right = layer.querySelector('[data-slot="right"]');
+  const plushie = layer.querySelector('[data-slot="plushie"]');
+  if (left) {
+    left.innerHTML = `<span>${getCuteSymbol(safeTheme.leftSticker)}</span><small>Corner charm</small>`;
+    left.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
+  }
+  if (right) {
+    right.innerHTML = `<span>${getCuteSymbol(safeTheme.rightSticker)}</span><small>Happy glow</small>`;
+    right.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
+  }
+  if (plushie) {
+    plushie.innerHTML = `<span>${getPlushieSymbol(safeTheme.plushie)}</span><small>Plushie pal</small>`;
+    plushie.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
+  }
 }
 
 function initializeCustomerTheme() {
@@ -288,6 +461,29 @@ function initializeCustomerTheme() {
 
   applyCustomerTheme(savedTheme);
   setCustomerThemePanelState(unlocked);
+
+  if (customerPresetButtons) {
+    customerPresetButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!isCustomerThemeUnlocked()) {
+          return;
+        }
+        const presetName = normalizeThemeField(button.dataset.preset, Object.keys(customerCuteThemes), 'kawaii');
+        const presetTheme = getPresetTheme(presetName);
+        const nextTheme = {
+          ...readCustomerTheme(),
+          preset: presetName,
+          accent: presetTheme.accent,
+          style: presetTheme.style,
+          leftSticker: presetTheme.leftSticker,
+          rightSticker: presetTheme.rightSticker,
+          plushie: presetTheme.plushie
+        };
+        saveCustomerTheme(nextTheme);
+        applyCustomerTheme(nextTheme);
+      });
+    });
+  }
 
   if (customerVerifyAccessBtn) {
     customerVerifyAccessBtn.addEventListener('click', async () => {
@@ -315,6 +511,7 @@ function initializeCustomerTheme() {
 
         setCustomerThemeUnlocked(true);
         setCustomerThemePanelState(true);
+        applyCustomerTheme(readCustomerTheme());
         if (customerPaymentMessage) {
           customerPaymentMessage.textContent = 'Private style unlocked for this browser only. Other visitors will not see your changes.';
         }
@@ -354,11 +551,54 @@ function initializeCustomerTheme() {
     });
   }
 
+  if (customerLeftStickerSelect) {
+    customerLeftStickerSelect.addEventListener('change', () => {
+      if (!isCustomerThemeUnlocked()) {
+        return;
+      }
+      const nextTheme = {
+        ...readCustomerTheme(),
+        leftSticker: normalizeThemeField(customerLeftStickerSelect.value, Object.keys(cuteStickerSymbols), 'bow')
+      };
+      saveCustomerTheme(nextTheme);
+      applyCustomerTheme(nextTheme);
+    });
+  }
+
+  if (customerRightStickerSelect) {
+    customerRightStickerSelect.addEventListener('change', () => {
+      if (!isCustomerThemeUnlocked()) {
+        return;
+      }
+      const nextTheme = {
+        ...readCustomerTheme(),
+        rightSticker: normalizeThemeField(customerRightStickerSelect.value, Object.keys(cuteStickerSymbols), 'star')
+      };
+      saveCustomerTheme(nextTheme);
+      applyCustomerTheme(nextTheme);
+    });
+  }
+
+  if (customerPlushieSelect) {
+    customerPlushieSelect.addEventListener('change', () => {
+      if (!isCustomerThemeUnlocked()) {
+        return;
+      }
+      const nextTheme = {
+        ...readCustomerTheme(),
+        plushie: normalizeThemeField(customerPlushieSelect.value, Object.keys(plushieSymbols), 'bear')
+      };
+      saveCustomerTheme(nextTheme);
+      applyCustomerTheme(nextTheme);
+    });
+  }
+
   if (customerResetThemeBtn) {
     customerResetThemeBtn.addEventListener('click', () => {
       const defaults = getDefaultCustomerTheme();
       saveCustomerTheme(defaults);
       applyCustomerTheme(defaults);
+      document.body.classList.remove('customer-cute-active');
       if (customerPaymentMessage) {
         customerPaymentMessage.textContent = 'Your private style was reset for this browser.';
       }

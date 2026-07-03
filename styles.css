@@ -466,6 +466,150 @@ article { padding: 24px; }
   gap: 6px;
   color: var(--muted);
 }
+.customer-cute-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mini-label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+}
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.preset-chip {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.preset-chip:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: var(--accent);
+}
+.customer-corner-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.customer-corner-options label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+}
+.customer-corner-options select {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  padding: 10px 12px;
+}
+.customer-cute-preview {
+  position: relative;
+  min-height: 124px;
+  border: 1px dashed rgba(255,255,255,0.18);
+  border-radius: 18px;
+  padding: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+}
+.corner-preview,
+.plushie-preview {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: var(--text);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.24);
+}
+.corner-preview {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  font-size: 1.7rem;
+}
+.corner-preview-left { top: 14px; left: 14px; }
+.corner-preview-right { top: 14px; right: 14px; }
+.plushie-preview {
+  right: 14px;
+  bottom: 14px;
+  min-width: 92px;
+  min-height: 92px;
+  border-radius: 24px;
+  font-size: 2.1rem;
+  padding: 8px;
+}
+.customer-cute-preview .mini-caption {
+  position: absolute;
+  left: 16px;
+  right: 124px;
+  bottom: 16px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+.customer-cute-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.customer-cute-badge {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 72px;
+  padding: 8px 10px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.28);
+}
+.customer-cute-badge span {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.customer-cute-badge small {
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+.customer-cute-badge-left { top: 18px; left: 18px; }
+.customer-cute-badge-right { top: 18px; right: 18px; }
+.customer-cute-plushie { left: 50%; bottom: 18px; transform: translateX(-50%); }
+.customer-cute-active .page-shell {
+  position: relative;
+}
+.customer-cute-active .page-shell::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255,255,255,0.08), transparent 18%),
+    radial-gradient(circle at 84% 10%, rgba(255,255,255,0.09), transparent 16%),
+    radial-gradient(circle at 24% 82%, rgba(255,255,255,0.06), transparent 18%),
+    radial-gradient(circle at 84% 78%, rgba(255,255,255,0.07), transparent 18%);
+}
 .customer-theme-controls select,
 .customer-theme-controls input[type='color'] {
   border: 1px solid var(--line);
@@ -488,6 +632,105 @@ article { padding: 24px; }
   --bg: #0a0a0d;
   --surface: #16131a;
   --surface-2: #24202b;
+}
+.theme-style-kawaii {
+  --bg: #fff4fb;
+  --surface: #fff7fd;
+  --surface-2: #ffeaf7;
+  --text: #3a2436;
+  --muted: #8d647d;
+  --line: #f0bfdc;
+  --accent: #ff8fc9;
+  --accent-soft: #ffd1eb;
+  --shadow: 0 18px 55px rgba(255, 143, 201, 0.22);
+}
+.theme-style-sakura {
+  --bg: #fff6f8;
+  --surface: #fffdfd;
+  --surface-2: #ffeef1;
+  --text: #4b2430;
+  --muted: #9b6a75;
+  --line: #f4c2cc;
+  --accent: #ff8aa5;
+  --accent-soft: #ffd4de;
+  --shadow: 0 18px 55px rgba(255, 138, 165, 0.18);
+}
+.theme-style-lavender {
+  --bg: #f7f3ff;
+  --surface: #fcfaff;
+  --surface-2: #efe8ff;
+  --text: #34294d;
+  --muted: #6f648c;
+  --line: #d8c9f4;
+  --accent: #b18cff;
+  --accent-soft: #dfcffd;
+  --shadow: 0 18px 55px rgba(177, 140, 255, 0.16);
+}
+.theme-style-mint {
+  --bg: #f2fff8;
+  --surface: #f7fffb;
+  --surface-2: #e0fff1;
+  --text: #234338;
+  --muted: #69857b;
+  --line: #bbefda;
+  --accent: #67d7a7;
+  --accent-soft: #c9f5e0;
+  --shadow: 0 18px 55px rgba(103, 215, 167, 0.16);
+}
+.theme-style-strawberry {
+  --bg: #fff5f7;
+  --surface: #fffafc;
+  --surface-2: #ffe8ee;
+  --text: #4f2530;
+  --muted: #94606c;
+  --line: #f0c1ca;
+  --accent: #ff6b8f;
+  --accent-soft: #ffd3df;
+  --shadow: 0 18px 55px rgba(255, 107, 143, 0.16);
+}
+.theme-style-cloud {
+  --bg: #f3fbff;
+  --surface: #f8fdff;
+  --surface-2: #e7f7ff;
+  --text: #27414f;
+  --muted: #67808c;
+  --line: #c0e1f1;
+  --accent: #75cfff;
+  --accent-soft: #d0eeff;
+  --shadow: 0 18px 55px rgba(117, 207, 255, 0.16);
+}
+.theme-style-cotton {
+  --bg: #fff6fb;
+  --surface: #fffafc;
+  --surface-2: #ffe7f7;
+  --text: #4d2741;
+  --muted: #8b6578;
+  --line: #f0c9e4;
+  --accent: #ff9fd9;
+  --accent-soft: #ffd4ee;
+  --shadow: 0 18px 55px rgba(255, 159, 217, 0.16);
+}
+.theme-style-berry {
+  --bg: #fff3f6;
+  --surface: #fffafc;
+  --surface-2: #ffe2ea;
+  --text: #4a2130;
+  --muted: #915d72;
+  --line: #efbccb;
+  --accent: #ff6884;
+  --accent-soft: #ffd0dc;
+  --shadow: 0 18px 55px rgba(255, 104, 132, 0.16);
+}
+.theme-style-night {
+  --bg: #12101a;
+  --surface: #1b1727;
+  --surface-2: #26213a;
+  --text: #f3efff;
+  --muted: #b1a8cd;
+  --line: #473d63;
+  --accent: #cfb4ff;
+  --accent-soft: #e8dbff;
+  --shadow: 0 20px 60px rgba(0, 0, 0, 0.42);
 }
 .ad-card {
   padding: 16px;

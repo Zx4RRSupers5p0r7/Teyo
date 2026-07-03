@@ -134,11 +134,24 @@
           <div class="customer-theme-panel is-locked" id="customerThemePanel">
             <div class="customer-theme-copy">
               <h3>Private personalization (members)</h3>
-              <p>After purchase, members can personalize color and style for their own shopping view only. This does not change the website for other visitors.</p>
+              <p>After purchase, members can personalize color, cute presets, stickers, and style for their own shopping view only. This does not change the website for other visitors.</p>
               <button id="customerVerifyAccessBtn" class="btn btn-primary" type="button">I have paid - verify and unlock</button>
               <p id="customerPaymentMessage" class="form-message" aria-live="polite"></p>
             </div>
             <div class="customer-theme-controls" id="customerThemeControls">
+              <div class="customer-cute-presets">
+                <p class="mini-label">Cute presets</p>
+                <div class="preset-grid" role="group" aria-label="Cute personalization presets">
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="kawaii">Kawaii pastel</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="strawberry">Strawberry milk</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="cloud">Cloud puff</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="lavender">Lavender dream</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="mint">Mint candy</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="cotton">Cotton candy</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="berry">Berry pop</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="night">Moon sparkle</button>
+                </div>
+              </div>
               <label>
                 Accent color
                 <input id="customerAccentColor" type="color" value="#ffffff" />
@@ -146,11 +159,60 @@
               <label>
                 Visual style
                 <select id="customerStyleSelect">
+                  <option value="kawaii">Kawaii pastel</option>
+                  <option value="sakura">Sakura bloom</option>
+                  <option value="lavender">Lavender dream</option>
+                  <option value="mint">Mint candy</option>
+                  <option value="strawberry">Strawberry milk</option>
+                  <option value="cloud">Cloud puff</option>
+                  <option value="cotton">Cotton candy</option>
+                  <option value="berry">Berry pop</option>
+                  <option value="night">Moon sparkle</option>
                   <option value="midnight">Midnight noir</option>
                   <option value="graphite">Graphite steel</option>
                   <option value="carbon">Carbon contrast</option>
                 </select>
               </label>
+              <div class="customer-corner-options">
+                <label>
+                  Left corner sticker
+                  <select id="customerLeftStickerSelect">
+                    <option value="bow">Bow</option>
+                    <option value="heart">Heart</option>
+                    <option value="star">Star</option>
+                    <option value="cloud">Cloud</option>
+                    <option value="flower">Flower</option>
+                    <option value="bunny">Bunny</option>
+                  </select>
+                </label>
+                <label>
+                  Right corner sticker
+                  <select id="customerRightStickerSelect">
+                    <option value="sparkle">Sparkle</option>
+                    <option value="heart">Heart</option>
+                    <option value="star">Star</option>
+                    <option value="moon">Moon</option>
+                    <option value="pearl">Pearl</option>
+                    <option value="flower">Flower</option>
+                  </select>
+                </label>
+                <label>
+                  Plushie style
+                  <select id="customerPlushieSelect">
+                    <option value="bunny">Bunny plush</option>
+                    <option value="bear">Bear plush</option>
+                    <option value="cat">Cat plush</option>
+                    <option value="frog">Frog plush</option>
+                    <option value="star">Star plush</option>
+                  </select>
+                </label>
+              </div>
+              <div class="customer-cute-preview" aria-label="Preview of your cute corner decorations">
+                <div class="corner-preview corner-preview-left" id="customerPreviewLeft">✿</div>
+                <div class="corner-preview corner-preview-right" id="customerPreviewRight">✦</div>
+                <div class="plushie-preview" id="customerPlushiePreview">(ᵔᴥᵔ)</div>
+                <p class="mini-caption">Cute corners and a plushie badge appear only after you verify your paid access.</p>
+              </div>
               <button id="customerResetThemeBtn" class="btn btn-secondary" type="button">Reset my private style</button>
             </div>
           </div>

@@ -603,9 +603,13 @@ article { padding: 24px; }
 .customer-theme-controls input[type='color'] {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgba(255,255,255,0.04);
+  background: var(--surface-2, #1e1e1e);
   color: var(--text);
   padding: 10px 12px;
+}
+.customer-theme-controls select option {
+  background: #1a1a1a;
+  color: #f0f0f0;
 }
 .theme-style-midnight {
   --bg: #050505;

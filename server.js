@@ -194,7 +194,7 @@ function hasOwnerKeyAccess(customerEmail, accessKey = '') {
 }
 
 function isOwnerConfigured() {
-  return Boolean(ownerEmail && ownerAccessKey && ownerEmail.length > 0 && ownerAccessKey.length >= 32);
+  return Boolean(ownerEmail && ownerAccessKey && ownerEmail.length > 0 && ownerAccessKey.length >= 8);
 }
 
 function hasOwnerHeader(req) {

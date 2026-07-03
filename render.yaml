@@ -18,7 +18,7 @@ services:
       - key: OWNER_EMAIL
         value: chazmiller872@gmail.com
       - key: OWNER_ACCESS_KEY
-        value: ^ty8e(%uI98dYhfgjeHDg0adj$#$
+        value: "^ty8e(%uI98dYhfgjeHDg0adj$#$"
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

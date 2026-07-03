@@ -181,6 +181,13 @@ function clearOwnerAccess() {
   sessionStorage.removeItem(ownerKeyStorageKey);
 }
 
+function syncOwnerOnlyVisibility() {
+  const ownerVisible = hasOwnerSession();
+  document.querySelectorAll('[data-owner-only]').forEach((element) => {
+    element.hidden = !ownerVisible;
+  });
+}
+
 function requestAndStoreAdminKey() {
   let key = window.prompt('Enter admin access key to manage approvals:') || '';
   key = key.trim();
@@ -209,39 +216,10 @@ async function ensureAdminAccess() {
     return true;
   }
 
-  let key = getAdminKey();
-  if (!key) {
-    const captured = requestAndStoreAdminKey();
-    if (!captured) {
-      setAdminAccessMessage('View-only mode enabled. Enter admin key to approve requests.');
-      return false;
-    }
-    key = getAdminKey();
-  }
+  adminAccessGranted = false;
+  setAdminAccessMessage('Owner access is required for this page.');
+  return false;
 
-  try {
-    const response = await fetch('/api/admin/verify', {
-      method: 'POST',
-      headers: {
-        ...getAdminHeaders()
-      }
-    });
-
-    if (!response.ok) {
-      sessionStorage.removeItem('teyoAdminKey');
-      adminAccessGranted = false;
-      setAdminAccessMessage('Admin key was rejected. Please re-enter your key.');
-      return false;
-    }
-
-    adminAccessGranted = true;
-    setAdminAccessMessage('Admin key verified. Approval controls are enabled.');
-    return true;
-  } catch (error) {
-    adminAccessGranted = false;
-    setAdminAccessMessage('Unable to verify admin key right now.');
-    return false;
-  }
 }
 
 async function verifyOwnerAccess() {
@@ -274,6 +252,7 @@ async function verifyOwnerAccess() {
 
     requestAndStoreOwnerKey();
     adminAccessGranted = true;
+    syncOwnerOnlyVisibility();
     if (ownerAccessMessage) {
       ownerAccessMessage.textContent = 'Owner access unlocked. You now have the full privileged role.';
     }
@@ -1251,6 +1230,7 @@ if (ownerClearKeyBtn) {
   ownerClearKeyBtn.addEventListener('click', async () => {
     clearOwnerAccess();
     adminAccessGranted = false;
+    syncOwnerOnlyVisibility();
     if (ownerAccessMessage) {
       ownerAccessMessage.textContent = 'Owner access cleared. The site is back to the default public role.';
     }
@@ -1354,6 +1334,7 @@ if (adminPartnerList) {
 }
 
 async function initializeMarketplace() {
+  syncOwnerOnlyVisibility();
   renderAds();
   renderResults();
 
@@ -1367,3 +1348,4 @@ async function initializeMarketplace() {
 
 initializeMarketplace();
 initializeCustomerTheme();
+syncOwnerOnlyVisibility();

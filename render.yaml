@@ -16,7 +16,7 @@ services:
       - key: ADMIN_API_KEY
         sync: false
       - key: OWNER_EMAIL
-        sync: false
+        value: chazmiller872@gmail.com
       - key: OWNER_ACCESS_KEY
         sync: false
       - key: STRIPE_SECRET_KEY

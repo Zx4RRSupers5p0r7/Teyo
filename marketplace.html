@@ -47,6 +47,37 @@
             </select>
           </div>
 
+          <section class="section map-section" id="map">
+            <div class="section-heading">
+              <p class="eyebrow">Location guided</p>
+              <h2>See what is available near you or buy online from the brand you choose.</h2>
+            </div>
+
+            <div class="map-grid">
+              <div class="map-card">
+                <iframe
+                  class="map-embed grayscale-map"
+                  src="https://www.google.com/maps?q=Toronto%20Canada&z=11&output=embed"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  title="Google map for nearby inventory"
+                ></iframe>
+                <div id="storeList" class="store-list"></div>
+              </div>
+              <div class="info-card">
+                <h3>How it works</h3>
+                <ul>
+                  <li>Explore online availability and shipping details.</li>
+                  <li>Switch to better options when the first product is unavailable.</li>
+                  <li>Find nearby retail stock and plan an in-store pickup.</li>
+                </ul>
+                <div class="info-note">
+                  <strong>Safety-first:</strong> products with child-safety or performance concerns are shown with clear guidance and trusted evidence.
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div class="search-grid">
             <div id="resultsList" class="results-list"></div>
             <div class="detail-panel">
@@ -121,37 +152,6 @@
                 </select>
               </label>
               <button id="customerResetThemeBtn" class="btn btn-secondary" type="button">Reset my private style</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="section map-section" id="map">
-          <div class="section-heading">
-            <p class="eyebrow">Location guided</p>
-            <h2>See what is available near you or buy online from the brand you choose.</h2>
-          </div>
-
-          <div class="map-grid">
-            <div class="map-card">
-              <iframe
-                class="map-embed grayscale-map"
-                src="https://www.google.com/maps?q=Toronto%20Canada&z=11&output=embed"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                title="Google map for nearby inventory"
-              ></iframe>
-              <div id="storeList" class="store-list"></div>
-            </div>
-            <div class="info-card">
-              <h3>How it works</h3>
-              <ul>
-                <li>Explore online availability and shipping details.</li>
-                <li>Switch to better options when the first product is unavailable.</li>
-                <li>Find nearby retail stock and plan an in-store pickup.</li>
-              </ul>
-              <div class="info-note">
-                <strong>Safety-first:</strong> products with child-safety or performance concerns are shown with clear guidance and trusted evidence.
-              </div>
             </div>
           </div>
         </section>

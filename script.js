@@ -502,32 +502,178 @@ function setCustomerThemePanelState(unlocked) {
 
 function ensureCuteDecorLayer() {
   let layer = document.getElementById('customerCuteDecorLayer');
-  if (layer) {
-    return layer;
-  }
-
+  if (layer) return layer;
   layer = document.createElement('div');
   layer.id = 'customerCuteDecorLayer';
   layer.className = 'customer-cute-layer';
   layer.innerHTML = `
-    <div class="customer-cute-badge customer-cute-plushie" data-slot="plushie"></div>
+    <div class="pet-character pet-action-idle" data-slot="plushie">
+      <div class="pet-svg-wrap"></div>
+      <small class="pet-name-tag"></small>
+    </div>
   `;
   document.body.appendChild(layer);
   return layer;
 }
 
-/* ── Pet animation system ─────────────────────────────────────────────── */
+/* ── SVG Pet builder ───────────────────────────────────────────────── */
+function buildPetSVG(type, color) {
+  const b = lightenHex(color, 52);
+  const d = '#1a1a1a';
+  const s = '#ffffff';
+  const nk = '#ff9090';
+  const wrap = (body) => `<svg class="pet-svg" viewBox="0 0 100 130" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 6px 14px rgba(0,0,0,0.38))">${body}</svg>`;
+  switch (type) {
+    case 'cat': return wrap(`
+      <path class="pet-tail" d="M62,90 Q90,68 76,44 Q65,24 80,16" stroke="${color}" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <ellipse class="pet-body" cx="50" cy="89" rx="26" ry="22" fill="${color}"/>
+      <ellipse cx="50" cy="93" rx="14" ry="12" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="53" r="21" fill="${color}"/>
+      <polygon class="pet-ear-l" points="27,37 34,16 46,36" fill="${color}"/>
+      <polygon points="29,35 35,19 43,34" fill="${b}"/>
+      <polygon class="pet-ear-r" points="54,36 66,16 73,37" fill="${color}"/>
+      <polygon points="56,34 65,19 71,35" fill="${b}"/>
+      <ellipse class="pet-eye-l" cx="42" cy="51" rx="5" ry="5.5" fill="${d}"/>
+      <ellipse class="pet-eye-r" cx="58" cy="51" rx="5" ry="5.5" fill="${d}"/>
+      <circle cx="43.5" cy="49.5" r="1.8" fill="${s}"/><circle cx="59.5" cy="49.5" r="1.8" fill="${s}"/>
+      <polygon points="50,57 47,61 53,61" fill="${nk}"/>
+      <path d="M47,61 Q50,65 53,61" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <line x1="27" y1="57" x2="43" y2="60" stroke="#aaa" stroke-width="1"/><line x1="27" y1="61" x2="43" y2="62" stroke="#aaa" stroke-width="1"/>
+      <line x1="57" y1="60" x2="73" y2="57" stroke="#aaa" stroke-width="1"/><line x1="57" y1="62" x2="73" y2="61" stroke="#aaa" stroke-width="1"/>
+      <ellipse class="pet-paw-l" cx="36" cy="108" rx="12" ry="8" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="64" cy="108" rx="12" ry="8" fill="${color}"/>
+      <ellipse cx="32" cy="112" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="36" cy="114" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="40" cy="112" rx="3.5" ry="2.5" fill="${b}"/>
+      <ellipse cx="60" cy="112" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="64" cy="114" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="68" cy="112" rx="3.5" ry="2.5" fill="${b}"/>`);
+    case 'dog': return wrap(`
+      <ellipse class="pet-tail" cx="74" cy="82" rx="7" ry="15" fill="${color}" transform="rotate(-20,74,82)"/>
+      <ellipse class="pet-body" cx="50" cy="89" rx="27" ry="22" fill="${color}"/>
+      <ellipse cx="50" cy="93" rx="16" ry="13" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="52" r="22" fill="${color}"/>
+      <ellipse class="pet-ear-l" cx="29" cy="58" rx="9" ry="17" fill="${color}" transform="rotate(-10,29,58)"/>
+      <ellipse class="pet-ear-r" cx="71" cy="58" rx="9" ry="17" fill="${color}" transform="rotate(10,71,58)"/>
+      <ellipse class="pet-eye-l" cx="42" cy="49" rx="5" ry="5" fill="${d}"/><ellipse class="pet-eye-r" cx="58" cy="49" rx="5" ry="5" fill="${d}"/>
+      <circle cx="43.5" cy="47.5" r="1.8" fill="${s}"/><circle cx="59.5" cy="47.5" r="1.8" fill="${s}"/>
+      <ellipse cx="50" cy="60" rx="9" ry="6" fill="${b}"/><ellipse cx="50" cy="62" rx="5" ry="3.5" fill="${nk}"/>
+      <path d="M43,65 Q50,70 57,65" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="35" cy="108" rx="12" ry="8" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="65" cy="108" rx="12" ry="8" fill="${color}"/>
+      <ellipse cx="31" cy="112" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="35" cy="114" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="39" cy="112" rx="3.5" ry="2.5" fill="${b}"/>
+      <ellipse cx="61" cy="112" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="65" cy="114" rx="3.5" ry="2.5" fill="${b}"/><ellipse cx="69" cy="112" rx="3.5" ry="2.5" fill="${b}"/>`);
+    case 'bunny': return wrap(`
+      <ellipse cx="64" cy="99" rx="8" ry="10" fill="${b}"/>
+      <ellipse class="pet-body" cx="50" cy="91" rx="25" ry="22" fill="${color}"/>
+      <ellipse cx="50" cy="95" rx="13" ry="11" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="54" r="20" fill="${color}"/>
+      <ellipse class="pet-ear-l" cx="38" cy="26" rx="7" ry="18" fill="${color}"/>
+      <ellipse cx="38" cy="26" rx="4" ry="14" fill="${nk}"/>
+      <ellipse class="pet-ear-r" cx="62" cy="26" rx="7" ry="18" fill="${color}"/>
+      <ellipse cx="62" cy="26" rx="4" ry="14" fill="${nk}"/>
+      <ellipse class="pet-eye-l" cx="43" cy="52" rx="5" ry="5" fill="${d}"/><ellipse class="pet-eye-r" cx="57" cy="52" rx="5" ry="5" fill="${d}"/>
+      <circle cx="44.5" cy="50.5" r="1.8" fill="${s}"/><circle cx="58.5" cy="50.5" r="1.8" fill="${s}"/>
+      <ellipse cx="50" cy="59" rx="3" ry="2.5" fill="${nk}"/>
+      <path d="M46,61 Q50,65 54,61" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="35" cy="110" rx="12" ry="8" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="65" cy="110" rx="12" ry="8" fill="${color}"/>`);
+    case 'bear': return wrap(`
+      <ellipse class="pet-body" cx="50" cy="90" rx="28" ry="24" fill="${color}"/>
+      <ellipse cx="50" cy="96" rx="16" ry="14" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="53" r="23" fill="${color}"/>
+      <circle class="pet-ear-l" cx="29" cy="33" r="10" fill="${color}"/><circle cx="29" cy="33" r="6" fill="${b}"/>
+      <circle class="pet-ear-r" cx="71" cy="33" r="10" fill="${color}"/><circle cx="71" cy="33" r="6" fill="${b}"/>
+      <ellipse class="pet-eye-l" cx="42" cy="51" rx="5.5" ry="5.5" fill="${d}"/><ellipse class="pet-eye-r" cx="58" cy="51" rx="5.5" ry="5.5" fill="${d}"/>
+      <circle cx="43.5" cy="49.5" r="2" fill="${s}"/><circle cx="59.5" cy="49.5" r="2" fill="${s}"/>
+      <ellipse cx="50" cy="62" rx="10" ry="7" fill="${b}"/><ellipse cx="50" cy="64" rx="5" ry="3.5" fill="${nk}"/>
+      <path d="M44,67 Q50,72 56,67" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="35" cy="111" rx="13" ry="9" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="65" cy="111" rx="13" ry="9" fill="${color}"/>`);
+    case 'frog': return wrap(`
+      <ellipse class="pet-body" cx="50" cy="93" rx="32" ry="25" fill="${color}"/>
+      <ellipse cx="50" cy="97" rx="20" ry="16" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="61" r="22" fill="${color}"/>
+      <circle cx="36" cy="48" r="10" fill="${color}"/><circle cx="36" cy="48" r="7" fill="${s}"/><circle cx="36" cy="48" r="4" fill="${d}"/><circle cx="34.5" cy="46.5" r="1.5" fill="${s}"/>
+      <circle cx="64" cy="48" r="10" fill="${color}"/><circle cx="64" cy="48" r="7" fill="${s}"/><circle cx="64" cy="48" r="4" fill="${d}"/><circle cx="62.5" cy="46.5" r="1.5" fill="${s}"/>
+      <ellipse cx="50" cy="68" rx="6" ry="4" fill="${nk}"/>
+      <path d="M40,70 Q50,77 60,70" stroke="${nk}" stroke-width="2" fill="none"/>
+      <ellipse class="pet-paw-l" cx="22" cy="112" rx="14" ry="9" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="78" cy="112" rx="14" ry="9" fill="${color}"/>`);
+    case 'hamster': return wrap(`
+      <ellipse class="pet-body" cx="50" cy="92" rx="28" ry="26" fill="${color}"/>
+      <ellipse cx="50" cy="98" rx="18" ry="16" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="54" r="24" fill="${color}"/>
+      <ellipse cx="35" cy="61" rx="13" ry="10" fill="${b}"/>
+      <ellipse cx="65" cy="61" rx="13" ry="10" fill="${b}"/>
+      <circle class="pet-ear-l" cx="30" cy="34" r="9" fill="${color}"/><circle class="pet-ear-r" cx="70" cy="34" r="9" fill="${color}"/>
+      <ellipse class="pet-eye-l" cx="43" cy="50" rx="5" ry="5" fill="${d}"/><ellipse class="pet-eye-r" cx="57" cy="50" rx="5" ry="5" fill="${d}"/>
+      <circle cx="44.5" cy="48.5" r="1.8" fill="${s}"/><circle cx="58.5" cy="48.5" r="1.8" fill="${s}"/>
+      <ellipse cx="50" cy="59" rx="4" ry="3" fill="${nk}"/>
+      <path d="M45,62 Q50,67 55,62" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="36" cy="113" rx="11" ry="7" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="64" cy="113" rx="11" ry="7" fill="${color}"/>`);
+    case 'panda': return wrap(`
+      <ellipse class="pet-body" cx="50" cy="90" rx="28" ry="24" fill="${s}"/>
+      <ellipse cx="50" cy="96" rx="16" ry="14" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="53" r="23" fill="${s}"/>
+      <circle class="pet-ear-l" cx="29" cy="33" r="10" fill="${color}"/><circle class="pet-ear-r" cx="71" cy="33" r="10" fill="${color}"/>
+      <ellipse cx="39" cy="52" rx="9" ry="8" fill="${color}"/><ellipse cx="61" cy="52" rx="9" ry="8" fill="${color}"/>
+      <ellipse class="pet-eye-l" cx="39" cy="52" rx="5" ry="5" fill="${d}"/><ellipse class="pet-eye-r" cx="61" cy="52" rx="5" ry="5" fill="${d}"/>
+      <circle cx="40.5" cy="50.5" r="1.8" fill="${s}"/><circle cx="62.5" cy="50.5" r="1.8" fill="${s}"/>
+      <ellipse cx="50" cy="63" rx="10" ry="7" fill="${b}"/><ellipse cx="50" cy="65" rx="5" ry="3.5" fill="${nk}"/>
+      <path d="M44,68 Q50,73 56,68" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="35" cy="110" rx="13" ry="9" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="65" cy="110" rx="13" ry="9" fill="${color}"/>`);
+    case 'fox': return wrap(`
+      <path class="pet-tail" d="M68,88 Q96,68 86,42 Q78,22 92,14" stroke="${color}" stroke-width="14" fill="none" stroke-linecap="round"/>
+      <path d="M68,88 Q96,68 86,42 Q78,22 92,14" stroke="${b}" stroke-width="6" fill="none" stroke-linecap="round"/>
+      <ellipse class="pet-body" cx="50" cy="89" rx="25" ry="21" fill="${color}"/>
+      <ellipse cx="50" cy="94" rx="13" ry="11" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="52" r="22" fill="${color}"/>
+      <polygon class="pet-ear-l" points="25,34 33,10 47,33" fill="${color}"/><polygon points="28,32 34,14 45,31" fill="${nk}"/>
+      <polygon class="pet-ear-r" points="53,33 67,10 75,34" fill="${color}"/><polygon points="55,31 66,14 72,32" fill="${nk}"/>
+      <ellipse cx="40" cy="58" rx="10" ry="6" fill="${b}"/><ellipse cx="60" cy="58" rx="10" ry="6" fill="${b}"/>
+      <ellipse class="pet-eye-l" cx="42" cy="49" rx="5" ry="5.5" fill="${d}"/><ellipse class="pet-eye-r" cx="58" cy="49" rx="5" ry="5.5" fill="${d}"/>
+      <circle cx="43.5" cy="47.5" r="1.8" fill="${s}"/><circle cx="59.5" cy="47.5" r="1.8" fill="${s}"/>
+      <ellipse cx="50" cy="58" rx="4" ry="3" fill="${nk}"/>
+      <path d="M45,61 Q50,66 55,61" stroke="${nk}" stroke-width="1.5" fill="none"/>
+      <ellipse class="pet-paw-l" cx="36" cy="107" rx="12" ry="8" fill="${color}"/>
+      <ellipse class="pet-paw-r" cx="64" cy="107" rx="12" ry="8" fill="${color}"/>`);
+    case 'duck': return wrap(`
+      <ellipse class="pet-body" cx="50" cy="91" rx="28" ry="24" fill="${color}"/>
+      <ellipse class="pet-wing-l" cx="24" cy="88" rx="10" ry="19" fill="${color}" transform="rotate(15,24,88)"/>
+      <ellipse class="pet-wing-r" cx="76" cy="88" rx="10" ry="19" fill="${color}" transform="rotate(-15,76,88)"/>
+      <ellipse cx="50" cy="96" rx="16" ry="12" fill="${b}"/>
+      <circle class="pet-head" cx="50" cy="56" r="20" fill="${color}"/>
+      <ellipse cx="65" cy="61" rx="13" ry="7" fill="#ffc04a" transform="rotate(-10,65,61)"/>
+      <ellipse class="pet-eye-l" cx="42" cy="50" rx="5" ry="5" fill="${d}"/><ellipse class="pet-eye-r" cx="58" cy="50" rx="5" ry="5" fill="${d}"/>
+      <circle cx="43.5" cy="48.5" r="1.8" fill="${s}"/><circle cx="59.5" cy="48.5" r="1.8" fill="${s}"/>
+      <ellipse class="pet-paw-l" cx="35" cy="113" rx="16" ry="7" fill="#ffc04a"/>
+      <ellipse class="pet-paw-r" cx="65" cy="113" rx="16" ry="7" fill="#ffc04a"/>`);
+    case 'star': return wrap(`
+      <polygon class="pet-body" points="50,8 61,36 91,36 68,54 76,82 50,64 24,82 32,54 9,36 39,36" fill="${color}"/>
+      <polygon points="50,20 58,39 78,39 63,51 69,70 50,57 31,70 37,51 22,39 42,39" fill="${b}"/>
+      <circle class="pet-eye-l" cx="41" cy="47" r="4" fill="${d}"/><circle class="pet-eye-r" cx="59" cy="47" r="4" fill="${d}"/>
+      <circle cx="42.5" cy="45.5" r="1.5" fill="${s}"/><circle cx="60.5" cy="45.5" r="1.5" fill="${s}"/>
+      <path d="M43,55 Q50,61 57,55" stroke="${nk}" stroke-width="1.5" fill="none"/>`);
+    default: return wrap(`
+      <ellipse class="pet-body" cx="50" cy="90" rx="28" ry="24" fill="${color}"/>
+      <circle class="pet-head" cx="50" cy="53" r="23" fill="${color}"/>
+      <ellipse class="pet-eye-l" cx="42" cy="51" rx="5.5" ry="5.5" fill="${d}"/><ellipse class="pet-eye-r" cx="58" cy="51" rx="5.5" ry="5.5" fill="${d}"/>
+      <circle cx="43.5" cy="49.5" r="2" fill="${s}"/><circle cx="59.5" cy="49.5" r="2" fill="${s}"/>`);
+  }
+}
+/* ───────────────────────────────────────────────────────── */
+
+/* ── Pet animation system ────────────────────────────────────────── */
 const petActionSeq = {
-  cat:     [{em:'🐱',a:'pet-bob',ms:2200},{em:'😸',a:'pet-lick',ms:1400},{em:'🐱',a:'pet-stretch',ms:1800},{em:'😴',a:'pet-bob',ms:3200},{em:'😼',a:'pet-shake',ms:900}],
-  dog:     [{em:'🐶',a:'pet-wag',ms:1000},{em:'😋',a:'pet-bounce',ms:900},{em:'🐶',a:'pet-wag',ms:1200},{em:'🐶',a:'pet-hop',ms:800}],
-  bunny:   [{em:'🐰',a:'pet-bob',ms:1600},{em:'🐇',a:'pet-hop',ms:900},{em:'🐰',a:'pet-bob',ms:2000},{em:'🐰',a:'pet-shake',ms:600}],
-  bear:    [{em:'🧸',a:'pet-sway',ms:2200},{em:'🧸',a:'pet-bounce',ms:1400},{em:'🧸',a:'pet-sway',ms:3000}],
-  frog:    [{em:'🐸',a:'pet-bob',ms:2000},{em:'🐸',a:'pet-hop',ms:700},{em:'🐸',a:'pet-bob',ms:2400},{em:'🐸',a:'pet-shake',ms:500}],
-  hamster: [{em:'🐹',a:'pet-spin',ms:700},{em:'🐹',a:'pet-shake',ms:500},{em:'🐹',a:'pet-bob',ms:1400},{em:'🐹',a:'pet-spin',ms:600}],
-  panda:   [{em:'🐼',a:'pet-sway',ms:2500},{em:'🐼',a:'pet-bounce',ms:1400},{em:'🐼',a:'pet-sway',ms:3000}],
-  fox:     [{em:'🦊',a:'pet-bob',ms:1800},{em:'🦊',a:'pet-hop',ms:900},{em:'🦊',a:'pet-wag',ms:1100},{em:'🦊',a:'pet-bob',ms:2000}],
-  duck:    [{em:'🐥',a:'pet-wag',ms:900},{em:'🐤',a:'pet-bounce',ms:800},{em:'🐥',a:'pet-bob',ms:1800},{em:'🐤',a:'pet-wag',ms:1000}],
-  star:    [{em:'⭐',a:'pet-spin',ms:900},{em:'🌟',a:'pet-twinkle',ms:1400},{em:'✨',a:'pet-spin',ms:700},{em:'⭐',a:'pet-twinkle',ms:1200}]
+  cat:     [{cls:'pet-action-idle',ms:3200},{cls:'pet-action-a',ms:1800},{cls:'pet-action-idle',ms:2400},{cls:'pet-action-b',ms:2200},{cls:'pet-action-idle',ms:4000},{cls:'pet-action-c',ms:900}],
+  dog:     [{cls:'pet-action-idle',ms:2200},{cls:'pet-action-a',ms:1200},{cls:'pet-action-idle',ms:2800},{cls:'pet-action-b',ms:1000}],
+  bunny:   [{cls:'pet-action-idle',ms:2000},{cls:'pet-action-a',ms:1100},{cls:'pet-action-idle',ms:2800},{cls:'pet-action-b',ms:800}],
+  bear:    [{cls:'pet-action-idle',ms:3800},{cls:'pet-action-a',ms:2200},{cls:'pet-action-idle',ms:4200}],
+  frog:    [{cls:'pet-action-idle',ms:2800},{cls:'pet-action-a',ms:900},{cls:'pet-action-idle',ms:3200},{cls:'pet-action-b',ms:700}],
+  hamster: [{cls:'pet-action-idle',ms:1600},{cls:'pet-action-a',ms:900},{cls:'pet-action-idle',ms:2000},{cls:'pet-action-b',ms:700}],
+  panda:   [{cls:'pet-action-idle',ms:3800},{cls:'pet-action-a',ms:2200},{cls:'pet-action-idle',ms:4200}],
+  fox:     [{cls:'pet-action-idle',ms:2600},{cls:'pet-action-a',ms:1600},{cls:'pet-action-idle',ms:3000},{cls:'pet-action-b',ms:1200}],
+  duck:    [{cls:'pet-action-idle',ms:2200},{cls:'pet-action-a',ms:1400},{cls:'pet-action-idle',ms:2600},{cls:'pet-action-b',ms:900}],
+  star:    [{cls:'pet-action-idle',ms:1800},{cls:'pet-action-a',ms:1400},{cls:'pet-action-idle',ms:2200},{cls:'pet-action-b',ms:1100}]
 };
 
 let _petTimer = null;
@@ -552,37 +698,41 @@ function _runNextPetFrame() {
 
   const layer = document.getElementById('customerCuteDecorLayer');
   if (!layer || layer.hidden) return;
-  const emojiEl = layer.querySelector('.pet-emoji');
-  if (!emojiEl) return;
+  const petChar = layer.querySelector('.pet-character');
+  if (!petChar) return;
 
-  emojiEl.textContent = frame.em;
-  emojiEl.style.animation = 'none';
-  void emojiEl.offsetHeight; // force reflow to restart animation
-  emojiEl.style.animation = `${frame.a} ${frame.ms}ms ease-in-out`;
-
-  _petTimer = setTimeout(_runNextPetFrame, frame.ms + 200);
+  petChar.className = petChar.className.replace(/\bpet-action-\S+/g, '').trim() + ' ' + frame.cls;
+  _petTimer = setTimeout(_runNextPetFrame, frame.ms);
 }
-/* ─────────────────────────────────────────────────────────────────────── */
+/* ────────────────────────────────────────────────────────────────── */
 
 function updateCuteDecorLayer(theme) {
   const layer = ensureCuteDecorLayer();
-  const unlocked = isCustomerThemeUnlocked();
-  layer.hidden = !unlocked && !hasOwnerSession();
-  const safeTheme = {
-    plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), 'bear'),
-    preset: normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii'),
-    petName: String(theme.petName || '').trim().slice(0, 16),
-    petColor: normalizeHexColor(theme.petColor, getPresetTheme(normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii')).accent)
-  };
+  const active = isCustomerThemeUnlocked() || hasOwnerSession();
+  layer.hidden = !active;
+  if (!active) { stopPetAnimation(); return; }
 
-  const plushie = layer.querySelector('[data-slot="plushie"]');
-  if (plushie) {
-    const label = safeTheme.petName ? escapeHtml(safeTheme.petName) : 'Pet pal';
-    plushie.innerHTML = `<span class="pet-emoji">${getPlushieSymbol(safeTheme.plushie)}</span><small class="pet-name">${label}</small>`;
-    plushie.style.background = `color-mix(in srgb, ${safeTheme.petColor} 28%, rgba(0,0,0,0.55))`;
-    plushie.style.borderColor = `color-mix(in srgb, ${safeTheme.petColor} 50%, transparent)`;
-    startPetAnimation(safeTheme.plushie);
+  const safeType  = normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), 'bear');
+  const safeColor = normalizeHexColor(theme.petColor || theme.accent, '#ff9ad5');
+  const safeName  = String(theme.petName || '').trim().slice(0, 16);
+
+  const petChar = layer.querySelector('[data-slot="plushie"]');
+  if (!petChar) return;
+
+  // Rebuild SVG only when type or colour actually changed
+  if (petChar.dataset.petType !== safeType || petChar.dataset.petColor !== safeColor) {
+    const svgWrap = petChar.querySelector('.pet-svg-wrap');
+    if (svgWrap) svgWrap.innerHTML = buildPetSVG(safeType, safeColor);
+    petChar.dataset.petType  = safeType;
+    petChar.dataset.petColor = safeColor;
+    const typeClasses = Object.keys(plushieSymbols).map(t => `pet-type-${t}`);
+    petChar.classList.remove(...typeClasses);
+    petChar.classList.add(`pet-type-${safeType}`);
+    startPetAnimation(safeType);
   }
+
+  const nameTag = petChar.querySelector('.pet-name-tag');
+  if (nameTag) nameTag.textContent = safeName;
 }
 
 function initializeCustomerTheme() {

@@ -565,51 +565,139 @@ article { padding: 24px; }
   pointer-events: none;
   z-index: 2;
 }
-.customer-cute-badge {
+/* Pet character — no box, just the drawn creature at bottom-left */
+.pet-character {
   position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 100;
+  pointer-events: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 80px;
-  padding: 10px 12px;
-  border-radius: 20px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #f2f2f2;
-  backdrop-filter: blur(14px);
-  box-shadow: 0 14px 30px rgba(0,0,0,0.28);
-  transition: background 0.4s, border-color 0.4s;
 }
-.pet-emoji {
-  font-size: 1.8rem;
-  line-height: 1;
-  display: block;
-  transform-origin: center bottom;
-  will-change: transform;
+.pet-svg-wrap { width: 88px; height: 114px; }
+.pet-svg { width: 100%; height: 100%; overflow: visible; }
+/* Allow SVG elements to use transform-origin relative to their own box */
+.pet-svg * {
+  transform-box: fill-box;
+  transform-origin: center;
 }
-.pet-name {
+.pet-name-tag {
   font-size: 0.7rem;
-  color: rgba(255,255,255,0.7);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
+  color: rgba(255,255,255,0.92);
+  background: rgba(0,0,0,0.48);
+  padding: 2px 10px;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  letter-spacing: 0.1em;
   white-space: nowrap;
-  max-width: 90px;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Pet keyframe animations */
-@keyframes pet-bob     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
-@keyframes pet-lick    { 0%,100%{transform:rotate(0) scale(1)} 25%{transform:rotate(-14deg) scale(1.18)} 55%{transform:rotate(10deg) scale(1.12)} 80%{transform:rotate(-6deg) scale(1.06)} }
-@keyframes pet-stretch { 0%,100%{transform:scaleX(1) scaleY(1)} 35%{transform:scaleX(1.55) scaleY(0.68) translateY(5px)} 65%{transform:scaleX(0.85) scaleY(1.22)} }
-@keyframes pet-hop     { 0%,100%{transform:translateY(0) scaleY(1)} 25%{transform:translateY(-12px) scaleY(1.1)} 45%{transform:translateY(0) scaleY(0.82)} 55%{transform:translateY(0) scaleY(1)} }
-@keyframes pet-bounce  { 0%,100%{transform:translateY(0) scaleY(1)} 40%{transform:translateY(-9px) scaleY(1.08)} 65%{transform:translateY(0) scaleY(0.9)} }
-@keyframes pet-wag     { 0%,100%{transform:rotate(0)} 20%{transform:rotate(-10deg)} 60%{transform:rotate(10deg)} 80%{transform:rotate(-5deg)} }
-@keyframes pet-spin    { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
-@keyframes pet-shake   { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
-@keyframes pet-sway    { 0%,100%{transform:rotate(0)} 33%{transform:rotate(-6deg)} 66%{transform:rotate(6deg)} }
-@keyframes pet-twinkle { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.35) rotate(18deg)} 50%{transform:scale(0.88) rotate(-12deg)} 75%{transform:scale(1.25) rotate(6deg)} }
-.customer-cute-plushie { left: 50%; bottom: 18px; transform: translateX(-50%); }
+.pet-name-tag:empty { display: none; }
+
+/* ── Idle: eyes blink, body breathes ── */
+@keyframes pet-breathe  { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(1.05)} }
+@keyframes pet-blink    { 0%,88%,100%{transform:scaleY(1)} 92%,96%{transform:scaleY(0.08)} }
+.pet-action-idle .pet-body   { animation: pet-breathe 2.8s ease-in-out infinite; }
+.pet-eye-l,.pet-eye-r        { animation: pet-blink 5s ease-in-out infinite; }
+
+/* ── Shared action keyframes ── */
+@keyframes pet-paw-lick { 0%,100%{transform:rotate(0) translateY(0)} 25%{transform:rotate(-52deg) translateY(-14px)} 60%{transform:rotate(-46deg) translateY(-12px) translateX(7px)} 85%{transform:rotate(-18deg) translateY(-4px)} }
+@keyframes pet-head-tilt { 0%,100%{transform:rotate(0)} 30%,70%{transform:rotate(-14deg)} }
+@keyframes pet-body-stretch { 0%,100%{transform:scaleX(1) scaleY(1)} 35%{transform:scaleX(1.48) scaleY(0.70)} 65%{transform:scaleX(0.88) scaleY(1.20)} }
+@keyframes pet-paw-wave  { 0%,100%{transform:rotate(0) translateY(0)} 20%{transform:rotate(-62deg) translateY(-18px)} 55%{transform:rotate(-70deg) translateY(-20px)} 82%{transform:rotate(-38deg) translateY(-9px)} }
+@keyframes pet-head-bounce { 0%,100%{transform:translateY(0)} 25%{transform:translateY(-5px)} 50%{transform:translateY(0)} 75%{transform:translateY(-3px)} }
+@keyframes pet-body-hop  { 0%,100%{transform:translateY(0) scaleY(1)} 28%{transform:translateY(-13px) scaleY(1.06)} 52%{transform:translateY(0) scaleY(0.86)} 68%{transform:translateY(0) scaleY(1)} }
+@keyframes pet-ear-twitch-l { 0%,85%,100%{transform:rotate(0)} 88%,95%{transform:rotate(-12deg)} }
+@keyframes pet-ear-twitch-r { 0%,82%,100%{transform:rotate(0)} 85%,92%{transform:rotate(12deg)} }
+@keyframes pet-frog-jump { 0%,100%{transform:translateY(0) scaleY(1) scaleX(1)} 22%{transform:translateY(-20px) scaleY(1.1) scaleX(0.9)} 44%{transform:translateY(0) scaleY(0.74) scaleX(1.32)} 62%{transform:translateY(0) scaleY(1.08) scaleX(0.96)} }
+@keyframes pet-frog-puff  { 0%,100%{transform:scaleX(1) scaleY(1)} 50%{transform:scaleX(1.14) scaleY(1.1)} }
+@keyframes pet-hamster-spin { 0%{transform:rotate(0) scale(1)} 40%{transform:rotate(180deg) scale(0.9)} 100%{transform:rotate(360deg) scale(1)} }
+@keyframes pet-cheek-stuff  { 0%,100%{transform:scaleX(1)} 50%{transform:scaleX(1.26)} }
+@keyframes pet-tail-sway { 0%,100%{transform:rotate(0)} 35%{transform:rotate(10deg)} 68%{transform:rotate(-8deg)} }
+@keyframes pet-tail-wag  { 0%,100%{transform:rotate(-30deg)} 50%{transform:rotate(30deg)} }
+@keyframes pet-fox-tail  { 0%,100%{transform:rotate(0)} 38%{transform:rotate(14deg)} 70%{transform:rotate(-10deg)} }
+@keyframes pet-wing-idle-l { 0%,100%{transform:rotate(0)} 50%{transform:rotate(-5deg)} }
+@keyframes pet-wing-idle-r { 0%,100%{transform:rotate(0)} 50%{transform:rotate(5deg)} }
+@keyframes pet-wing-flap-l { 0%,100%{transform:rotate(0)} 30%{transform:rotate(-32deg)} 65%{transform:rotate(12deg)} }
+@keyframes pet-wing-flap-r { 0%,100%{transform:rotate(0)} 30%{transform:rotate(32deg)} 65%{transform:rotate(-12deg)} }
+@keyframes pet-star-spin    { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+@keyframes pet-star-twinkle { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.35) rotate(18deg)} 50%{transform:scale(0.87) rotate(-11deg)} 75%{transform:scale(1.22) rotate(6deg)} }
+@keyframes pet-bear-sway    { 0%,100%{transform:rotate(0)} 33%{transform:rotate(-3deg)} 66%{transform:rotate(3deg)} }
+@keyframes pet-fox-pounce   { 0%,100%{transform:rotate(0) translateY(0)} 30%{transform:rotate(-8deg) translateY(-8px)} 65%{transform:rotate(5deg) translateY(0)} }
+
+/* ── CAT ── */
+.pet-type-cat .pet-tail { animation: pet-tail-sway 3.2s ease-in-out infinite; transform-origin: bottom center; }
+.pet-type-cat.pet-action-a .pet-paw-l { animation: pet-paw-lick 1.8s ease-in-out forwards; transform-origin: top center; }
+.pet-type-cat.pet-action-a .pet-head  { animation: pet-head-tilt 1.8s ease-in-out forwards; }
+.pet-type-cat.pet-action-b .pet-body  { animation: pet-body-stretch 2.2s ease-in-out forwards; }
+.pet-type-cat.pet-action-c .pet-eye-l,
+.pet-type-cat.pet-action-c .pet-eye-r { animation: pet-blink 0.35s ease-in-out 3; }
+
+/* ── DOG ── */
+.pet-type-dog .pet-tail { animation: pet-tail-wag 0.45s ease-in-out infinite; }
+.pet-type-dog.pet-action-a .pet-head  { animation: pet-head-bounce 0.4s ease-in-out 3; }
+.pet-type-dog.pet-action-b .pet-body,
+.pet-type-dog.pet-action-b .pet-head,
+.pet-type-dog.pet-action-b .pet-ear-l,
+.pet-type-dog.pet-action-b .pet-ear-r { animation: pet-body-hop 0.75s ease-in-out; }
+
+/* ── BUNNY ── */
+.pet-type-bunny .pet-ear-l { animation: pet-ear-twitch-l 4.2s ease-in-out infinite; transform-origin: bottom center; }
+.pet-type-bunny .pet-ear-r { animation: pet-ear-twitch-r 4.8s ease-in-out infinite; transform-origin: bottom center; }
+.pet-type-bunny.pet-action-a .pet-body,
+.pet-type-bunny.pet-action-a .pet-head,
+.pet-type-bunny.pet-action-a .pet-ear-l,
+.pet-type-bunny.pet-action-a .pet-ear-r { animation: pet-body-hop 0.9s ease-in-out; }
+.pet-type-bunny.pet-action-b .pet-head  { animation: pet-head-tilt 0.25s ease-in-out 4; }
+
+/* ── BEAR ── */
+.pet-type-bear .pet-body,
+.pet-type-bear .pet-head { animation: pet-bear-sway 4.2s ease-in-out infinite; }
+.pet-type-bear.pet-action-a .pet-paw-r { animation: pet-paw-wave 2.2s ease-in-out forwards; transform-origin: top center; }
+
+/* ── FROG ── */
+.pet-type-frog.pet-action-a .pet-body,
+.pet-type-frog.pet-action-a .pet-head,
+.pet-type-frog.pet-action-a .pet-paw-l,
+.pet-type-frog.pet-action-a .pet-paw-r { animation: pet-frog-jump 0.85s ease-in-out; }
+.pet-type-frog.pet-action-b .pet-body  { animation: pet-frog-puff 0.6s ease-in-out 2; }
+
+/* ── HAMSTER ── */
+.pet-type-hamster .pet-body { animation: pet-breathe 1.4s ease-in-out infinite; }
+.pet-type-hamster.pet-action-a .pet-body,
+.pet-type-hamster.pet-action-a .pet-head { animation: pet-hamster-spin 0.65s ease-in-out; }
+.pet-type-hamster.pet-action-b .pet-head  { animation: pet-cheek-stuff 0.5s ease-in-out 2; }
+
+/* ── PANDA (same as bear) ── */
+.pet-type-panda .pet-body,
+.pet-type-panda .pet-head { animation: pet-bear-sway 4.6s ease-in-out infinite; }
+.pet-type-panda.pet-action-a .pet-paw-r { animation: pet-paw-wave 2.2s ease-in-out forwards; transform-origin: top center; }
+
+/* ── FOX ── */
+.pet-type-fox .pet-tail { animation: pet-fox-tail 2.2s ease-in-out infinite; transform-origin: bottom center; }
+.pet-type-fox.pet-action-a .pet-paw-l { animation: pet-paw-lick 1.6s ease-in-out forwards; transform-origin: top center; }
+.pet-type-fox.pet-action-a .pet-head  { animation: pet-head-tilt 1.6s ease-in-out forwards; }
+.pet-type-fox.pet-action-b .pet-body,
+.pet-type-fox.pet-action-b .pet-head  { animation: pet-fox-pounce 1s ease-in-out; }
+
+/* ── DUCK ── */
+.pet-type-duck .pet-wing-l { animation: pet-wing-idle-l 2.2s ease-in-out infinite; transform-origin: right center; }
+.pet-type-duck .pet-wing-r { animation: pet-wing-idle-r 2.2s ease-in-out infinite; transform-origin: left center; }
+.pet-type-duck.pet-action-a .pet-wing-l { animation: pet-wing-flap-l 0.45s ease-in-out 3; transform-origin: right center; }
+.pet-type-duck.pet-action-a .pet-wing-r { animation: pet-wing-flap-r 0.45s ease-in-out 3; transform-origin: left center; }
+.pet-type-duck.pet-action-b .pet-head   { animation: pet-head-bounce 0.3s ease-in-out 4; }
+
+/* ── STAR ── */
+.pet-type-star .pet-body             { animation: pet-star-spin 7s linear infinite; }
+.pet-type-star.pet-action-a .pet-body { animation: pet-star-twinkle 1.4s ease-in-out; }
+.pet-type-star.pet-action-b .pet-body { animation: pet-star-spin 0.6s linear 3; }
+
+.customer-cute-plushie { left: 20px; bottom: 20px; transform: none; }
 .customer-cute-active .page-shell {
   position: relative;
 }

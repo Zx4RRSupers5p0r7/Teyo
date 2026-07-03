@@ -39,11 +39,7 @@ const customerMonthlyCheckoutBtn = document.getElementById('customerMonthlyCheck
 const customerOneTimePlanBtn = document.getElementById('customerOneTimePlanBtn');
 const customerPlusPlanBtn = document.getElementById('customerPlusPlanBtn');
 const customerPresetButtons = document.querySelectorAll('.customer-preset-btn');
-const customerLeftStickerSelect = document.getElementById('customerLeftStickerSelect');
-const customerRightStickerSelect = document.getElementById('customerRightStickerSelect');
 const customerPlushieSelect = document.getElementById('customerPlushieSelect');
-const customerPreviewLeft = document.getElementById('customerPreviewLeft');
-const customerPreviewRight = document.getElementById('customerPreviewRight');
 const customerPlushiePreview = document.getElementById('customerPlushiePreview');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
@@ -76,17 +72,6 @@ const customerPresetClasses = [
   'theme-preset-berry',
   'theme-preset-night'
 ];
-const cuteStickerSymbols = {
-  bow: '🎀',
-  heart: '♡',
-  star: '✦',
-  cloud: '☁',
-  flower: '✿',
-  bunny: '🐰',
-  sparkle: '✧',
-  moon: '☾',
-  pearl: '◌'
-};
 const plushieSymbols = {
   bunny: '🐰',
   bear: '🧸',
@@ -95,14 +80,14 @@ const plushieSymbols = {
   star: '⭐'
 };
 const customerCuteThemes = {
-  kawaii: { accent: '#ff9ad5', style: 'kawaii', leftSticker: 'bow', rightSticker: 'sparkle', plushie: 'bear' },
-  strawberry: { accent: '#ff6f8f', style: 'strawberry', leftSticker: 'heart', rightSticker: 'flower', plushie: 'bunny' },
-  cloud: { accent: '#9edcff', style: 'cloud', leftSticker: 'cloud', rightSticker: 'sparkle', plushie: 'star' },
-  lavender: { accent: '#c7a8ff', style: 'lavender', leftSticker: 'flower', rightSticker: 'moon', plushie: 'cat' },
-  mint: { accent: '#8be6c4', style: 'mint', leftSticker: 'sparkle', rightSticker: 'flower', plushie: 'frog' },
-  cotton: { accent: '#ffb2f0', style: 'cotton', leftSticker: 'bow', rightSticker: 'heart', plushie: 'bear' },
-  berry: { accent: '#ff7b93', style: 'berry', leftSticker: 'star', rightSticker: 'sparkle', plushie: 'cat' },
-  night: { accent: '#d8c6ff', style: 'night', leftSticker: 'moon', rightSticker: 'star', plushie: 'star' }
+  kawaii: { accent: '#ff9ad5', style: 'kawaii', plushie: 'bear' },
+  strawberry: { accent: '#ff6f8f', style: 'strawberry', plushie: 'bunny' },
+  cloud: { accent: '#9edcff', style: 'cloud', plushie: 'star' },
+  lavender: { accent: '#c7a8ff', style: 'lavender', plushie: 'cat' },
+  mint: { accent: '#8be6c4', style: 'mint', plushie: 'frog' },
+  cotton: { accent: '#ffb2f0', style: 'cotton', plushie: 'bear' },
+  berry: { accent: '#ff7b93', style: 'berry', plushie: 'cat' },
+  night: { accent: '#d8c6ff', style: 'night', plushie: 'star' }
 };
 
 let marketplaceState = {
@@ -345,10 +330,6 @@ function normalizeThemeField(value, allowed, fallback) {
   return allowed.includes(input) ? input : fallback;
 }
 
-function getCuteSymbol(name) {
-  return cuteStickerSymbols[name] || cuteStickerSymbols.star;
-}
-
 function getPlushieSymbol(name) {
   return plushieSymbols[name] || plushieSymbols.bear;
 }
@@ -363,8 +344,6 @@ function getDefaultCustomerTheme() {
     accent: preset.accent,
     style: preset.style,
     preset: 'kawaii',
-    leftSticker: preset.leftSticker,
-    rightSticker: preset.rightSticker,
     plushie: preset.plushie
   };
 }
@@ -383,8 +362,6 @@ function getDefaultCustomerTheme() {
     accent: '#ffffff',
     style: 'midnight',
     preset: 'kawaii',
-    leftSticker: 'bow',
-    rightSticker: 'star',
     plushie: 'bear'
   };
 }
@@ -404,8 +381,6 @@ function readCustomerTheme() {
       accent: normalizeHexColor(parsed.accent, presetTheme.accent),
       style,
       preset,
-      leftSticker: normalizeThemeField(parsed.leftSticker, Object.keys(cuteStickerSymbols), presetTheme.leftSticker),
-      rightSticker: normalizeThemeField(parsed.rightSticker, Object.keys(cuteStickerSymbols), presetTheme.rightSticker),
       plushie: normalizeThemeField(parsed.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
     };
   } catch (error) {
@@ -432,8 +407,6 @@ function applyCustomerTheme(theme) {
     accent: normalizeHexColor(theme.accent, presetTheme.accent),
     style: normalizeThemeField(theme.style, customerStyleClasses.map((className) => className.replace('theme-style-', '')), presetTheme.style),
     preset: presetName,
-    leftSticker: normalizeThemeField(theme.leftSticker, Object.keys(cuteStickerSymbols), presetTheme.leftSticker),
-    rightSticker: normalizeThemeField(theme.rightSticker, Object.keys(cuteStickerSymbols), presetTheme.rightSticker),
     plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), presetTheme.plushie)
   };
 
@@ -451,20 +424,8 @@ function applyCustomerTheme(theme) {
   if (customerStyleSelect) {
     customerStyleSelect.value = safeTheme.style;
   }
-  if (customerLeftStickerSelect) {
-    customerLeftStickerSelect.value = safeTheme.leftSticker;
-  }
-  if (customerRightStickerSelect) {
-    customerRightStickerSelect.value = safeTheme.rightSticker;
-  }
   if (customerPlushieSelect) {
     customerPlushieSelect.value = safeTheme.plushie;
-  }
-  if (customerPreviewLeft) {
-    customerPreviewLeft.textContent = getCuteSymbol(safeTheme.leftSticker);
-  }
-  if (customerPreviewRight) {
-    customerPreviewRight.textContent = getCuteSymbol(safeTheme.rightSticker);
   }
   if (customerPlushiePreview) {
     customerPlushiePreview.textContent = getPlushieSymbol(safeTheme.plushie);
@@ -494,8 +455,6 @@ function ensureCuteDecorLayer() {
   layer.id = 'customerCuteDecorLayer';
   layer.className = 'customer-cute-layer';
   layer.innerHTML = `
-    <div class="customer-cute-badge customer-cute-badge-left" data-slot="left"></div>
-    <div class="customer-cute-badge customer-cute-badge-right" data-slot="right"></div>
     <div class="customer-cute-badge customer-cute-plushie" data-slot="plushie"></div>
   `;
   document.body.appendChild(layer);
@@ -507,23 +466,11 @@ function updateCuteDecorLayer(theme) {
   const unlocked = isCustomerThemeUnlocked();
   layer.hidden = !unlocked;
   const safeTheme = {
-    leftSticker: normalizeThemeField(theme.leftSticker, Object.keys(cuteStickerSymbols), 'bow'),
-    rightSticker: normalizeThemeField(theme.rightSticker, Object.keys(cuteStickerSymbols), 'star'),
     plushie: normalizeThemeField(theme.plushie, Object.keys(plushieSymbols), 'bear'),
     preset: normalizeThemeField(theme.preset, Object.keys(customerCuteThemes), 'kawaii')
   };
 
-  const left = layer.querySelector('[data-slot="left"]');
-  const right = layer.querySelector('[data-slot="right"]');
   const plushie = layer.querySelector('[data-slot="plushie"]');
-  if (left) {
-    left.innerHTML = `<span>${getCuteSymbol(safeTheme.leftSticker)}</span><small>Corner charm</small>`;
-    left.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
-  }
-  if (right) {
-    right.innerHTML = `<span>${getCuteSymbol(safeTheme.rightSticker)}</span><small>Happy glow</small>`;
-    right.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
-  }
   if (plushie) {
     plushie.innerHTML = `<span>${getPlushieSymbol(safeTheme.plushie)}</span><small>Plushie pal</small>`;
     plushie.style.setProperty('--decor-color', getPresetTheme(safeTheme.preset).accent);
@@ -566,8 +513,6 @@ function initializeCustomerTheme() {
           preset: presetName,
           accent: presetTheme.accent,
           style: presetTheme.style,
-          leftSticker: presetTheme.leftSticker,
-          rightSticker: presetTheme.rightSticker,
           plushie: presetTheme.plushie
         };
         saveCustomerTheme(nextTheme);
@@ -636,34 +581,6 @@ function initializeCustomerTheme() {
       const nextTheme = {
         ...readCustomerTheme(),
         style: customerStyleSelect.value
-      };
-      saveCustomerTheme(nextTheme);
-      applyCustomerTheme(nextTheme);
-    });
-  }
-
-  if (customerLeftStickerSelect) {
-    customerLeftStickerSelect.addEventListener('change', () => {
-      if (!isCustomerThemeUnlocked()) {
-        return;
-      }
-      const nextTheme = {
-        ...readCustomerTheme(),
-        leftSticker: normalizeThemeField(customerLeftStickerSelect.value, Object.keys(cuteStickerSymbols), 'bow')
-      };
-      saveCustomerTheme(nextTheme);
-      applyCustomerTheme(nextTheme);
-    });
-  }
-
-  if (customerRightStickerSelect) {
-    customerRightStickerSelect.addEventListener('change', () => {
-      if (!isCustomerThemeUnlocked()) {
-        return;
-      }
-      const nextTheme = {
-        ...readCustomerTheme(),
-        rightSticker: normalizeThemeField(customerRightStickerSelect.value, Object.keys(cuteStickerSymbols), 'star')
       };
       saveCustomerTheme(nextTheme);
       applyCustomerTheme(nextTheme);

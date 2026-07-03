@@ -524,7 +524,6 @@ article { padding: 24px; }
   overflow: hidden;
   background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
 }
-.corner-preview,
 .plushie-preview {
   position: absolute;
   display: inline-flex;
@@ -535,14 +534,6 @@ article { padding: 24px; }
   color: var(--text);
   box-shadow: 0 12px 30px rgba(0,0,0,0.24);
 }
-.corner-preview {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  font-size: 1.7rem;
-}
-.corner-preview-left { top: 14px; left: 14px; }
-.corner-preview-right { top: 14px; right: 14px; }
 .plushie-preview {
   right: 14px;
   bottom: 14px;
@@ -593,8 +584,6 @@ article { padding: 24px; }
   text-transform: uppercase;
   letter-spacing: 0.18em;
 }
-.customer-cute-badge-left { top: 18px; left: 18px; }
-.customer-cute-badge-right { top: 18px; right: 18px; }
 .customer-cute-plushie { left: 50%; bottom: 18px; transform: translateX(-50%); }
 .customer-cute-active .page-shell {
   position: relative;

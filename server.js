@@ -624,6 +624,11 @@ function hasActiveCustomerThemeAccess(customerEmail) {
     return false;
   }
 
+  // Theme customisation is a Teyo Plus exclusive feature
+  if (entitlement.sourcePlan !== 'customer-plus') {
+    return false;
+  }
+
   if (!entitlement.expiresAt) {
     return true;
   }
@@ -1155,7 +1160,7 @@ app.post('/api/customer/theme-access', (req, res) => {
   }
 
   if (!hasActiveCustomerThemeAccess(customerEmail)) {
-    return res.status(403).json({ success: false, message: 'No active paid customer access found for this email yet.' });
+    return res.status(403).json({ success: false, message: 'Private personalization requires an active Teyo Plus subscription. The one-time pass does not include this feature.' });
   }
 
   res.json({ success: true, message: 'Paid access verified. Private theme controls are now unlocked.' });

@@ -457,6 +457,21 @@ article { padding: 24px; }
 }
 .customer-theme-copy h3 {
   margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.plus-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: var(--accent, #ff9ad5);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 .customer-theme-copy p {
   margin: 0 0 12px;

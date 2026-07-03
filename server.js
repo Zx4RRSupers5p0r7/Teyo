@@ -109,11 +109,7 @@ function secureEquals(a, b) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!adminApiKey || adminApiKey.length < 32) {
-    return res.status(503).json({ success: false, message: 'Admin protection is not configured.' });
-  }
-
-  if (!hasPrivilegedAccess(req)) {
+  if (!hasOwnerHeader(req)) {
     return res.status(401).json({ success: false, message: 'Unauthorized admin request.' });
   }
 
@@ -712,16 +708,14 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/api/ready', (req, res) => {
-  const adminConfigured = Boolean(adminApiKey && adminApiKey.length >= 32);
   const ownerConfigured = isOwnerConfigured();
   const stripeConfigured = Boolean(validStripeKey);
   const storageReady = Boolean(dbPool || storageMode === 'file');
-  const ready = Boolean(stripeConfigured && adminConfigured && storageReady);
+  const ready = Boolean(stripeConfigured && ownerConfigured && storageReady);
 
   res.status(ready ? 200 : 503).json({
     status: ready ? 'ready' : 'not-ready',
     stripeConfigured,
-    adminConfigured,
     ownerConfigured,
     storageMode,
     storageReady
@@ -793,7 +787,7 @@ app.post('/api/partner', (req, res) => {
 
 app.get('/api/partners', (req, res) => {
   const data = loadData();
-  if (hasPrivilegedAccess(req)) {
+  if (hasOwnerHeader(req)) {
     return res.json(data.partners);
   }
   res.json(data.partners.map(serializePublicPartner));
@@ -864,7 +858,7 @@ app.post('/api/ads', (req, res) => {
 
 app.get('/api/ads', (req, res) => {
   const data = loadData();
-  if (hasPrivilegedAccess(req)) {
+  if (hasOwnerHeader(req)) {
     return res.json(data.ads);
   }
   res.json(data.ads.map(serializePublicAd));
@@ -946,7 +940,7 @@ app.post('/api/products', (req, res) => {
 
 app.get('/api/products', (req, res) => {
   const data = loadData();
-  if (hasPrivilegedAccess(req)) {
+  if (hasOwnerHeader(req)) {
     return res.json(data.products);
   }
   res.json(data.products.map(serializePublicProduct));

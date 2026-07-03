@@ -3,7 +3,8 @@ const http = require('http');
 
 const TEST_PORT = 4310;
 const BASE_URL = `http://127.0.0.1:${TEST_PORT}`;
-const ADMIN_KEY = 'smoke_test_admin_key_1234567890_abcdef';
+const OWNER_EMAIL = 'chazmiller872@gmail.com';
+const OWNER_KEY = '^ty8e(%uI98dYhfgjeHDg0adj$#$';
 
 function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -77,7 +78,9 @@ async function run() {
       NODE_ENV: 'test',
       PORT: String(TEST_PORT),
       APP_BASE_URL: BASE_URL,
-      ADMIN_API_KEY: ADMIN_KEY,
+      ADMIN_API_KEY: 'smoke_test_admin_key_1234567890_abcdef',
+      OWNER_EMAIL,
+      OWNER_ACCESS_KEY: OWNER_KEY,
       STRIPE_SECRET_KEY: '',
       STRIPE_WEBHOOK_SECRET: '',
       DATABASE_URL: ''
@@ -112,16 +115,22 @@ async function run() {
     assert(!Object.prototype.hasOwnProperty.call(publicPartners.body[0], 'ownerEmail'), 'Public partners must not expose ownerEmail');
 
     const adminVerifyUnauthorized = await request('/api/admin/verify', { method: 'POST' });
-    assert(adminVerifyUnauthorized.status === 401, 'Admin verify should reject missing key');
+    assert(adminVerifyUnauthorized.status === 401, 'Admin verify should reject missing owner auth');
 
     const adminVerifyAuthorized = await request('/api/admin/verify', {
       method: 'POST',
-      headers: { 'x-admin-key': ADMIN_KEY }
+      headers: {
+        'x-owner-email': OWNER_EMAIL,
+        'x-owner-key': OWNER_KEY
+      }
     });
-    assert(adminVerifyAuthorized.status === 200 && adminVerifyAuthorized.body && adminVerifyAuthorized.body.success, 'Admin verify should pass with valid key');
+    assert(adminVerifyAuthorized.status === 200 && adminVerifyAuthorized.body && adminVerifyAuthorized.body.success, 'Admin verify should pass with valid owner credentials');
 
     const adminPartners = await request('/api/partners', {
-      headers: { 'x-admin-key': ADMIN_KEY }
+      headers: {
+        'x-owner-email': OWNER_EMAIL,
+        'x-owner-key': OWNER_KEY
+      }
     });
     assert(adminPartners.status === 200 && Array.isArray(adminPartners.body), 'Admin partners should return an array');
     assert(adminPartners.body.length >= 1, 'Admin partners should include created partner');

@@ -143,8 +143,7 @@ function getAdminHeaders() {
     };
   }
 
-  const key = getAdminKey();
-  return key ? { 'x-admin-key': key } : {};
+  return {};
 }
 
 function getOwnerHeaders() {
@@ -894,13 +893,17 @@ function renderAds() {
     renderTarget(activeAdsList, liveAds);
   }
   if (adminAdsList) {
+    if (!adminAccessGranted) {
+      adminAdsList.innerHTML = '<p>Owner access required to view ad requests.</p>';
+      return;
+    }
     renderTarget(adminAdsList, marketplaceState.ads, adminAccessGranted);
   }
 }
 
 async function loadMarketplaceData() {
   try {
-    const sharedHeaders = hasOwnerSession() || isAdminPage() ? getAdminHeaders() : {};
+    const sharedHeaders = hasOwnerSession() ? getAdminHeaders() : {};
     const [partnersResponse, adsResponse, productsResponse] = await Promise.all([
       fetch('/api/partners', { headers: sharedHeaders }),
       fetch('/api/ads', { headers: sharedHeaders }),
@@ -1257,7 +1260,8 @@ if (adminPartnerList) {
       return;
     }
     if (!adminAccessGranted) {
-      adminPartnerList.insertAdjacentHTML('beforeend', '<p>View-only mode: enter admin access key to approve requests.</p>');
+      adminPartnerList.insertAdjacentHTML('beforeend', '<p>Owner access required to view company requests.</p>');
+      return;
     }
     if (!marketplaceState.partners.length) {
       adminPartnerList.innerHTML = '<p>No partner requests yet.</p>';
@@ -1297,7 +1301,8 @@ if (adminPartnerList) {
       return;
     }
     if (!adminAccessGranted) {
-      adminProductList.insertAdjacentHTML('beforeend', '<p>View-only mode: enter admin access key to approve products.</p>');
+      adminProductList.insertAdjacentHTML('beforeend', '<p>Owner access required to view product requests.</p>');
+      return;
     }
     if (!marketplaceState.products.length) {
       adminProductList.innerHTML = '<p>No product submissions yet.</p>';
@@ -1340,7 +1345,7 @@ async function initializeMarketplace() {
 
   const accessGranted = await ensureAdminAccess();
   if (!accessGranted && isAdminPage() && adminAdsList) {
-    adminAdsList.innerHTML = '<p>View-only mode: enter admin access key to approve ads.</p>';
+    adminAdsList.innerHTML = '<p>Owner access required to view ad requests.</p>';
   }
 
   await loadMarketplaceData();

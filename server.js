@@ -20,6 +20,7 @@ const stripeSecretKey = String(process.env.STRIPE_SECRET_KEY || '').trim();
 const webhookSecret = String(process.env.STRIPE_WEBHOOK_SECRET || '').trim();
 const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
 const adminApiKey = String(process.env.ADMIN_API_KEY || '').trim();
+const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
@@ -184,6 +185,11 @@ function isValidBusinessWebsite(value) {
 function isBusinessOwnerSubmission(companyName, websiteUrl) {
   const normalizedName = String(companyName || '').trim();
   return normalizedName.length >= 2 && isValidBusinessWebsite(websiteUrl);
+}
+
+function hasOwnerAccess(customerEmail) {
+  const email = sanitizeEmail(customerEmail);
+  return Boolean(ownerEmail && email && normalizeName(email) === normalizeName(ownerEmail));
 }
 
 function sanitizeCreative(creative) {
@@ -588,6 +594,10 @@ function setCustomerSubscriptionState(subscriptionId, status) {
 }
 
 function hasActiveCustomerThemeAccess(customerEmail) {
+  if (hasOwnerAccess(customerEmail)) {
+    return true;
+  }
+
   const data = loadData();
   const email = sanitizeEmail(customerEmail);
   if (!email) {
@@ -729,6 +739,12 @@ app.post('/api/partner', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
+  if (hasOwnerAccess(ownerEmail)) {
+    entry.paymentConfirmed = true;
+    entry.paid = true;
+    entry.activeListing = true;
+  }
+
   data.partners.push(entry);
   saveData(data);
 
@@ -792,6 +808,12 @@ app.post('/api/ads', (req, res) => {
     createdAt: new Date().toISOString()
   };
 
+  if (hasOwnerAccess(ownerEmail)) {
+    entry.paid = true;
+    entry.active = true;
+    entry.subscriptionStatus = 'active';
+  }
+
   data.ads.push(entry);
   saveData(data);
 
@@ -813,6 +835,7 @@ app.get('/api/ads', (req, res) => {
 app.post('/api/products', (req, res) => {
   const productName = sanitizePlainText(req.body.productName, 180);
   const companyName = sanitizePlainText(req.body.companyName, 120);
+  const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const category = sanitizePlainText(req.body.category, 80);
   const price = sanitizePlainText(req.body.price, 80);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
@@ -835,8 +858,16 @@ app.post('/api/products', (req, res) => {
 
   const data = loadData();
   const partnerMatch = data.partners.find((partner) => normalizeName(partner.companyName) === normalizeName(companyName));
+  const ownerOverride = hasOwnerAccess(ownerEmail);
 
-  if (!partnerMatch || !partnerMatch.paid || !partnerMatch.activeListing || !partnerMatch.paymentConfirmed) {
+  if (ownerOverride) {
+    const ownerPartner = ensurePartnerRecord(companyName, ownerEmail);
+    ownerPartner.paid = true;
+    ownerPartner.activeListing = true;
+    ownerPartner.paymentConfirmed = true;
+  }
+
+  if (!ownerOverride && (!partnerMatch || !partnerMatch.paid || !partnerMatch.activeListing || !partnerMatch.paymentConfirmed)) {
     return res.status(403).json({
       success: false,
       message: 'Your company must first complete the one-time $2,500 placement activation and receive approval before adding products. After that, you can add unlimited products.'
@@ -1083,6 +1114,10 @@ app.post('/api/customer/theme-access', (req, res) => {
   const customerEmail = sanitizeEmail(req.body.customerEmail);
   if (!customerEmail) {
     return res.status(400).json({ success: false, message: 'A valid customer email is required.' });
+  }
+
+  if (hasOwnerAccess(customerEmail)) {
+    return res.json({ success: true, owner: true, message: 'Owner access verified. Private theme controls are now unlocked.' });
   }
 
   if (!hasActiveCustomerThemeAccess(customerEmail)) {

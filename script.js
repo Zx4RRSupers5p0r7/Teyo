@@ -689,7 +689,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
     + `<ellipse cx="50" cy="96" rx="14" ry="13" fill="${c2}"/>`
     + `<ellipse class="pet-paw-l" cx="27" cy="87" rx="9" ry="7" fill="${c}"/><ellipse class="pet-paw-r" cx="73" cy="87" rx="9" ry="7" fill="${c}"/>`
     + ears
-    + `<rect x="40" y="62" width="20" height="16" rx="8" fill="${c}"/>`
+    + `<rect x="41" y="64" width="18" height="9" rx="4" fill="${c}"/>`
     + `<circle class="pet-head" cx="50" cy="40" r="26" fill="${c}"/>`
     + `<ellipse cx="24" cy="48" rx="15" ry="12" fill="${c2}"/><ellipse cx="76" cy="48" rx="15" ry="12" fill="${c2}"/>`
     + eyesSt + noses + mouth);
@@ -705,7 +705,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
     + `<ellipse cx="50" cy="95" rx="14" ry="13" fill="${c2}"/>`
     + `<ellipse class="pet-paw-l" cx="27" cy="87" rx="9" ry="7" fill="${dk}"/><ellipse class="pet-paw-r" cx="73" cy="87" rx="9" ry="7" fill="${dk}"/>`
     + pEars
-    + `<rect x="40" y="62" width="20" height="16" rx="8" fill="${wh}"/>`
+    + `<rect x="41" y="64" width="18" height="9" rx="4" fill="${wh}"/>`
     + `<circle class="pet-head" cx="50" cy="40" r="26" fill="${wh}"/>`
     + `<ellipse cx="37" cy="39" rx="10" ry="9" fill="${dk}"/><ellipse cx="63" cy="39" rx="10" ry="9" fill="${dk}"/>`
     + eyesSt + noses + mouth);
@@ -718,7 +718,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
     + `<ellipse cx="50" cy="95" rx="14" ry="13" fill="${c2}"/>`
     + `<ellipse class="pet-paw-l" cx="27" cy="87" rx="9" ry="7" fill="${c}"/><ellipse class="pet-paw-r" cx="73" cy="87" rx="9" ry="7" fill="${c}"/>`
     + ears
-    + `<rect x="40" y="62" width="20" height="16" rx="8" fill="${c}"/>`
+    + `<rect x="41" y="64" width="18" height="9" rx="4" fill="${c}"/>`
     + `<circle class="pet-head" cx="50" cy="40" r="26" fill="${c}"/>`
     + `<ellipse cx="38" cy="50" rx="11" ry="9" fill="${c2}"/><ellipse cx="62" cy="50" rx="11" ry="9" fill="${c2}"/>`
     + eyesSt + noses + mouth);
@@ -737,7 +737,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
   + `<ellipse cx="50" cy="95" rx="14" ry="13" fill="${c2}"/>`
   + `<ellipse class="pet-paw-l" cx="27" cy="87" rx="9" ry="7" fill="${c}"/><ellipse class="pet-paw-r" cx="73" cy="87" rx="9" ry="7" fill="${c}"/>`
   + ears
-  + `<rect x="40" y="62" width="20" height="16" rx="8" fill="${c}"/>`
+  + `<rect x="41" y="64" width="18" height="9" rx="4" fill="${c}"/>`
   + `<circle class="pet-head" cx="50" cy="40" r="26" fill="${c}"/>`
   + eyesSt + noses
   + catWhiskers + dogTongue

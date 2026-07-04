@@ -1141,22 +1141,55 @@ function renderProduct(product) {
     </div>
   `;
 
-  renderStores(stores);
+  renderStores(stores, product.stockStatus);
   updateMapForProduct(stores);
 }
 
-function renderStores(stores) {
+function renderStores(stores, stockStatus) {
   if (!storeList) return;
-
   storeList.innerHTML = '';
+
   const heading = document.createElement('p');
-  heading.textContent = 'Nearby availability';
-  heading.style.fontWeight = '700';
+  heading.textContent = 'Stores near you';
+  heading.style.cssText = 'font-weight:700;margin:0 0 4px;font-size:0.9rem;';
   storeList.appendChild(heading);
-  stores.forEach((store) => {
-    const entry = document.createElement('div');
-    entry.innerHTML = `<strong>${escapeHtml(store)}</strong><p>Pickup and in-store availability near your selected area.</p>`;
-    storeList.appendChild(entry);
+
+  const real = (stores || []).filter((s) => s.length > 6 && !s.toLowerCase().includes('confirmed by the brand'));
+  if (!real.length) {
+    const ph = document.createElement('p');
+    ph.textContent = 'No store locations listed yet. Brands add pickup locations when submitting products.';
+    ph.style.cssText = 'color:var(--muted);font-size:0.82rem;margin:6px 0 0;';
+    storeList.appendChild(ph);
+    return;
+  }
+
+  const raw = (stockStatus || '').toLowerCase();
+  const cls = raw.includes('out') ? 'stock-out'
+    : (raw.includes('low') || raw.includes('limited')) ? 'stock-low'
+    : (raw.includes('in') || raw.includes('available')) ? 'stock-in'
+    : 'stock-unknown';
+  const label = raw.includes('out') ? 'Out of stock'
+    : (raw.includes('low') || raw.includes('limited')) ? 'Low stock'
+    : (raw.includes('in') || raw.includes('available')) ? 'In stock'
+    : escapeHtml(stockStatus || 'Check availability');
+
+  real.forEach((store, i) => {
+    const card = document.createElement('div');
+    card.className = 'store-card';
+    card.dataset.storeIdx = i;
+    card.innerHTML =
+      `<span class="store-card-name">${escapeHtml(store)}</span>`
+      + `<span class="store-stock-badge ${cls}">${label}</span>`;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.store-card').forEach((c) => c.classList.remove('store-card-active'));
+      card.classList.add('store-card-active');
+      if (_storeMarkers[i] && _leafletMap) {
+        if (_storeFlyTimer) { clearInterval(_storeFlyTimer); _storeFlyTimer = null; }
+        _leafletMap.flyTo(_storeMarkers[i].getLatLng(), 15, { duration: 1.5 });
+        _storeMarkers[i].openPopup();
+      }
+    });
+    storeList.appendChild(card);
   });
 }
 
@@ -1244,6 +1277,12 @@ async function updateMapForProduct(stores) {
       idx = (idx + 1) % coords.length;
       _leafletMap.flyTo([coords[idx].lat, coords[idx].lng], 15, { duration: 1.8 });
       _storeMarkers[idx].openPopup();
+      document.querySelectorAll('.store-card').forEach((c) => c.classList.remove('store-card-active'));
+      const activeCard = storeList && storeList.querySelector(`[data-store-idx="${idx}"]`);
+      if (activeCard) {
+        activeCard.classList.add('store-card-active');
+        activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     }, 4500);
   } else if (_storeMarkers.length === 1) {
     _storeMarkers[0].openPopup();

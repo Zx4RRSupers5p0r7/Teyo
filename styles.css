@@ -1061,6 +1061,9 @@ article { padding: 24px; }
 .price { font-size: 2rem; font-weight: 800; margin: 8px 0; }
 .price span { font-size: 0.95rem; color: var(--muted); font-weight: 500; }
 .plan-card ul { padding-left: 18px; color: var(--muted); line-height: 1.8; }
+.plan-card { display: flex; flex-direction: column; }
+.plan-card .btn { margin-top: auto; padding-top: 12px; align-self: flex-start; }
+.plan-card .form-message { margin-top: 8px; }
 
 .partner-form-card { padding: 24px; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: start; margin-top: 18px; }
 .partner-form { display: flex; flex-direction: column; gap: 10px; }

@@ -741,6 +741,14 @@ app.get('/api/active-viewers', (req, res) => {
   res.json({ count: _activeSessions.size });
 });
 
+app.get('/api/live-count', (req, res) => {
+  const cutoff = Date.now() - _SESSION_TTL;
+  for (const [id, ts] of _activeSessions) {
+    if (ts < cutoff) _activeSessions.delete(id);
+  }
+  res.json({ count: _activeSessions.size });
+});
+
 app.get('/api/owner/stats', (req, res) => {
   if (!hasOwnerHeader(req)) return res.status(403).json({ error: 'Forbidden' });
   const cutoff = Date.now() - _SESSION_TTL;

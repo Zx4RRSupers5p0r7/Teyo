@@ -1909,3 +1909,50 @@ function initViewerBeacon() {
   setInterval(fetchStats, 15000);
 }
 initViewerBeacon();
+
+// ── Public live viewer pill (visible to everyone in the topbar) ───────────
+(function initPublicLiveCount() {
+  const topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+
+  const pill = document.createElement('div');
+  pill.id = 'publicLivePill';
+  pill.style.cssText = [
+    'display:inline-flex', 'align-items:center', 'gap:6px',
+    'margin-left:auto', 'padding:5px 12px',
+    'border:1px solid rgba(124,124,255,0.3)', 'border-radius:999px',
+    'font-size:0.75rem', 'font-weight:600', 'color:var(--muted)',
+    'letter-spacing:0.04em', 'user-select:none'
+  ].join(';');
+
+  const dot = document.createElement('span');
+  dot.style.cssText = 'width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:livePulse 1.8s ease-in-out infinite';
+  pill.appendChild(dot);
+
+  const label = document.createElement('span');
+  label.textContent = '— live';
+  pill.appendChild(label);
+
+  topbar.appendChild(pill);
+
+  // Inject pulse keyframes once
+  if (!document.getElementById('livePulseStyle')) {
+    const s = document.createElement('style');
+    s.id = 'livePulseStyle';
+    s.textContent = '@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.45;transform:scale(0.75)}}';
+    document.head.appendChild(s);
+  }
+
+  function update() {
+    fetch('/api/live-count')
+      .then((r) => r.json())
+      .then((d) => {
+        const n = typeof d.count === 'number' ? d.count : 0;
+        label.textContent = `${n} browsing now`;
+      })
+      .catch(() => {});
+  }
+
+  update();
+  setInterval(update, 30000);
+}());

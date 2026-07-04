@@ -52,7 +52,8 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'admin.html',
   'contact.html',
   'styles.css',
-  'script.js'
+  'script.js',
+  'favicon.svg'
 ]);
 
 let inMemoryData = null;

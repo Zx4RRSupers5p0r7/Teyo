@@ -1809,3 +1809,58 @@ initializeMarketplace();
 initializeCustomerTheme();
 syncOwnerOnlyVisibility();
 if (document.getElementById('mapLeaflet')) initMap();
+
+// ── Live viewer beacon (runs on every page) ───────────────────────
+function initViewerBeacon() {
+  // Stable per-tab session ID
+  let sid = sessionStorage.getItem('_teyoSid');
+  if (!sid) {
+    sid = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+      .map((b) => b.toString(16).padStart(2, '0')).join('');
+    sessionStorage.setItem('_teyoSid', sid);
+  }
+
+  function ping() {
+    fetch('/api/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ s: sid }),
+      keepalive: true
+    }).catch(() => {});
+  }
+
+  ping();
+  setInterval(ping, 15000);
+
+  // Owner-only live viewer badge
+  if (!hasOwnerSession()) return;
+
+  const badge = document.createElement('div');
+  badge.id = 'ownerViewerBadge';
+  badge.style.cssText = [
+    'position:fixed', 'bottom:22px', 'left:22px',
+    'background:rgba(8,8,16,0.92)', 'color:#7c7cff',
+    'border:1.5px solid #7c7cff', 'border-radius:22px',
+    'padding:5px 15px', 'font-size:0.76rem', 'font-weight:700',
+    'z-index:99999', 'backdrop-filter:blur(10px)',
+    'letter-spacing:0.05em', 'pointer-events:none',
+    'box-shadow:0 2px 12px rgba(124,124,255,0.25)'
+  ].join(';');
+  badge.textContent = '\u{1F441} \u2014 live';
+  document.body.appendChild(badge);
+
+  function fetchCount() {
+    fetch('/api/active-viewers', { headers: getAdminHeaders() })
+      .then((r) => r.json())
+      .then((d) => {
+        if (typeof d.count === 'number') {
+          badge.textContent = `\u{1F441} ${d.count} live`;
+        }
+      })
+      .catch(() => {});
+  }
+
+  fetchCount();
+  setInterval(fetchCount, 15000);
+}
+initViewerBeacon();

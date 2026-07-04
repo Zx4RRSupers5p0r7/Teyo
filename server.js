@@ -22,6 +22,10 @@ const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
 const adminApiKey = String(process.env.ADMIN_API_KEY || '').trim();
 const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
 const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
+
+// In-memory live viewer tracking (resets on server restart — intentional)
+const _activeSessions = new Map();
+const _SESSION_TTL = 35000; // 35 s — heartbeat fires every 15 s
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
@@ -702,6 +706,21 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
 });
 
 app.use(express.json({ limit: '2mb' }));
+
+app.post('/api/heartbeat', express.json({ limit: '512b' }), (req, res) => {
+  const raw = String(req.body?.s || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
+  if (raw.length >= 8) _activeSessions.set(raw, Date.now());
+  res.json({ ok: true });
+});
+
+app.get('/api/active-viewers', (req, res) => {
+  if (!hasOwnerHeader(req)) return res.status(403).json({ error: 'Forbidden' });
+  const cutoff = Date.now() - _SESSION_TTL;
+  for (const [id, ts] of _activeSessions) {
+    if (ts < cutoff) _activeSessions.delete(id);
+  }
+  res.json({ count: _activeSessions.size });
+});
 
 app.get('/api/health', (req, res) => {
   res.json({

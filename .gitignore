@@ -8,4 +8,5 @@ yarn-debug.log*
 yarn-error.log*
 coverage/
 startup.out.txt
+teyo-config.json
 startup.err.txt

@@ -280,6 +280,7 @@ async function verifyOwnerAccess() {
     requestAndStoreOwnerKey();
     adminAccessGranted = true;
     syncOwnerOnlyVisibility();
+    initViewerBeacon();
     if (ownerAccessMessage) {
       ownerAccessMessage.textContent = 'Owner access unlocked. You now have the full privileged role.';
     }
@@ -1048,7 +1049,7 @@ function renderResults() {
   resultsList.innerHTML = '';
 
   if (!items.length) {
-    resultsList.innerHTML = '<p>No approved brand listings are live yet. New company listings stay hidden until the $2,500 placement fee is approved and the product is reviewed.</p>';
+    resultsList.innerHTML = '<p>No approved brand listings are live yet. New company listings stay hidden until the $249 placement fee is approved and the product is reviewed.</p>';
     if (selectedProduct) {
       selectedProduct.innerHTML = '<p>Select a verified product to view pricing, store availability, and safety guidance.</p>';
     }
@@ -1812,7 +1813,8 @@ if (document.getElementById('mapLeaflet')) initMap();
 
 // ── Live viewer beacon (runs on every page) ───────────────────────
 function initViewerBeacon() {
-  // Stable per-tab session ID
+  if (document.getElementById('ownerViewerBadge')) return;
+
   let sid = sessionStorage.getItem('_teyoSid');
   if (!sid) {
     sid = Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -1832,35 +1834,78 @@ function initViewerBeacon() {
   ping();
   setInterval(ping, 15000);
 
-  // Owner-only live viewer badge
   if (!hasOwnerSession()) return;
 
+  // — Badge —
   const badge = document.createElement('div');
   badge.id = 'ownerViewerBadge';
+  badge.title = 'Click to open Teyo dashboard';
   badge.style.cssText = [
     'position:fixed', 'bottom:22px', 'left:22px',
     'background:rgba(8,8,16,0.92)', 'color:#7c7cff',
     'border:1.5px solid #7c7cff', 'border-radius:22px',
     'padding:5px 15px', 'font-size:0.76rem', 'font-weight:700',
     'z-index:99999', 'backdrop-filter:blur(10px)',
-    'letter-spacing:0.05em', 'pointer-events:none',
+    'letter-spacing:0.05em', 'cursor:pointer', 'user-select:none',
     'box-shadow:0 2px 12px rgba(124,124,255,0.25)'
   ].join(';');
   badge.textContent = '\u{1F441} \u2014 live';
   document.body.appendChild(badge);
 
-  function fetchCount() {
-    fetch('/api/active-viewers', { headers: getAdminHeaders() })
+  // — Stats panel —
+  const panel = document.createElement('div');
+  panel.id = 'ownerStatsPanel';
+  panel.style.cssText = [
+    'position:fixed', 'bottom:62px', 'left:22px',
+    'background:rgba(8,8,22,0.97)', 'color:#e8e8ff',
+    'border:1.5px solid #7c7cff', 'border-radius:16px',
+    'padding:16px 20px', 'font-size:0.82rem', 'line-height:1.8',
+    'z-index:99998', 'backdrop-filter:blur(12px)',
+    'box-shadow:0 4px 24px rgba(124,124,255,0.3)',
+    'min-width:250px', 'display:none'
+  ].join(';');
+  panel.innerHTML = '<p style="margin:0;opacity:0.5;font-size:0.72rem">Loading…</p>';
+  document.body.appendChild(panel);
+
+  let panelOpen = false;
+
+  function renderPanel(d) {
+    const raise = d.recommendedPriceCents > d.currentPriceCents;
+    panel.innerHTML =
+      `<div style="font-weight:800;font-size:0.9rem;margin-bottom:10px;color:#7c7cff">📊 Teyo Dashboard</div>`
+      + `<div>👁 Live viewers: <strong>${d.liveViewers}</strong></div>`
+      + `<div>📈 Total visitors: <strong>${(d.totalVisitors || 0).toLocaleString()}</strong></div>`
+      + `<hr style="border:0;border-top:1px solid rgba(124,124,255,0.25);margin:10px 0"/>`
+      + `<div>💰 Listing price: <strong>$${Math.round(d.currentPriceCents / 100)}</strong></div>`
+      + `<div style="font-size:0.78rem;color:#aaa;margin-top:2px">${escapeHtml(d.priceAdvice)}</div>`
+      + (raise
+        ? `<div style="margin-top:10px;padding:8px 10px;background:rgba(50,200,100,0.12);border:1px solid rgba(50,200,100,0.3);border-radius:10px;color:#32c864;font-size:0.78rem">`
+          + `💡 Suggested raise → <strong>${escapeHtml(d.recommendedPrice)}</strong></div>`
+        : '');
+  }
+
+  function fetchStats() {
+    fetch('/api/owner/stats', { headers: getAdminHeaders() })
       .then((r) => r.json())
       .then((d) => {
-        if (typeof d.count === 'number') {
-          badge.textContent = `\u{1F441} ${d.count} live`;
-        }
+        badge.textContent = `\u{1F441} ${d.liveViewers} live`;
+        if (panelOpen) renderPanel(d);
       })
       .catch(() => {});
   }
 
-  fetchCount();
-  setInterval(fetchCount, 15000);
+  badge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panelOpen = !panelOpen;
+    panel.style.display = panelOpen ? 'block' : 'none';
+    if (panelOpen) fetchStats();
+  });
+  document.addEventListener('click', () => {
+    if (panelOpen) { panelOpen = false; panel.style.display = 'none'; }
+  });
+  panel.addEventListener('click', (e) => e.stopPropagation());
+
+  fetchStats();
+  setInterval(fetchStats, 15000);
 }
 initViewerBeacon();

@@ -25,12 +25,21 @@ const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
 
 // In-memory live viewer tracking (resets on server restart — intentional)
 const _activeSessions = new Map();
+const _seenSessionIds  = new Set();
 const _SESSION_TTL = 35000; // 35 s — heartbeat fires every 15 s
+
+function getRecommendedPrice(total) {
+  if (total >= 10000) return { label: '$2,500', cents: 250000, advice: 'Over 10,000 visitors — original price is now fully justified.' };
+  if (total >= 5000)  return { label: '$1,999', cents: 199900, advice: 'Strong platform — raise to $1,999.' };
+  if (total >= 2000)  return { label: '$999',   cents: 99900,  advice: 'Proven traction — raise to $999.' };
+  if (total >= 500)   return { label: '$499',   cents: 49900,  advice: 'Growing traffic — consider raising to $499.' };
+  return { label: '$249', cents: 24900, advice: 'Building your audience — $249 is the right entry price right now.' };
+}
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
-  placement: { amount: 250000, description: 'Teyo premium product placement for $2,500 one-time access.' },
+  placement: { amount: 24900, description: 'Teyo premium product placement for $249 one-time access.' },
   monthlyAd: { amount: 12999, description: 'Teyo monthly sponsor ad placement for $129.99/month.' },
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
@@ -253,7 +262,8 @@ function ensureDataShape(parsed) {
     products: Array.isArray(parsed.products) ? parsed.products : [],
     webhookEvents: Array.isArray(parsed.webhookEvents) ? parsed.webhookEvents : [],
     customerEntitlements: Array.isArray(parsed.customerEntitlements) ? parsed.customerEntitlements : [],
-    customerSubscriptions: Array.isArray(parsed.customerSubscriptions) ? parsed.customerSubscriptions : []
+    customerSubscriptions: Array.isArray(parsed.customerSubscriptions) ? parsed.customerSubscriptions : [],
+    totalVisitors: Number.isInteger(parsed.totalVisitors) ? parsed.totalVisitors : 0
   };
 }
 
@@ -709,7 +719,16 @@ app.use(express.json({ limit: '2mb' }));
 
 app.post('/api/heartbeat', express.json({ limit: '512b' }), (req, res) => {
   const raw = String(req.body?.s || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
-  if (raw.length >= 8) _activeSessions.set(raw, Date.now());
+  if (raw.length >= 8) {
+    const isNew = !_activeSessions.has(raw) && !_seenSessionIds.has(raw);
+    _activeSessions.set(raw, Date.now());
+    if (isNew) {
+      _seenSessionIds.add(raw);
+      const d = loadData();
+      d.totalVisitors = (d.totalVisitors || 0) + 1;
+      saveData(d);
+    }
+  }
   res.json({ ok: true });
 });
 
@@ -720,6 +739,25 @@ app.get('/api/active-viewers', (req, res) => {
     if (ts < cutoff) _activeSessions.delete(id);
   }
   res.json({ count: _activeSessions.size });
+});
+
+app.get('/api/owner/stats', (req, res) => {
+  if (!hasOwnerHeader(req)) return res.status(403).json({ error: 'Forbidden' });
+  const cutoff = Date.now() - _SESSION_TTL;
+  for (const [id, ts] of _activeSessions) {
+    if (ts < cutoff) _activeSessions.delete(id);
+  }
+  const d = loadData();
+  const total = d.totalVisitors || 0;
+  const rec = getRecommendedPrice(total);
+  res.json({
+    liveViewers: _activeSessions.size,
+    totalVisitors: total,
+    currentPriceCents: PRICING.placement.amount,
+    recommendedPrice: rec.label,
+    recommendedPriceCents: rec.cents,
+    priceAdvice: rec.advice
+  });
 });
 
 app.get('/api/health', (req, res) => {
@@ -805,7 +843,7 @@ app.post('/api/partner', (req, res) => {
 
   res.json({
     success: true,
-    message: 'Thanks — your placement request has been received. Once your one-time $2,500 activation fee is confirmed, your company can add unlimited products to Teyo.ca.'
+    message: 'Thanks — your placement request has been received. Once your one-time $249 activation fee is confirmed, your company can add unlimited products to Teyo.ca.'
   });
 });
 
@@ -927,7 +965,7 @@ app.post('/api/products', (req, res) => {
   if (!ownerOverride && (!partnerMatch || !partnerMatch.paid || !partnerMatch.activeListing || !partnerMatch.paymentConfirmed)) {
     return res.status(403).json({
       success: false,
-      message: 'Your company must first complete the one-time $2,500 placement activation and receive approval before adding products. After that, you can add unlimited products.'
+      message: 'Your company must first complete the one-time $249 placement activation and receive approval before adding products. After that, you can add unlimited products.'
     });
   }
 

@@ -1256,10 +1256,10 @@ app.get('*', (req, res) => {
 
 async function startServer() {
   try {
-    await initializeStorage();
     app.listen(port, () => {
       console.log(`Teyo server running on http://localhost:${port} using ${storageMode} storage`);
     });
+    await initializeStorage();
   } catch (error) {
     console.error('Failed to initialize storage. Server aborted.', error.message);
     process.exit(1);

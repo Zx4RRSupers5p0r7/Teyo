@@ -6,7 +6,7 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
-    plan: free
+    plan: starter
     autoDeploy: true
     envVars:
       - key: APP_BASE_URL

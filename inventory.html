@@ -36,22 +36,42 @@
 
           <div class="partner-form-card owner-access-card">
             <div>
-              <h3>Owner access controls</h3>
-              <p>Unlock owner access to edit inventory for live products.</p>
+              <h3>Company inventory access</h3>
+              <p>Only approved company listings can unlock and edit their own product inventory.</p>
             </div>
             <div class="partner-form">
               <label>
-                Owner email
-                <input id="ownerEmailInput" type="email" placeholder="you@yourdomain.com" />
+                Company name
+                <input id="companyNameInput" type="text" placeholder="Your company name" />
               </label>
               <label>
-                Owner key
-                <input id="ownerKeyInput" type="password" placeholder="Owner access key" />
+                Owner email
+                <input id="companyOwnerEmailInput" type="email" placeholder="you@yourcompany.com" />
               </label>
-              <button id="ownerSetKeyBtn" class="btn btn-primary" type="button">Unlock owner access</button>
-              <button id="ownerClearKeyBtn" class="btn btn-secondary" type="button">Clear owner access</button>
-              <p id="ownerAccessMessage" class="form-message" aria-live="polite"></p>
+              <label>
+                Company access key
+                <input id="companyAccessKeyInput" type="password" placeholder="Company access key from listing approval" />
+              </label>
+              <button id="companySetAccessBtn" class="btn btn-primary" type="button">Unlock company access</button>
+              <button id="companyClearAccessBtn" class="btn btn-secondary" type="button">Clear company access</button>
+              <p id="companyAccessMessage" class="form-message" aria-live="polite"></p>
             </div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>My company products</h3>
+              <p>Quick totals for your submitted products and inventory pressure points.</p>
+            </div>
+            <div id="inventorySummaryPanel" class="ad-list"></div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Restock soon dashboard</h3>
+              <p>Upcoming restock targets in the next 14 days for out-of-stock or low-stock sizes.</p>
+            </div>
+            <div id="inventoryRestockList" class="ad-list"></div>
           </div>
 
           <div class="partner-form-card">
@@ -69,8 +89,8 @@
         <a href="index.html">Home</a>
         <a href="marketplace.html">Marketplace</a>
         <a href="partners.html">Partners</a>
-        <a href="admin.html" data-owner-only>Admin</a>
-        <a href="inventory.html" class="active" data-owner-only>Inventory</a>
+        <a href="admin.html">Admin</a>
+        <a href="inventory.html" class="active">Inventory</a>
         <a href="contact.html">Contact</a>
       </nav>
 

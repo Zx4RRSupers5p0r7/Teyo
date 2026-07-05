@@ -21,6 +21,8 @@ const activeAdsList = document.getElementById('activeAdsList');
 const adminAdsList = document.getElementById('adminAdsList');
 const adminPartnerList = document.getElementById('adminPartnerList');
 const inventoryProductList = document.getElementById('inventoryProductList');
+const inventorySummaryPanel = document.getElementById('inventorySummaryPanel');
+const inventoryRestockList = document.getElementById('inventoryRestockList');
 const inventoryStatusMessage = document.getElementById('inventoryStatusMessage');
 const adminSetKeyBtn = document.getElementById('adminSetKeyBtn');
 const adminClearKeyBtn = document.getElementById('adminClearKeyBtn');
@@ -30,6 +32,12 @@ const ownerKeyInput = document.getElementById('ownerKeyInput');
 const ownerSetKeyBtn = document.getElementById('ownerSetKeyBtn');
 const ownerClearKeyBtn = document.getElementById('ownerClearKeyBtn');
 const ownerAccessMessage = document.getElementById('ownerAccessMessage');
+const companyNameInput = document.getElementById('companyNameInput');
+const companyOwnerEmailInput = document.getElementById('companyOwnerEmailInput');
+const companyAccessKeyInput = document.getElementById('companyAccessKeyInput');
+const companySetAccessBtn = document.getElementById('companySetAccessBtn');
+const companyClearAccessBtn = document.getElementById('companyClearAccessBtn');
+const companyAccessMessage = document.getElementById('companyAccessMessage');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -61,6 +69,9 @@ const customerThemeStorageKey = 'teyoCustomerThemeV1';
 const customerThemeUnlockedKey = 'teyoCustomerThemeUnlockedV1';
 const ownerEmailStorageKey = 'teyoOwnerEmailV1';
 const ownerKeyStorageKey = 'teyoOwnerKeyV1';
+const companyNameStorageKey = 'teyoCompanyNameV1';
+const companyEmailStorageKey = 'teyoCompanyEmailV1';
+const companyKeyStorageKey = 'teyoCompanyKeyV1';
 const stockReminderStorageKey = 'teyoStockRemindersV1';
 const customerStyleClasses = [
   'theme-style-midnight',
@@ -150,7 +161,7 @@ let adminAccessGranted = false;
 let marketplaceLoadError = '';
 
 function isAdminPage() {
-  return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList') || inventoryProductList);
+  return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList'));
 }
 
 function getAdminKey() {
@@ -169,6 +180,22 @@ function hasOwnerSession() {
   return Boolean(getOwnerEmail() && getOwnerKey());
 }
 
+function getCompanySessionName() {
+  return sessionStorage.getItem(companyNameStorageKey) || '';
+}
+
+function getCompanySessionEmail() {
+  return sessionStorage.getItem(companyEmailStorageKey) || '';
+}
+
+function getCompanySessionKey() {
+  return sessionStorage.getItem(companyKeyStorageKey) || '';
+}
+
+function hasCompanySession() {
+  return Boolean(getCompanySessionName() && getCompanySessionEmail() && getCompanySessionKey());
+}
+
 function getAdminHeaders() {
   if (hasOwnerSession()) {
     return {
@@ -183,6 +210,18 @@ function getAdminHeaders() {
 function getOwnerHeaders() {
   if (!hasOwnerSession()) {
     return {};
+  }
+
+  function getCompanyHeaders() {
+    if (!hasCompanySession()) {
+      return {};
+    }
+
+    return {
+      'x-company-name': getCompanySessionName(),
+      'x-company-email': getCompanySessionEmail(),
+      'x-company-key': getCompanySessionKey()
+    };
   }
 
   return {
@@ -212,6 +251,12 @@ function requestAndStoreOwnerKey() {
 function clearOwnerAccess() {
   sessionStorage.removeItem(ownerEmailStorageKey);
   sessionStorage.removeItem(ownerKeyStorageKey);
+}
+
+function clearCompanyAccess() {
+  sessionStorage.removeItem(companyNameStorageKey);
+  sessionStorage.removeItem(companyEmailStorageKey);
+  sessionStorage.removeItem(companyKeyStorageKey);
 }
 
 function syncOwnerOnlyVisibility() {
@@ -295,6 +340,47 @@ async function verifyOwnerAccess() {
   } catch (error) {
     if (ownerAccessMessage) {
       ownerAccessMessage.textContent = 'Unable to verify owner access right now.';
+    }
+    return false;
+  }
+}
+
+async function verifyCompanyAccess() {
+  const companyName = String(companyNameInput?.value || '').trim();
+  const ownerEmail = String(companyOwnerEmailInput?.value || '').trim();
+  const companyKey = String(companyAccessKeyInput?.value || '').trim();
+  if (!companyName || !ownerEmail || !companyKey) {
+    if (companyAccessMessage) {
+      companyAccessMessage.textContent = 'Enter your company name, owner email, and company access key.';
+    }
+    return false;
+  }
+
+  try {
+    const response = await fetch('/api/company/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ companyName, ownerEmail, companyKey })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      clearCompanyAccess();
+      if (companyAccessMessage) {
+        companyAccessMessage.textContent = result.message || 'Company access was rejected.';
+      }
+      return false;
+    }
+
+    sessionStorage.setItem(companyNameStorageKey, companyName);
+    sessionStorage.setItem(companyEmailStorageKey, ownerEmail);
+    sessionStorage.setItem(companyKeyStorageKey, companyKey);
+    if (companyAccessMessage) {
+      companyAccessMessage.textContent = `Company access unlocked for ${companyName}.`;
+    }
+    return true;
+  } catch (error) {
+    if (companyAccessMessage) {
+      companyAccessMessage.textContent = 'Unable to verify company access right now.';
     }
     return false;
   }
@@ -1917,12 +2003,148 @@ function setInventoryStatusMessage(text) {
   }
 }
 
+function setInventorySummaryMessage(text) {
+  if (inventorySummaryPanel) {
+    inventorySummaryPanel.innerHTML = `<p>${escapeHtml(text)}</p>`;
+  }
+}
+
+function setInventoryRestockMessage(text) {
+  if (inventoryRestockList) {
+    inventoryRestockList.innerHTML = `<p>${escapeHtml(text)}</p>`;
+  }
+}
+
+function getInventoryScopedProducts() {
+  const hasGlobalOwner = hasOwnerSession();
+  const companySessionName = normalize(String(getCompanySessionName() || ''));
+  const companySessionEmail = normalize(String(getCompanySessionEmail() || ''));
+
+  if (!hasGlobalOwner && !hasCompanySession()) {
+    return { products: [], accessMessage: 'Company access is required to edit inventory.' };
+  }
+
+  if (!hasGlobalOwner && (!companySessionName || !companySessionEmail)) {
+    return { products: [], accessMessage: 'Company access is required to edit inventory.' };
+  }
+
+  const scopedProducts = marketplaceState.products
+    .filter((product) => hasGlobalOwner || (
+      normalize(product.companyName || product.company || '') === companySessionName
+      && normalize(product.ownerEmail || '') === companySessionEmail
+    ))
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+
+  return { products: scopedProducts, accessMessage: '' };
+}
+
+function renderInventorySummary(products) {
+  if (!inventorySummaryPanel) {
+    return;
+  }
+
+  if (!Array.isArray(products) || !products.length) {
+    inventorySummaryPanel.innerHTML = '<p>No products are available for summary metrics yet.</p>';
+    return;
+  }
+
+  const totalProducts = products.length;
+  const liveProducts = products.filter((product) => Boolean(product.approved && product.visible)).length;
+  const pendingProducts = totalProducts - liveProducts;
+  const sizeInventoryEntries = products.reduce((sum, product) => sum + getProductSizeInventory(product).length, 0);
+  const lowOrOutEntries = products.reduce((sum, product) => (
+    sum + getProductSizeInventory(product).filter((entry) => !isInStockStatus(entry.stockStatus)).length
+  ), 0);
+
+  inventorySummaryPanel.innerHTML = `
+    <div class="inventory-summary-grid">
+      <article class="inventory-stat-card">
+        <strong>${totalProducts}</strong>
+        <span>Total products</span>
+      </article>
+      <article class="inventory-stat-card">
+        <strong>${liveProducts}</strong>
+        <span>Live products</span>
+      </article>
+      <article class="inventory-stat-card">
+        <strong>${pendingProducts}</strong>
+        <span>Pending approval</span>
+      </article>
+      <article class="inventory-stat-card">
+        <strong>${sizeInventoryEntries}</strong>
+        <span>Size inventory lines</span>
+      </article>
+      <article class="inventory-stat-card">
+        <strong>${lowOrOutEntries}</strong>
+        <span>Low / out-of-stock lines</span>
+      </article>
+    </div>
+  `;
+}
+
+function renderRestockSoonDashboard(products) {
+  if (!inventoryRestockList) {
+    return;
+  }
+
+  if (!Array.isArray(products) || !products.length) {
+    inventoryRestockList.innerHTML = '<p>No restock targets available yet.</p>';
+    return;
+  }
+
+  const now = Date.now();
+  const maxWindow = now + (14 * 24 * 60 * 60 * 1000);
+  const rows = [];
+
+  products.forEach((product) => {
+    const productName = String(product.productName || product.name || '').trim();
+    const companyName = String(product.companyName || product.company || '').trim();
+    getProductSizeInventory(product).forEach((entry) => {
+      const restockTimestamp = toMidnightTimestamp(entry.restockDate);
+      if (!restockTimestamp || restockTimestamp < now || restockTimestamp > maxWindow) {
+        return;
+      }
+      if (isInStockStatus(entry.stockStatus)) {
+        return;
+      }
+
+      rows.push({
+        productName,
+        companyName,
+        storeName: entry.storeName,
+        size: entry.size,
+        stockStatus: entry.stockStatus,
+        restockDate: entry.restockDate,
+        timestamp: restockTimestamp
+      });
+    });
+  });
+
+  rows.sort((left, right) => left.timestamp - right.timestamp);
+
+  if (!rows.length) {
+    inventoryRestockList.innerHTML = '<p>No low/out-of-stock size lines are scheduled to restock in the next 14 days.</p>';
+    return;
+  }
+
+  inventoryRestockList.innerHTML = rows.slice(0, 30).map((row) => `
+    <article class="inventory-restock-card">
+      <h4>${escapeHtml(row.productName)}</h4>
+      <p><strong>Company:</strong> ${escapeHtml(row.companyName)}</p>
+      <p><strong>Store:</strong> ${escapeHtml(row.storeName)} • <strong>Size:</strong> ${escapeHtml(row.size)}</p>
+      <p><strong>Status:</strong> ${escapeHtml(row.stockStatus || 'Check availability')}</p>
+      <p><strong>Restock date:</strong> ${escapeHtml(formatDateLabel(row.restockDate) || row.restockDate)}</p>
+    </article>
+  `).join('');
+}
+
 async function saveProductInventory(productId, payload) {
+  const authHeaders = hasOwnerSession() ? getOwnerHeaders() : getCompanyHeaders();
   const response = await fetch(`/api/products/${productId}/inventory`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...getOwnerHeaders()
+      ...authHeaders
     },
     body: JSON.stringify(payload)
   });
@@ -1939,22 +2161,27 @@ function renderInventoryManager() {
   }
 
   inventoryProductList.innerHTML = '';
+  setInventorySummaryMessage('Loading your company summary...');
+  setInventoryRestockMessage('Loading restock dashboard...');
   if (marketplaceLoadError) {
     inventoryProductList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(marketplaceLoadError)}</p>`);
+    setInventorySummaryMessage(marketplaceLoadError);
+    setInventoryRestockMessage(marketplaceLoadError);
     return;
   }
 
-  if (!hasOwnerSession()) {
-    inventoryProductList.insertAdjacentHTML('beforeend', '<p>Owner access is required to edit inventory.</p>');
+  const { products, accessMessage } = getInventoryScopedProducts();
+  if (accessMessage) {
+    inventoryProductList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(accessMessage)}</p>`);
+    setInventorySummaryMessage(accessMessage);
+    setInventoryRestockMessage(accessMessage);
     return;
   }
-
-  const products = marketplaceState.products
-    .filter((product) => Boolean(product.approved && product.visible))
-    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+  renderInventorySummary(products);
+  renderRestockSoonDashboard(products);
 
   if (!products.length) {
-    inventoryProductList.innerHTML = '<p>No live products available for inventory updates yet.</p>';
+    inventoryProductList.innerHTML = '<p>No products are available for inventory updates yet.</p>';
     return;
   }
 
@@ -1969,6 +2196,7 @@ function renderInventoryManager() {
     card.innerHTML = `
       <h4>${safeProductName}</h4>
       <p><strong>Company:</strong> ${safeCompanyName}</p>
+      <p><strong>Listing status:</strong> ${product.approved && product.visible ? 'Live' : 'Pending approval'}</p>
       <label>General stock status
         <input type="text" data-inventory-field="stockStatus" value="${escapeHtml(product.stockStatus || '')}" />
       </label>
@@ -2102,7 +2330,8 @@ async function checkStockReminders() {
 
 async function loadMarketplaceData() {
   try {
-    const sharedHeaders = hasOwnerSession() ? getAdminHeaders() : {};
+    const useCompanyScope = Boolean(inventoryProductList && hasCompanySession() && !hasOwnerSession());
+    const sharedHeaders = hasOwnerSession() ? getAdminHeaders() : (useCompanyScope ? getCompanyHeaders() : {});
     const [partnersResponse, adsResponse, productsResponse] = await Promise.all([
       fetch('/api/partners', { headers: sharedHeaders }),
       fetch('/api/ads', { headers: sharedHeaders }),
@@ -2222,7 +2451,10 @@ if (partnerForm) {
       });
 
       const result = await response.json();
-      formMessage.textContent = result.message || 'Thanks — your request was submitted.';
+      const accessKeyNotice = result.companyAccessKey
+        ? ` Save this company access key: ${result.companyAccessKey}`
+        : '';
+      formMessage.textContent = `${result.message || 'Thanks — your request was submitted.'}${accessKeyNotice}`;
       if (result.success) {
         partnerForm.reset();
         await loadMarketplaceData();
@@ -2444,6 +2676,25 @@ if (ownerSetKeyBtn) {
   });
 }
 
+if (companySetAccessBtn) {
+  companySetAccessBtn.addEventListener('click', async () => {
+    const verified = await verifyCompanyAccess();
+    if (verified) {
+      await initializeMarketplace();
+    }
+  });
+}
+
+if (companyClearAccessBtn) {
+  companyClearAccessBtn.addEventListener('click', async () => {
+    clearCompanyAccess();
+    if (companyAccessMessage) {
+      companyAccessMessage.textContent = 'Company access cleared for this browser.';
+    }
+    await initializeMarketplace();
+  });
+}
+
 if (ownerClearKeyBtn) {
   ownerClearKeyBtn.addEventListener('click', async () => {
     clearOwnerAccess();
@@ -2569,6 +2820,18 @@ async function initializeMarketplace() {
 initializeMarketplace();
 initializeCustomerTheme();
 syncOwnerOnlyVisibility();
+if (companyNameInput) {
+  companyNameInput.value = getCompanySessionName();
+}
+if (companyOwnerEmailInput) {
+  companyOwnerEmailInput.value = getCompanySessionEmail();
+}
+if (companyAccessKeyInput) {
+  companyAccessKeyInput.value = getCompanySessionKey();
+}
+if (companyAccessMessage && hasCompanySession()) {
+  companyAccessMessage.textContent = `Company access loaded for ${getCompanySessionName()}.`;
+}
 if (document.getElementById('mapLeaflet')) initMap();
 if (document.getElementById('mapLeaflet')) {
   setInterval(() => {

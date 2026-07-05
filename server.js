@@ -301,6 +301,58 @@ function hasOwnerHeader(req) {
   return hasOwnerKeyAccess(providedEmail, providedKey);
 }
 
+function generateCompanyAccessKey() {
+  return crypto.randomBytes(16).toString('hex').slice(0, 24);
+}
+
+function findLatestPartner(data, companyName, ownerEmail = '') {
+  const normalizedCompany = normalizeName(companyName);
+  const normalizedOwner = normalizeName(ownerEmail);
+  const matches = data.partners
+    .filter((entry) => normalizeName(entry.companyName) === normalizedCompany)
+    .filter((entry) => !normalizedOwner || normalizeName(entry.ownerEmail) === normalizedOwner)
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+
+  return matches[0] || null;
+}
+
+function hasCompanyKeyAccess(companyName, ownerEmail, companyKey, options = {}) {
+  const data = loadData();
+  const partner = findLatestPartner(data, companyName, ownerEmail);
+  if (!partner) {
+    return false;
+  }
+
+  const storedKey = String(partner.companyAccessKey || '').trim();
+  if (!storedKey || !secureEquals(String(companyKey || '').trim(), storedKey)) {
+    return false;
+  }
+
+  if (options.requireActiveListing && (!partner.paid || !partner.activeListing || !partner.paymentConfirmed)) {
+    return false;
+  }
+
+  return true;
+}
+
+function getCompanyHeaderAuth(req, options = {}) {
+  const companyName = sanitizePlainText(req.headers['x-company-name'], 120);
+  const ownerEmail = sanitizeEmail(req.headers['x-company-email']);
+  const companyKey = sanitizePlainText(req.headers['x-company-key'], 80);
+  if (!companyName || !ownerEmail || !companyKey) {
+    return null;
+  }
+
+  if (!hasCompanyKeyAccess(companyName, ownerEmail, companyKey, options)) {
+    return null;
+  }
+
+  return {
+    companyName,
+    ownerEmail
+  };
+}
+
 function hasPrivilegedAccess(req) {
   return hasValidAdminHeader(req) || hasOwnerHeader(req);
 }
@@ -550,6 +602,9 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     if (safeOwnerEmail) {
       existing.ownerEmail = safeOwnerEmail;
     }
+    if (!existing.companyAccessKey) {
+      existing.companyAccessKey = generateCompanyAccessKey();
+    }
     saveData(data);
     return existing;
   }
@@ -563,6 +618,7 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     paymentConfirmed: false,
     paid: false,
     activeListing: false,
+    companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
 
@@ -574,10 +630,12 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
 function markPartnerPaid(companyName, ownerEmail = '') {
   const data = loadData();
   const safeCompanyName = sanitizePlainText(companyName, 120);
-  let partner = data.partners.find((entry) => normalizeName(entry.companyName) === normalizeName(safeCompanyName));
+  const safeOwnerEmail = sanitizeEmail(ownerEmail);
+  let partner = findLatestPartner(data, safeCompanyName, safeOwnerEmail)
+    || findLatestPartner(data, safeCompanyName);
 
   if (!partner) {
-    const created = ensurePartnerRecord(safeCompanyName, ownerEmail);
+    const created = ensurePartnerRecord(safeCompanyName, safeOwnerEmail);
     if (!created) {
       return null;
     }
@@ -898,6 +956,36 @@ app.post('/api/owner/verify', adminLimiter, (req, res) => {
   res.json({ success: true, owner: true });
 });
 
+app.post('/api/company/verify', adminLimiter, (req, res) => {
+  const companyName = sanitizePlainText(req.body.companyName, 120);
+  const providedEmail = sanitizeEmail(req.body.ownerEmail);
+  const companyKey = sanitizePlainText(req.body.companyKey, 80);
+
+  if (!companyName || !providedEmail || !companyKey) {
+    return res.status(400).json({ success: false, message: 'Enter company name, owner email, and company access key.' });
+  }
+
+  const data = loadData();
+  const partner = findLatestPartner(data, companyName, providedEmail);
+  if (!partner) {
+    return res.status(404).json({ success: false, message: 'No matching company listing was found for that company and email.' });
+  }
+
+  if (!partner.companyAccessKey) {
+    return res.status(403).json({ success: false, message: 'Company access is not configured yet for this listing. Contact platform support.' });
+  }
+
+  if (!secureEquals(companyKey, partner.companyAccessKey)) {
+    return res.status(401).json({ success: false, message: 'Invalid company access key.' });
+  }
+
+  if (!partner.paid || !partner.activeListing || !partner.paymentConfirmed) {
+    return res.status(403).json({ success: false, message: 'Your company listing must be approved and paid before inventory access is enabled.' });
+  }
+
+  return res.json({ success: true, company: true });
+});
+
 app.post('/api/partner', (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
@@ -924,6 +1012,7 @@ app.post('/api/partner', (req, res) => {
     paymentConfirmed: paymentConfirmed === true || paymentConfirmed === 'true',
     paid: false,
     activeListing: false,
+    companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
 
@@ -938,7 +1027,8 @@ app.post('/api/partner', (req, res) => {
 
   res.json({
     success: true,
-    message: 'Thanks — your placement request has been received. Once your one-time $249 activation fee is confirmed, your company can add unlimited products to Teyo.ca.'
+    message: 'Thanks — your placement request has been received. Once your one-time $249 activation fee is confirmed, your company can add unlimited products to Teyo.ca.',
+    companyAccessKey: entry.companyAccessKey
   });
 });
 
@@ -1049,7 +1139,7 @@ app.post('/api/products', (req, res) => {
   }
 
   const data = loadData();
-  const partnerMatch = data.partners.find((partner) => normalizeName(partner.companyName) === normalizeName(companyName));
+  const partnerMatch = findLatestPartner(data, companyName, ownerEmail);
   const ownerOverride = hasOwnerKeyAccess(ownerEmail, ownerKey);
 
   if (ownerOverride) {
@@ -1105,6 +1195,14 @@ app.get('/api/products', (req, res) => {
   if (hasOwnerHeader(req)) {
     return res.json(data.products);
   }
+  const companyAuth = getCompanyHeaderAuth(req, { requireActiveListing: true });
+  if (companyAuth) {
+    const scoped = data.products.filter((entry) =>
+      normalizeName(entry.companyName) === normalizeName(companyAuth.companyName)
+      && normalizeName(entry.ownerEmail) === normalizeName(companyAuth.ownerEmail)
+    );
+    return res.json(scoped);
+  }
   res.json(data.products.map(serializePublicProduct));
 });
 
@@ -1124,7 +1222,9 @@ app.post('/api/products/:id/approve', requireAdmin, (req, res) => {
 });
 
 app.post('/api/products/:id/inventory', (req, res) => {
-  if (!hasPrivilegedAccess(req)) {
+  const hasPrivileged = hasPrivilegedAccess(req);
+  const companyAuth = getCompanyHeaderAuth(req, { requireActiveListing: true });
+  if (!hasPrivileged && !companyAuth) {
     return res.status(401).json({ success: false, message: 'Unauthorized inventory update request.' });
   }
 
@@ -1133,6 +1233,14 @@ app.post('/api/products/:id/inventory', (req, res) => {
 
   if (!product) {
     return res.status(404).json({ success: false, message: 'Product not found.' });
+  }
+
+  if (!hasPrivileged && companyAuth) {
+    const sameCompany = normalizeName(product.companyName) === normalizeName(companyAuth.companyName);
+    const sameOwner = normalizeName(product.ownerEmail) === normalizeName(companyAuth.ownerEmail);
+    if (!sameCompany || !sameOwner) {
+      return res.status(403).json({ success: false, message: 'You can only edit inventory for your own company products.' });
+    }
   }
 
   const stockStatus = sanitizePlainText(req.body.stockStatus, 120);

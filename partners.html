@@ -82,7 +82,7 @@
           <div class="partner-form-card">
             <div>
               <h3>Submit a product for review</h3>
-              <p>Only approved companies can submit products. Each listing is reviewed before it can appear publicly, and product images and safety notes are shown to shoppers.</p>
+              <p>Only approved companies can submit products. Each listing is reviewed before it can appear publicly, and product images and safety notes are shown to shoppers. Brand stores are auto-discovered on the map, and you can still provide manual store overrides.</p>
             </div>
             <form id="productForm" class="partner-form">
               <input name="productName" type="text" placeholder="Product name" required />
@@ -91,7 +91,8 @@
               <input name="price" type="text" placeholder="Price" required />
               <input name="websiteUrl" type="text" placeholder="Company or product URL" required />
               <input name="imageUrl" type="text" placeholder="Product image URL" />
-              <input name="stockStatus" type="text" placeholder="Stock status" />
+              <input name="sizeOptions" type="text" placeholder="Sizes sold (for example: XS, S, M, L, XL or 8, 9, 10)" />
+              <input name="stockStatus" type="text" placeholder="Stock status (for example: in stock, low stock, out of stock)" />
               <input name="rating" type="text" placeholder="Average rating (for example 4.8/5)" />
               <input name="reviewCount" type="text" placeholder="Review count (for example 184 reviews)" />
               <input name="verificationStatus" type="text" placeholder="Verification label (for example Verified seller)" />
@@ -102,7 +103,8 @@
               <textarea name="description" rows="4" placeholder="Describe the product and any key features"></textarea>
               <textarea name="safetyNote" rows="3" placeholder="Add safety guidance or compliance note"></textarea>
               <textarea name="trustSummary" rows="3" placeholder="Share your seller promise, shipping policy, or return confidence"></textarea>
-              <textarea name="stores" rows="2" placeholder="Nearby store names, separated by commas"></textarea>
+              <textarea name="stores" rows="2" placeholder="Optional manual store overrides: Store Name|Stock, Store Name|Stock"></textarea>
+              <textarea name="sizeInventory" rows="4" placeholder="Per-size store inventory (one per line): Store Name|Size|Stock Status|YYYY-MM-DD"></textarea>
               <button class="btn btn-primary" type="submit">Submit product</button>
               <p id="productFormMessage" class="form-message" aria-live="polite"></p>
             </form>
@@ -146,6 +148,7 @@
         <a href="marketplace.html">Marketplace</a>
         <a href="partners.html" class="active">Partners</a>
         <a href="admin.html" data-owner-only>Admin</a>
+        <a href="inventory.html" data-owner-only>Inventory</a>
         <a href="contact.html">Contact</a>
       </nav>
 

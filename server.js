@@ -50,6 +50,7 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'marketplace.html',
   'partners.html',
   'admin.html',
+  'inventory.html',
   'contact.html',
   'styles.css',
   'script.js',
@@ -73,7 +74,7 @@ app.use(helmet({
       styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com'],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'https:', 'data:'],
-      connectSrc: ["'self'", 'https://api.stripe.com', 'https://nominatim.openstreetmap.org'],
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://nominatim.openstreetmap.org', 'https://overpass-api.de'],
       frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -141,6 +142,89 @@ function sanitizePlainText(value, maxLength = 4000) {
 function sanitizeEmail(value) {
   const email = sanitizePlainText(value, 180).toLowerCase();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
+}
+
+function isIsoDate(value) {
+  const raw = String(value || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return false;
+  }
+
+  const parsed = new Date(`${raw}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime());
+}
+
+function sanitizeSizeToken(value) {
+  return sanitizePlainText(value, 24).toUpperCase();
+}
+
+function sanitizeSizeOptions(value) {
+  const tokens = Array.isArray(value)
+    ? value
+    : String(value || '').split(',');
+  const seen = new Set();
+  const result = [];
+
+  tokens.forEach((token) => {
+    const safe = sanitizeSizeToken(token);
+    if (!safe || seen.has(safe)) {
+      return;
+    }
+    seen.add(safe);
+    result.push(safe);
+  });
+
+  return result.slice(0, 40);
+}
+
+function sanitizeSizeInventory(value, fallbackStockStatus = '') {
+  const lines = Array.isArray(value)
+    ? value.map((entry) => JSON.stringify(entry))
+    : String(value || '').split(/\r?\n/);
+  const entries = [];
+
+  lines.forEach((line) => {
+    const raw = String(line || '').trim();
+    if (!raw) {
+      return;
+    }
+
+    let storeName = '';
+    let size = '';
+    let status = '';
+    let restockDate = '';
+
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      try {
+        const parsed = JSON.parse(raw);
+        storeName = sanitizePlainText(parsed.storeName, 140);
+        size = sanitizeSizeToken(parsed.size);
+        status = sanitizePlainText(parsed.stockStatus || parsed.status, 80);
+        restockDate = sanitizePlainText(parsed.restockDate, 20);
+      } catch (error) {
+        return;
+      }
+    } else {
+      const [storePart, sizePart, statusPart, datePart] = raw.split('|');
+      storeName = sanitizePlainText(storePart, 140);
+      size = sanitizeSizeToken(sizePart);
+      status = sanitizePlainText(statusPart, 80);
+      restockDate = sanitizePlainText(datePart, 20);
+    }
+
+    if (!storeName || !size) {
+      return;
+    }
+
+    entries.push({
+      storeName,
+      size,
+      stockStatus: status || fallbackStockStatus || 'Check availability',
+      restockDate: isIsoDate(restockDate) ? restockDate : ''
+    });
+  });
+
+  return entries.slice(0, 500);
 }
 
 function isSafeHttpUrl(value) {
@@ -443,6 +527,8 @@ function serializePublicProduct(entry) {
     stockStatus: entry.stockStatus,
     safetyNote: entry.safetyNote,
     stores: Array.isArray(entry.stores) ? entry.stores : [],
+    sizeOptions: Array.isArray(entry.sizeOptions) ? entry.sizeOptions : [],
+    sizeInventory: Array.isArray(entry.sizeInventory) ? entry.sizeInventory : [],
     rating: entry.rating || '',
     reviewCount: entry.reviewCount || '',
     verifiedSeller: Boolean(entry.verifiedSeller),
@@ -948,6 +1034,8 @@ app.post('/api/products', (req, res) => {
   const stockStatus = sanitizePlainText(req.body.stockStatus, 120);
   const safetyNote = sanitizePlainText(req.body.safetyNote, 500);
   const stores = Array.isArray(req.body.stores) ? req.body.stores : String(req.body.stores || '').split(',').map((value) => value.trim()).filter(Boolean);
+  const sizeOptions = sanitizeSizeOptions(req.body.sizeOptions);
+  const sizeInventory = sanitizeSizeInventory(req.body.sizeInventory, stockStatus);
   const rating = sanitizePlainText(req.body.rating, 40);
   const reviewCount = sanitizePlainText(req.body.reviewCount, 40);
   const verifiedSeller = req.body.verifiedSeller;
@@ -982,6 +1070,7 @@ app.post('/api/products', (req, res) => {
     id: Date.now(),
     productName,
     companyName,
+    ownerEmail,
     category: category || 'general',
     price,
     websiteUrl: normalizedWebsiteUrl,
@@ -990,6 +1079,8 @@ app.post('/api/products', (req, res) => {
     stockStatus: stockStatus || 'Pending verification',
     safetyNote: safetyNote || '',
     stores: stores.map((value) => sanitizePlainText(value, 120)).slice(0, 20),
+    sizeOptions: sizeOptions.length > 0 ? sizeOptions : Array.from(new Set(sizeInventory.map((record) => sanitizeSizeToken(record.size)).filter(Boolean))).slice(0, 40),
+    sizeInventory,
     rating: rating || '',
     reviewCount: reviewCount || '',
     verifiedSeller: verifiedSeller === true || verifiedSeller === 'true',
@@ -1027,6 +1118,37 @@ app.post('/api/products/:id/approve', requireAdmin, (req, res) => {
 
   product.approved = true;
   product.visible = true;
+  saveData(data);
+
+  res.json({ success: true, product });
+});
+
+app.post('/api/products/:id/inventory', (req, res) => {
+  if (!hasPrivilegedAccess(req)) {
+    return res.status(401).json({ success: false, message: 'Unauthorized inventory update request.' });
+  }
+
+  const data = loadData();
+  const product = data.products.find((entry) => String(entry.id) === String(req.params.id));
+
+  if (!product) {
+    return res.status(404).json({ success: false, message: 'Product not found.' });
+  }
+
+  const stockStatus = sanitizePlainText(req.body.stockStatus, 120);
+  const stores = Array.isArray(req.body.stores)
+    ? req.body.stores
+    : String(req.body.stores || '').split(',').map((value) => value.trim()).filter(Boolean);
+  const sizeOptions = sanitizeSizeOptions(req.body.sizeOptions);
+  const sizeInventory = sanitizeSizeInventory(req.body.sizeInventory, stockStatus || product.stockStatus || '');
+
+  product.stockStatus = stockStatus || product.stockStatus || 'Pending verification';
+  product.stores = stores.map((value) => sanitizePlainText(value, 120)).filter(Boolean).slice(0, 20);
+  product.sizeOptions = sizeOptions.length > 0
+    ? sizeOptions
+    : Array.from(new Set(sizeInventory.map((record) => sanitizeSizeToken(record.size)).filter(Boolean))).slice(0, 40);
+  product.sizeInventory = sizeInventory;
+  product.updatedAt = new Date().toISOString();
   saveData(data);
 
   res.json({ success: true, product });

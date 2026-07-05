@@ -2,6 +2,9 @@ const products = [];
 
 const searchInput = document.getElementById('searchInput');
 const categorySelect = document.getElementById('categorySelect');
+const sizeFilterSelect = document.getElementById('sizeFilterSelect');
+const sizeInStockOnly = document.getElementById('sizeInStockOnly');
+const stockReminderMessage = document.getElementById('stockReminderMessage');
 const resultsList = document.getElementById('resultsList');
 const selectedProduct = document.getElementById('selectedProduct');
 const storeList = document.getElementById('storeList');
@@ -17,6 +20,8 @@ const checkoutMessage = document.getElementById('checkoutMessage');
 const activeAdsList = document.getElementById('activeAdsList');
 const adminAdsList = document.getElementById('adminAdsList');
 const adminPartnerList = document.getElementById('adminPartnerList');
+const inventoryProductList = document.getElementById('inventoryProductList');
+const inventoryStatusMessage = document.getElementById('inventoryStatusMessage');
 const adminSetKeyBtn = document.getElementById('adminSetKeyBtn');
 const adminClearKeyBtn = document.getElementById('adminClearKeyBtn');
 const adminAccessMessage = document.getElementById('adminAccessMessage');
@@ -56,6 +61,7 @@ const customerThemeStorageKey = 'teyoCustomerThemeV1';
 const customerThemeUnlockedKey = 'teyoCustomerThemeUnlockedV1';
 const ownerEmailStorageKey = 'teyoOwnerEmailV1';
 const ownerKeyStorageKey = 'teyoOwnerKeyV1';
+const stockReminderStorageKey = 'teyoStockRemindersV1';
 const customerStyleClasses = [
   'theme-style-midnight',
   'theme-style-graphite',
@@ -144,7 +150,7 @@ let adminAccessGranted = false;
 let marketplaceLoadError = '';
 
 function isAdminPage() {
-  return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList'));
+  return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList') || inventoryProductList);
 }
 
 function getAdminKey() {
@@ -307,6 +313,93 @@ function normalize(text) {
   return String(text || '').trim().toLowerCase();
 }
 
+function normalizeSizeValue(value) {
+  return String(value || '').trim().toUpperCase();
+}
+
+function getSelectedSizeFilter() {
+  return sizeFilterSelect ? normalizeSizeValue(sizeFilterSelect.value) : 'ALL';
+}
+
+function isInStockStatus(status) {
+  const raw = normalize(status);
+  return (raw.includes('in') || raw.includes('available')) && !raw.includes('out');
+}
+
+function toMidnightTimestamp(isoDate) {
+  const raw = String(isoDate || '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    return 0;
+  }
+  const parsed = new Date(`${raw}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+}
+
+function formatDateLabel(isoDate) {
+  const timestamp = toMidnightTimestamp(isoDate);
+  if (!timestamp) {
+    return '';
+  }
+  return new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function getProductSizeInventory(product) {
+  if (!Array.isArray(product?.sizeInventory)) {
+    return [];
+  }
+
+  return product.sizeInventory
+    .map((entry) => {
+      const storeName = String(entry?.storeName || entry?.store || '').trim();
+      const size = normalizeSizeValue(entry?.size);
+      const stockStatus = String(entry?.stockStatus || entry?.status || '').trim();
+      const restockDate = String(entry?.restockDate || '').trim();
+      if (!storeName || !size) {
+        return null;
+      }
+      return {
+        storeName,
+        size,
+        stockStatus: stockStatus || 'Check availability',
+        restockDate: /^\d{4}-\d{2}-\d{2}$/.test(restockDate) ? restockDate : ''
+      };
+    })
+    .filter(Boolean);
+}
+
+function getProductSizes(product) {
+  const fromOptions = Array.isArray(product?.sizeOptions) ? product.sizeOptions : [];
+  const fromInventory = getProductSizeInventory(product).map((entry) => entry.size);
+  return Array.from(new Set([...fromOptions, ...fromInventory].map((size) => normalizeSizeValue(size)).filter(Boolean)));
+}
+
+function getInventoryForSelectedSize(product, sizeFilter = 'ALL') {
+  const inventory = getProductSizeInventory(product);
+  if (sizeFilter === 'ALL') {
+    return inventory;
+  }
+  return inventory.filter((entry) => normalizeSizeValue(entry.size) === sizeFilter);
+}
+
+function readStockReminders() {
+  try {
+    const raw = localStorage.getItem(stockReminderStorageKey);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeStockReminders(reminders) {
+  localStorage.setItem(stockReminderStorageKey, JSON.stringify(reminders));
+}
+
+function setStockReminderMessage(text) {
+  if (stockReminderMessage) {
+    stockReminderMessage.textContent = text;
+  }
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -353,6 +446,47 @@ function isValidBusinessWebsite(value) {
 
 function isBusinessOwnerSubmission(companyName, websiteUrl) {
   return String(companyName || '').trim().length >= 2 && isValidBusinessWebsite(websiteUrl);
+}
+
+function validateSizeInventoryInput(value) {
+  const lines = String(value || '').split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  for (const line of lines) {
+    const parts = line.split('|');
+    if (parts.length < 3 || parts.length > 4) {
+      return false;
+    }
+
+    const storeName = String(parts[0] || '').trim();
+    const size = normalizeSizeValue(parts[1]);
+    if (!storeName || !size) {
+      return false;
+    }
+
+    if (parts[3]) {
+      const date = String(parts[3]).trim();
+      if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function sizeInventoryToMultilineText(product) {
+  const entries = Array.isArray(product?.sizeInventory) ? product.sizeInventory : [];
+  return entries
+    .map((entry) => {
+      const storeName = String(entry?.storeName || entry?.store || '').trim();
+      const size = normalizeSizeValue(entry?.size);
+      const stockStatus = String(entry?.stockStatus || entry?.status || '').trim();
+      const restockDate = String(entry?.restockDate || '').trim();
+      if (!storeName || !size) {
+        return '';
+      }
+      return [storeName, size, stockStatus || 'Check availability', restockDate].filter((part, index) => index < 3 || Boolean(part)).join('|');
+    })
+    .filter(Boolean)
+    .join('\n');
 }
 
 function fileToDataUrl(file) {
@@ -1034,11 +1168,21 @@ function isVisibleProduct(product) {
 function filteredProducts() {
   const query = (searchInput && searchInput.value ? searchInput.value : '').trim().toLowerCase();
   const category = categorySelect ? categorySelect.value : 'all';
+  const sizeFilter = getSelectedSizeFilter();
+  const inStockOnly = Boolean(sizeInStockOnly?.checked);
   const visibleProducts = marketplaceState.products.filter((product) => isVisibleProduct(product));
   return visibleProducts.filter((product) => {
     const categoryMatch = category === 'all' || product.category === category;
-    const searchMatch = !query || `${product.productName || product.name} ${product.companyName || product.company} ${product.description || ''} ${product.category || ''}`.toLowerCase().includes(query);
-    return categoryMatch && searchMatch;
+    const sizes = getProductSizes(product);
+    const selectedInventory = getInventoryForSelectedSize(product, sizeFilter);
+    const sizeMatch = sizeFilter === 'ALL' || sizes.includes(sizeFilter) || selectedInventory.length > 0;
+    const stockMatch = !inStockOnly
+      || (sizeFilter === 'ALL'
+        ? (selectedInventory.length ? selectedInventory.some((entry) => isInStockStatus(entry.stockStatus)) : isInStockStatus(product.stockStatus))
+        : selectedInventory.some((entry) => isInStockStatus(entry.stockStatus)));
+    const searchBlob = `${product.productName || product.name} ${product.companyName || product.company} ${product.description || ''} ${product.category || ''} ${sizes.join(' ')}`.toLowerCase();
+    const searchMatch = !query || searchBlob.includes(query);
+    return categoryMatch && sizeMatch && stockMatch && searchMatch;
   });
 }
 
@@ -1049,7 +1193,8 @@ function renderResults() {
   resultsList.innerHTML = '';
 
   if (!items.length) {
-    resultsList.innerHTML = '<p>No approved brand listings are live yet. New company listings stay hidden until the $249 placement fee is approved and the product is reviewed.</p>';
+    const sizeText = getSelectedSizeFilter() === 'ALL' ? '' : ` for size ${escapeHtml(getSelectedSizeFilter())}`;
+    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the $249 placement fee is approved and the product is reviewed.</p>`;
     if (selectedProduct) {
       selectedProduct.innerHTML = '<p>Select a verified product to view pricing, store availability, and safety guidance.</p>';
     }
@@ -1094,9 +1239,386 @@ function getSafetySummary(product) {
     : 'Safety information is provided by the brand and should be verified before purchase.';
 }
 
-function renderProduct(product) {
+let _storeLookupToken = 0;
+const _autoStoreCache = new Map();
+
+function classifyStockBadge(status, fallbackStatus = '', restockDate = '') {
+  const raw = String(status || fallbackStatus || '').toLowerCase();
+  const cls = raw.includes('out') ? 'stock-out'
+    : (raw.includes('low') || raw.includes('limited')) ? 'stock-low'
+    : (raw.includes('in') || raw.includes('available')) ? 'stock-in'
+    : 'stock-unknown';
+  const baseLabel = raw.includes('out') ? 'Out of stock'
+    : (raw.includes('low') || raw.includes('limited')) ? 'Low stock'
+    : (raw.includes('in') || raw.includes('available')) ? 'In stock'
+    : (status || fallbackStatus || 'Check availability');
+  const restockLabel = formatDateLabel(restockDate);
+  const label = restockLabel && (raw.includes('out') || raw.includes('low'))
+    ? `${baseLabel} • Restock ${restockLabel}`
+    : baseLabel;
+  return { cls, label };
+}
+
+function normalizeStoreEntries(stores, fallbackStockStatus = '') {
+  if (!Array.isArray(stores)) {
+    return [];
+  }
+
+  return stores
+    .map((entry) => {
+      const raw = String(entry || '').trim();
+      if (!raw) {
+        return null;
+      }
+
+      const [namePart, statusPart] = raw.split('|');
+      const name = String(namePart || '').trim();
+      const stockStatus = String(statusPart || '').trim();
+      if (!name || name.toLowerCase().includes('confirmed by the brand')) {
+        return null;
+      }
+
+      return {
+        name,
+        stockStatus: stockStatus || fallbackStockStatus || '',
+        source: 'manual'
+      };
+    })
+    .filter(Boolean);
+}
+
+function mergeStoreEntries(manualEntries, autoEntries) {
+  const merged = [];
+  const seen = new Set();
+
+  const append = (entry) => {
+    const name = String(entry?.name || '').trim();
+    if (!name) {
+      return;
+    }
+
+    const key = normalize(name);
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    merged.push(entry);
+  };
+
+  (manualEntries || []).forEach(append);
+  (autoEntries || []).forEach(append);
+  return merged.slice(0, 40);
+}
+
+function escapeRegex(value) {
+  return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function getMapAnchorCoordinates() {
+  if (_userMarker) {
+    const point = _userMarker.getLatLng();
+    return { lat: point.lat, lng: point.lng };
+  }
+
+  if (_leafletMap) {
+    const center = _leafletMap.getCenter();
+    return { lat: center.lat, lng: center.lng };
+  }
+
+  return { lat: 43.65, lng: -79.38 };
+}
+
+function getProductKeywords(productName) {
+  return String(productName || '')
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3)
+    .slice(0, 4);
+}
+
+function toStoreEntryFromOverpass(element, fallbackStockStatus, productKeywords) {
+  const tags = element?.tags || {};
+  const name = String(tags.name || tags.brand || tags.operator || '').trim();
+  const lat = Number(element?.lat ?? element?.center?.lat);
+  const lng = Number(element?.lon ?? element?.center?.lon);
+  if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
+
+  const searchable = `${tags.name || ''} ${tags.brand || ''} ${tags.operator || ''} ${tags.description || ''}`.toLowerCase();
+  const likelyItemMatch = productKeywords.length > 0 && productKeywords.some((keyword) => searchable.includes(keyword));
+
+  return {
+    name,
+    lat,
+    lng,
+    stockStatus: likelyItemMatch ? (fallbackStockStatus || 'Check availability') : 'Check in store',
+    source: 'auto'
+  };
+}
+
+async function fetchAutoStoresFromOverpass(brandName, productName, fallbackStockStatus = '') {
+  const safeBrand = String(brandName || '').trim();
+  if (!safeBrand) {
+    return [];
+  }
+
+  const { lat, lng } = getMapAnchorCoordinates();
+  const brandRegex = escapeRegex(safeBrand).slice(0, 80);
+  const overpassQuery = `
+[out:json][timeout:25];
+(
+  nwr(around:300000,${lat},${lng})["shop"]["brand"~"^${brandRegex}$",i];
+  nwr(around:300000,${lat},${lng})["shop"]["name"~"${brandRegex}",i];
+  nwr(around:300000,${lat},${lng})["shop"]["operator"~"${brandRegex}",i];
+);
+out center;
+`;
+
+  try {
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: overpassQuery
+    });
+    if (!response.ok) {
+      console.warn(`Auto store lookup failed (Overpass ${response.status}).`);
+      return [];
+    }
+
+    const payload = await response.json();
+    const keywords = getProductKeywords(productName);
+    const entries = (Array.isArray(payload?.elements) ? payload.elements : [])
+      .map((element) => toStoreEntryFromOverpass(element, fallbackStockStatus, keywords))
+      .filter(Boolean)
+      .slice(0, 25);
+    return entries;
+  } catch (error) {
+    console.warn('Auto store lookup failed (Overpass request error).');
+    return [];
+  }
+}
+
+async function fetchAutoStoresFromNominatim(brandName, productName, fallbackStockStatus = '') {
+  const safeBrand = String(brandName || '').trim();
+  if (!safeBrand) {
+    return [];
+  }
+
+  const query = `${safeBrand} ${String(productName || '').trim()} store`;
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=20`,
+      { headers: { 'Accept-Language': 'en', 'User-Agent': 'Teyo-marketplace/1.0' } }
+    );
+    if (!response.ok) {
+      console.warn(`Auto store lookup failed (Nominatim ${response.status}).`);
+      return [];
+    }
+
+    const payload = await response.json();
+    return (Array.isArray(payload) ? payload : [])
+      .map((entry) => {
+        const name = String(entry.display_name || '').split(',')[0].trim();
+        const lat = Number(entry.lat);
+        const lng = Number(entry.lon);
+        if (!name || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return null;
+        }
+
+        return {
+          name,
+          lat,
+          lng,
+          stockStatus: fallbackStockStatus || 'Check availability',
+          source: 'auto'
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 20);
+  } catch (error) {
+    console.warn('Auto store lookup failed (Nominatim request error).');
+    return [];
+  }
+}
+
+async function resolveStoreEntriesForProduct(product, stores, sizeFilter = 'ALL') {
+  const fallbackStockStatus = String(product?.stockStatus || '').trim();
+  const manualEntries = normalizeStoreEntries(stores, fallbackStockStatus);
+  const brandName = String(product?.companyName || product?.company || '').trim();
+  const productName = String(product?.productName || product?.name || '').trim();
+  const sizeInventory = getProductSizeInventory(product);
+  const normalizedSizeFilter = normalizeSizeValue(sizeFilter || 'ALL');
+
+  if (normalizedSizeFilter !== 'ALL') {
+    const exactSizeEntries = sizeInventory
+      .filter((entry) => normalizeSizeValue(entry.size) === normalizedSizeFilter)
+      .map((entry) => ({
+        name: entry.storeName,
+        stockStatus: entry.stockStatus || fallbackStockStatus || 'Check availability',
+        restockDate: entry.restockDate || '',
+        size: entry.size,
+        source: 'manual-size'
+      }));
+    return mergeStoreEntries(exactSizeEntries, []);
+  }
+
+  const inventoryByStore = new Map();
+  sizeInventory.forEach((entry) => {
+    const key = normalize(entry.storeName);
+    if (!key) {
+      return;
+    }
+
+    const previous = inventoryByStore.get(key);
+    const currentTimestamp = toMidnightTimestamp(entry.restockDate);
+    const previousTimestamp = toMidnightTimestamp(previous?.restockDate);
+
+    if (!previous) {
+      inventoryByStore.set(key, entry);
+      return;
+    }
+
+    if (isInStockStatus(entry.stockStatus) && !isInStockStatus(previous.stockStatus)) {
+      inventoryByStore.set(key, entry);
+      return;
+    }
+
+    if (currentTimestamp && (!previousTimestamp || currentTimestamp < previousTimestamp)) {
+      inventoryByStore.set(key, entry);
+    }
+  });
+
+  const inventoryEntries = Array.from(inventoryByStore.values()).map((entry) => ({
+    name: entry.storeName,
+    stockStatus: entry.stockStatus || fallbackStockStatus || 'Check availability',
+    restockDate: entry.restockDate || '',
+    size: entry.size,
+    source: 'manual-size'
+  }));
+  const manualMerged = mergeStoreEntries(inventoryEntries, manualEntries);
+
+  if (!brandName) {
+    return manualMerged;
+  }
+
+  const cacheKey = `${normalize(brandName)}|${normalize(productName)}`;
+  if (_autoStoreCache.has(cacheKey)) {
+    return mergeStoreEntries(manualMerged, _autoStoreCache.get(cacheKey));
+  }
+
+  const [overpassEntries, nominatimEntries] = await Promise.all([
+    fetchAutoStoresFromOverpass(brandName, productName, fallbackStockStatus),
+    fetchAutoStoresFromNominatim(brandName, productName, fallbackStockStatus)
+  ]);
+
+  const autoEntries = mergeStoreEntries(overpassEntries, nominatimEntries);
+  _autoStoreCache.set(cacheKey, autoEntries);
+  return mergeStoreEntries(manualMerged, autoEntries);
+}
+
+function upsertStockReminder(reminder) {
+  const reminders = readStockReminders();
+  const key = `${reminder.productId}|${normalizeSizeValue(reminder.size)}|${normalize(reminder.storeName)}`;
+  const existing = reminders.find((entry) => `${entry.productId}|${normalizeSizeValue(entry.size)}|${normalize(entry.storeName)}` === key);
+  if (existing) {
+    existing.restockDate = reminder.restockDate || existing.restockDate || '';
+    existing.createdAt = new Date().toISOString();
+    existing.notified = false;
+  } else {
+    reminders.push({
+      ...reminder,
+      createdAt: new Date().toISOString(),
+      notified: false
+    });
+  }
+  writeStockReminders(reminders);
+}
+
+async function ensureNotificationPermission() {
+  if (!('Notification' in window)) {
+    return 'unsupported';
+  }
+  if (Notification.permission === 'granted') {
+    return 'granted';
+  }
+  if (Notification.permission === 'denied') {
+    return 'denied';
+  }
+  return Notification.requestPermission();
+}
+
+function renderStockReminderPanel(product, storeEntries, sizeFilter) {
+  const panelHost = selectedProduct ? selectedProduct.querySelector('#stockReminderPanel') : null;
+  if (!panelHost) {
+    return;
+  }
+
+  if (sizeFilter === 'ALL') {
+    panelHost.innerHTML = '<p class="form-message">Pick a size filter to set exact-size restock reminders.</p>';
+    return;
+  }
+
+  const reminderCandidates = (Array.isArray(storeEntries) ? storeEntries : []).filter((entry) => {
+    const status = String(entry?.stockStatus || '').trim();
+    return !isInStockStatus(status) && (entry.restockDate || status);
+  });
+
+  if (!reminderCandidates.length) {
+    panelHost.innerHTML = `<p class="form-message">No reminder candidates found for size ${escapeHtml(sizeFilter)} right now.</p>`;
+    return;
+  }
+
+  const earliestDate = reminderCandidates
+    .map((entry) => entry.restockDate)
+    .filter((value) => Boolean(value))
+    .sort()[0] || '';
+  const earliestText = earliestDate ? `Earliest expected restock: ${escapeHtml(formatDateLabel(earliestDate))}.` : 'Restock dates vary by store.';
+
+  panelHost.innerHTML = `
+    <div class="reminder-panel">
+      <p><strong>Size ${escapeHtml(sizeFilter)} reminders</strong></p>
+      <p>${earliestText}</p>
+      <button id="stockReminderBtn" class="btn btn-secondary" type="button">Remind me when these stores restock</button>
+    </div>
+  `;
+
+  panelHost.querySelector('#stockReminderBtn')?.addEventListener('click', async () => {
+    const permission = await ensureNotificationPermission();
+    reminderCandidates.forEach((entry) => {
+      upsertStockReminder({
+        productId: String(product.id),
+        productName: String(product.productName || product.name || ''),
+        companyName: String(product.companyName || product.company || ''),
+        size: sizeFilter,
+        storeName: String(entry.name || ''),
+        restockDate: String(entry.restockDate || '')
+      });
+    });
+
+    if (permission === 'granted') {
+      setStockReminderMessage(`Reminder saved for ${reminderCandidates.length} stores for size ${sizeFilter}.`);
+    } else {
+      setStockReminderMessage(`Reminder saved for size ${sizeFilter}. Enable browser notifications to receive alerts.`);
+    }
+  });
+}
+
+async function renderProduct(product) {
   if (!selectedProduct) return;
 
+  const currentLookupToken = ++_storeLookupToken;
+  const sizeFilter = getSelectedSizeFilter();
+  const selectedInventory = getInventoryForSelectedSize(product, sizeFilter);
+  const productSizes = getProductSizes(product);
+  const sizeChips = productSizes.length > 0
+    ? `<div class="size-chip-row">${productSizes.map((size) => `<span class="size-chip">${escapeHtml(size)}</span>`).join('')}</div>`
+    : '<p class="form-message">No explicit size data provided for this product yet.</p>';
+  const sizeStatusLine = sizeFilter === 'ALL'
+    ? '<p><strong>Size filter:</strong> All sizes</p>'
+    : `<p><strong>Size filter:</strong> ${escapeHtml(sizeFilter)} • ${selectedInventory.length} matching store entries.</p>`;
   const safeProductName = escapeHtml(product.productName || product.name);
   const safeCompanyName = escapeHtml(product.companyName || product.company);
   const safeCategory = escapeHtml((product.category || 'general').toUpperCase());
@@ -1109,7 +1631,7 @@ function renderProduct(product) {
   const safeImageUrl = safeUrl(product.imageUrl || '');
   const safeWebsiteUrl = safeUrl(product.websiteUrl || product.website || '');
   const imageMarkup = product.imageUrl ? `<img src="${safeImageUrl}" alt="${safeProductName}" class="product-image" />` : '';
-  const stores = Array.isArray(product.stores) && product.stores.length ? product.stores : ['Store availability is confirmed by the brand after approval.'];
+  const stores = Array.isArray(product.stores) ? product.stores : [];
   const features = product.description ? [escapeHtml(product.description)] : [];
   const verifiedBadge = product.verifiedSeller ? '<span class="badge success-badge">Verified seller</span>' : '<span class="badge">Under review</span>';
   const ratingLine = product.rating ? `<p><strong>Customer rating:</strong> ${safeRating}</p>` : '<p><strong>Reviews:</strong> No public reviews yet. Buyer feedback will appear after verified purchases.</p>';
@@ -1134,19 +1656,29 @@ function renderProduct(product) {
     ${reviewLine}
     ${trustSummary}
     <p><strong>Stock status:</strong> ${safeStock}</p>
+    ${sizeStatusLine}
+    ${sizeChips}
     <p><strong>Safety guidance:</strong> ${getSafetySummary(product)}</p>
     <p><strong>Evidence source:</strong> Brand submission and admin review.</p>
     <div class="detail-actions">
       <a class="btn btn-primary" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">Visit brand site</a>
       <a class="btn btn-secondary" href="#map">Find nearby pickup</a>
     </div>
+    <div id="stockReminderPanel"></div>
   `;
 
-  renderStores(stores, product.stockStatus);
-  updateMapForProduct(stores);
+  renderStores(null, product.stockStatus, sizeFilter);
+  const storeEntries = await resolveStoreEntriesForProduct(product, stores, sizeFilter);
+  if (currentLookupToken !== _storeLookupToken) {
+    return;
+  }
+
+  renderStores(storeEntries, product.stockStatus, sizeFilter);
+  updateMapForProduct(storeEntries, product.stockStatus, sizeFilter);
+  renderStockReminderPanel(product, storeEntries, sizeFilter);
 }
 
-function renderStores(stores, stockStatus) {
+function renderStores(storeEntries, stockStatus, sizeFilter = 'ALL') {
   if (!storeList) return;
   storeList.innerHTML = '';
 
@@ -1155,31 +1687,33 @@ function renderStores(stores, stockStatus) {
   heading.style.cssText = 'font-weight:700;margin:0 0 4px;font-size:0.9rem;';
   storeList.appendChild(heading);
 
-  const real = (stores || []).filter((s) => s.length > 6 && !s.toLowerCase().includes('confirmed by the brand'));
-  if (!real.length) {
+  const isLoading = !Array.isArray(storeEntries);
+  if (isLoading) {
+    const loading = document.createElement('p');
+    loading.textContent = 'Finding brand stores for this product...';
+    loading.style.cssText = 'color:var(--muted);font-size:0.82rem;margin:6px 0 0;';
+    storeList.appendChild(loading);
+    return;
+  }
+
+  const entries = storeEntries;
+  if (!entries.length) {
     const ph = document.createElement('p');
-    ph.textContent = 'No store locations listed yet. Brands add pickup locations when submitting products.';
+    ph.textContent = sizeFilter === 'ALL'
+      ? 'No nearby store locations were found yet for this brand and product.'
+      : `No stores reported availability for size ${sizeFilter} yet.`;
     ph.style.cssText = 'color:var(--muted);font-size:0.82rem;margin:6px 0 0;';
     storeList.appendChild(ph);
     return;
   }
 
-  const raw = (stockStatus || '').toLowerCase();
-  const cls = raw.includes('out') ? 'stock-out'
-    : (raw.includes('low') || raw.includes('limited')) ? 'stock-low'
-    : (raw.includes('in') || raw.includes('available')) ? 'stock-in'
-    : 'stock-unknown';
-  const label = raw.includes('out') ? 'Out of stock'
-    : (raw.includes('low') || raw.includes('limited')) ? 'Low stock'
-    : (raw.includes('in') || raw.includes('available')) ? 'In stock'
-    : escapeHtml(stockStatus || 'Check availability');
-
-  real.forEach((store, i) => {
+  entries.forEach((storeEntry, i) => {
+    const { cls, label } = classifyStockBadge(storeEntry.stockStatus, stockStatus, storeEntry.restockDate);
     const card = document.createElement('div');
     card.className = 'store-card';
     card.dataset.storeIdx = i;
     card.innerHTML =
-      `<span class="store-card-name">${escapeHtml(store)}</span>`
+      `<span class="store-card-name">${escapeHtml(storeEntry.name)}</span>`
       + `<span class="store-stock-badge ${cls}">${label}</span>`;
     card.addEventListener('click', () => {
       document.querySelectorAll('.store-card').forEach((c) => c.classList.remove('store-card-active'));
@@ -1231,35 +1765,55 @@ async function _geocodeStore(name) {
       `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name)}&format=json&limit=1`,
       { headers: { 'Accept-Language': 'en', 'User-Agent': 'Teyo-marketplace/1.0' } }
     );
+    if (!res.ok) {
+      console.warn(`Store geocoding failed (${res.status}) for "${name}".`);
+      return null;
+    }
     const data = await res.json();
     if (data.length) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  } catch {}
+  } catch (error) {
+    console.warn(`Store geocoding failed for "${name}".`);
+  }
   return null;
 }
 
-async function updateMapForProduct(stores) {
+async function updateMapForProduct(storeEntries, stockStatus, sizeFilter = 'ALL') {
   if (!_leafletMap) return;
   _storeMarkers.forEach((m) => m.remove());
   _storeMarkers = [];
   if (_storeFlyTimer) { clearInterval(_storeFlyTimer); _storeFlyTimer = null; }
-
-  const real = stores.filter((s) => s.length > 6 && !s.toLowerCase().includes('confirmed by the brand'));
-  if (!real.length) return;
-
   const mapStatus = document.getElementById('mapLeaflet');
+
+  const real = (Array.isArray(storeEntries) ? storeEntries : []).filter((entry) => String(entry?.name || '').trim().length > 2);
+  if (!real.length) {
+    if (mapStatus) {
+      mapStatus.title = sizeFilter === 'ALL'
+        ? 'No nearby stores found for this product.'
+        : `No stores found for size ${sizeFilter}.`;
+    }
+    return;
+  }
+
   if (mapStatus) mapStatus.title = 'Finding stores on map…';
 
   const coords = [];
-  for (const store of real.slice(0, 5)) {
-    const pos = await _geocodeStore(store);
-    if (pos) coords.push({ ...pos, name: store });
+  for (const storeEntry of real.slice(0, 25)) {
+    const hasCoordinates = Number.isFinite(Number(storeEntry.lat)) && Number.isFinite(Number(storeEntry.lng));
+    const pos = hasCoordinates ? { lat: Number(storeEntry.lat), lng: Number(storeEntry.lng) } : await _geocodeStore(storeEntry.name);
+    if (pos) {
+      coords.push({
+        ...storeEntry,
+        ...pos
+      });
+    }
     await new Promise((r) => setTimeout(r, 350));
   }
 
-  coords.forEach(({ lat, lng, name }) => {
+  coords.forEach(({ lat, lng, name, stockStatus: storeStockStatus, restockDate }) => {
+    const { label } = classifyStockBadge(storeStockStatus, stockStatus, restockDate);
     const m = L.marker([lat, lng])
       .addTo(_leafletMap)
-      .bindPopup(`<strong>${escapeHtml(name)}</strong><br>Nearby store with matching items`);
+      .bindPopup(`<strong>${escapeHtml(name)}</strong><br>${escapeHtml(label)}`);
     _storeMarkers.push(m);
   });
 
@@ -1288,6 +1842,7 @@ async function updateMapForProduct(stores) {
   } else if (_storeMarkers.length === 1) {
     _storeMarkers[0].openPopup();
   }
+  if (mapStatus) mapStatus.title = 'Store map';
 }
 
 function renderAds() {
@@ -1356,6 +1911,195 @@ function renderAds() {
   }
 }
 
+function setInventoryStatusMessage(text) {
+  if (inventoryStatusMessage) {
+    inventoryStatusMessage.textContent = text;
+  }
+}
+
+async function saveProductInventory(productId, payload) {
+  const response = await fetch(`/api/products/${productId}/inventory`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...getOwnerHeaders()
+    },
+    body: JSON.stringify(payload)
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || 'Inventory update failed.');
+  }
+  return result;
+}
+
+function renderInventoryManager() {
+  if (!inventoryProductList) {
+    return;
+  }
+
+  inventoryProductList.innerHTML = '';
+  if (marketplaceLoadError) {
+    inventoryProductList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(marketplaceLoadError)}</p>`);
+    return;
+  }
+
+  if (!hasOwnerSession()) {
+    inventoryProductList.insertAdjacentHTML('beforeend', '<p>Owner access is required to edit inventory.</p>');
+    return;
+  }
+
+  const products = marketplaceState.products
+    .filter((product) => Boolean(product.approved && product.visible))
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+
+  if (!products.length) {
+    inventoryProductList.innerHTML = '<p>No live products available for inventory updates yet.</p>';
+    return;
+  }
+
+  products.forEach((product) => {
+    const card = document.createElement('div');
+    card.className = 'ad-card';
+    const safeProductName = escapeHtml(product.productName || product.name || '');
+    const safeCompanyName = escapeHtml(product.companyName || product.company || '');
+    const sizesText = getProductSizes(product).join(', ');
+    const storesText = Array.isArray(product.stores) ? product.stores.join(', ') : '';
+    const sizeInventoryText = sizeInventoryToMultilineText(product);
+    card.innerHTML = `
+      <h4>${safeProductName}</h4>
+      <p><strong>Company:</strong> ${safeCompanyName}</p>
+      <label>General stock status
+        <input type="text" data-inventory-field="stockStatus" value="${escapeHtml(product.stockStatus || '')}" />
+      </label>
+      <label>Size options (comma-separated)
+        <input type="text" data-inventory-field="sizeOptions" value="${escapeHtml(sizesText)}" />
+      </label>
+      <label>Manual stores (comma-separated)
+        <textarea rows="2" data-inventory-field="stores">${escapeHtml(storesText)}</textarea>
+      </label>
+      <label>Size inventory lines (Store|Size|Stock|YYYY-MM-DD)
+        <textarea rows="6" data-inventory-field="sizeInventory">${escapeHtml(sizeInventoryText)}</textarea>
+      </label>
+      <button class="btn btn-primary" type="button" data-save-inventory="${product.id}">Save inventory</button>
+    `;
+
+    card.querySelector('[data-save-inventory]')?.addEventListener('click', async () => {
+      const stockStatus = String(card.querySelector('[data-inventory-field="stockStatus"]')?.value || '').trim();
+      const sizeOptions = String(card.querySelector('[data-inventory-field="sizeOptions"]')?.value || '').trim();
+      const stores = String(card.querySelector('[data-inventory-field="stores"]')?.value || '').trim();
+      const sizeInventory = String(card.querySelector('[data-inventory-field="sizeInventory"]')?.value || '').trim();
+
+      if (!validateSizeInventoryInput(sizeInventory)) {
+        setInventoryStatusMessage(`Invalid size inventory format for "${safeProductName}". Use Store|Size|Stock|YYYY-MM-DD.`);
+        return;
+      }
+
+      try {
+        await saveProductInventory(product.id, { stockStatus, sizeOptions, stores, sizeInventory });
+        setInventoryStatusMessage(`Saved inventory updates for "${safeProductName}".`);
+        await loadMarketplaceData();
+      } catch (error) {
+        setInventoryStatusMessage(error.message || `Unable to save inventory for "${safeProductName}".`);
+      }
+    });
+
+    inventoryProductList.appendChild(card);
+  });
+}
+
+function refreshSizeFilterOptions() {
+  if (!sizeFilterSelect) {
+    return;
+  }
+
+  const current = normalizeSizeValue(sizeFilterSelect.value || 'ALL');
+  const allSizes = Array.from(new Set(
+    marketplaceState.products
+      .map((product) => getProductSizes(product))
+      .flat()
+      .map((size) => normalizeSizeValue(size))
+      .filter(Boolean)
+  )).sort((left, right) => left.localeCompare(right));
+
+  sizeFilterSelect.innerHTML = '<option value="ALL">All sizes</option>'
+    + allSizes.map((size) => `<option value="${escapeHtml(size)}">${escapeHtml(size)}</option>`).join('');
+  sizeFilterSelect.value = allSizes.includes(current) ? current : 'ALL';
+}
+
+function evaluateReminder(product, reminder) {
+  const inventory = getProductSizeInventory(product);
+  const matchingEntry = inventory.find((entry) => normalizeSizeValue(entry.size) === normalizeSizeValue(reminder.size)
+    && normalize(entry.storeName) === normalize(reminder.storeName));
+
+  if (!matchingEntry) {
+    return null;
+  }
+
+  const inStock = isInStockStatus(matchingEntry.stockStatus);
+  const restockReached = Boolean(matchingEntry.restockDate) && toMidnightTimestamp(matchingEntry.restockDate) <= Date.now();
+  if (!inStock && !restockReached) {
+    return null;
+  }
+
+  const reason = inStock
+    ? `${matchingEntry.storeName} now lists ${matchingEntry.size} as in stock.`
+    : `${matchingEntry.storeName} reached the expected restock date (${formatDateLabel(matchingEntry.restockDate)}).`;
+  return { reason };
+}
+
+async function checkStockReminders() {
+  const reminders = readStockReminders().filter((entry) => !entry.notified);
+  if (!reminders.length) {
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) {
+      return;
+    }
+
+    const products = await response.json();
+    let triggeredCount = 0;
+    const updatedReminders = readStockReminders().map((reminder) => {
+      if (reminder.notified) {
+        return reminder;
+      }
+
+      const product = (Array.isArray(products) ? products : []).find((entry) => String(entry.id) === String(reminder.productId));
+      if (!product) {
+        return reminder;
+      }
+
+      const result = evaluateReminder(product, reminder);
+      if (!result) {
+        return reminder;
+      }
+
+      triggeredCount += 1;
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('Teyo stock reminder', {
+          body: `${reminder.productName} (${reminder.size}) — ${result.reason}`
+        });
+      }
+
+      return {
+        ...reminder,
+        notified: true,
+        notifiedAt: new Date().toISOString()
+      };
+    });
+
+    writeStockReminders(updatedReminders);
+    if (triggeredCount > 0) {
+      setStockReminderMessage(`${triggeredCount} stock reminder${triggeredCount === 1 ? '' : 's'} triggered.`);
+    }
+  } catch (error) {
+    setStockReminderMessage('Unable to check stock reminders right now.');
+  }
+}
+
 async function loadMarketplaceData() {
   try {
     const sharedHeaders = hasOwnerSession() ? getAdminHeaders() : {};
@@ -1375,8 +2119,11 @@ async function loadMarketplaceData() {
     marketplaceLoadError = 'Unable to load marketplace data. Open this site from your running server URL (not as a local file) and verify the backend is running.';
   }
 
+  refreshSizeFilterOptions();
   renderAds();
+  renderInventoryManager();
   renderResults();
+  await checkStockReminders();
 }
 
 async function approvePartner(id) {
@@ -1443,6 +2190,15 @@ if (searchInput) {
 if (categorySelect) {
   categorySelect.addEventListener('change', renderResults);
 }
+if (sizeFilterSelect) {
+  sizeFilterSelect.addEventListener('change', () => {
+    setStockReminderMessage('');
+    renderResults();
+  });
+}
+if (sizeInStockOnly) {
+  sizeInStockOnly.addEventListener('change', renderResults);
+}
 if (partnerForm) {
   partnerForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -1487,6 +2243,10 @@ if (productForm) {
 
     if (!isBusinessOwnerSubmission(companyName, websiteUrl)) {
       productFormMessage.textContent = 'Only real companies with a valid business website can submit products.';
+      return;
+    }
+    if (!validateSizeInventoryInput(payload.sizeInventory)) {
+      productFormMessage.textContent = 'Size inventory lines must use: Store Name|Size|Stock Status|YYYY-MM-DD';
       return;
     }
 
@@ -1810,6 +2570,11 @@ initializeMarketplace();
 initializeCustomerTheme();
 syncOwnerOnlyVisibility();
 if (document.getElementById('mapLeaflet')) initMap();
+if (document.getElementById('mapLeaflet')) {
+  setInterval(() => {
+    checkStockReminders().catch(() => {});
+  }, 60000);
+}
 
 // ── Live viewer beacon (runs on every page) ───────────────────────
 function initViewerBeacon() {

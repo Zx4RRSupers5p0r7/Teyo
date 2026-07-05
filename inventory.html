@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Teyo.ca | Admin</title>
-    <meta name="description" content="Manage premium brand campaigns, verified listings, and sponsor ads for Teyo.ca." />
-    <meta name="keywords" content="Teyo.ca admin, sponsor ads, brand campaigns" />
+    <title>Teyo.ca | Inventory manager</title>
+    <meta name="description" content="Update product inventory, sizes, and restock dates for Teyo.ca listings." />
+    <meta name="keywords" content="Teyo inventory manager, stock updates, size inventory" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -30,14 +30,14 @@
       <main>
         <section class="section">
           <div class="section-heading">
-            <p class="eyebrow">Admin dashboard</p>
-            <h2>Approve paid placements, sponsor campaigns, and custom creatives for Teyo.ca.</h2>
+            <p class="eyebrow">Inventory manager</p>
+            <h2>Update size stock, store availability, and restock dates without re-submitting products.</h2>
           </div>
 
           <div class="partner-form-card owner-access-card">
             <div>
               <h3>Owner access controls</h3>
-              <p>This is the only role that can unlock everything on the site. Both the email and the owner key must match the server settings.</p>
+              <p>Unlock owner access to edit inventory for live products.</p>
             </div>
             <div class="partner-form">
               <label>
@@ -56,26 +56,11 @@
 
           <div class="partner-form-card">
             <div>
-              <h3>Partner approvals</h3>
-              <p>Approve new company listings once the $249 placement fee is confirmed. Only approved companies appear in search results.</p>
+              <h3>Product inventory editor</h3>
+              <p>Use one line per size entry: <code>Store Name|Size|Stock Status|YYYY-MM-DD</code>.</p>
             </div>
-            <div id="adminPartnerList" class="ad-list"></div>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Product review queue</h3>
-              <p>Approve submitted products only after the company has paid the placement fee and the product information has been reviewed.</p>
-            </div>
-            <div id="adminProductList" class="ad-list"></div>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Live ad manager</h3>
-              <p>Approve monthly sponsor placements and publish custom ad creatives after payment is confirmed.</p>
-            </div>
-            <div id="adminAdsList" class="ad-list"></div>
+            <p id="inventoryStatusMessage" class="form-message" aria-live="polite"></p>
+            <div id="inventoryProductList" class="ad-list"></div>
           </div>
         </section>
       </main>
@@ -84,13 +69,13 @@
         <a href="index.html">Home</a>
         <a href="marketplace.html">Marketplace</a>
         <a href="partners.html">Partners</a>
-        <a href="admin.html" class="active" data-owner-only>Admin</a>
-        <a href="inventory.html" data-owner-only>Inventory</a>
+        <a href="admin.html" data-owner-only>Admin</a>
+        <a href="inventory.html" class="active" data-owner-only>Inventory</a>
         <a href="contact.html">Contact</a>
       </nav>
 
       <footer class="footer">
-        <p>© 2026 Teyo.ca — Premium admin control for company-driven growth.</p>
+        <p>© 2026 Teyo.ca — inventory controls for accurate size-aware availability.</p>
       </footer>
     </div>
 

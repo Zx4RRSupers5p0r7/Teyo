@@ -25,6 +25,11 @@ Production-hardened Node.js marketplace with Stripe checkout, admin approvals, a
 - Public static serving is allowlisted to site files only.
 - API responses expose limited public fields unless a valid admin key is provided.
 - Admin verification is rate-limited.
+- Marketplace map auto-discovers likely brand stores using OpenStreetMap services and merges them with manual store entries when provided.
+- Stock levels remain brand-provided values unless the company submits per-store overrides.
+- Product submissions now support size-aware inventory lines in the format `Store Name|Size|Stock Status|YYYY-MM-DD`.
+- Marketplace size filters update both search results and the map, and customers can save browser-based restock reminders for exact size/store combinations.
+- Owner/admin users can manage live product inventory directly from `inventory.html` using the same size-inventory format.
 - CI runs syntax checks and API smoke tests on push and pull request.
 
 ## Health Endpoints

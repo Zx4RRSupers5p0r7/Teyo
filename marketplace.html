@@ -47,7 +47,15 @@
               <option value="health">Health</option>
               <option value="all">Any product</option>
             </select>
+            <select id="sizeFilterSelect">
+              <option value="all">All sizes</option>
+            </select>
+            <label class="search-toggle">
+              <input id="sizeInStockOnly" type="checkbox" />
+              <span>Only show in-stock for selected size</span>
+            </label>
           </div>
+          <p id="stockReminderMessage" class="form-message" aria-live="polite"></p>
 
           <section class="section map-section" id="map">
             <div class="section-heading">
@@ -273,6 +281,7 @@
         <a href="marketplace.html" class="active">Marketplace</a>
         <a href="partners.html">Partners</a>
         <a href="admin.html" data-owner-only>Admin</a>
+        <a href="inventory.html" data-owner-only>Inventory</a>
         <a href="contact.html">Contact</a>
       </nav>
 

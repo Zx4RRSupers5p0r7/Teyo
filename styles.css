@@ -190,6 +190,47 @@ article {
 .hero-metrics strong { display: block; margin-bottom: 4px; font-size: 1.1rem; }
 .hero-metrics span { color: var(--muted); font-size: 0.9rem; }
 
+.feature-callout {
+  padding-top: 8px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.feature-card {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  box-shadow: var(--shadow);
+}
+
+.feature-card h3 {
+  margin: 12px 0 8px;
+  font-size: 1.15rem;
+}
+
+.feature-card p {
+  margin: 0;
+}
+
+.feature-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .section { padding: 30px 0 14px; }
 .access-section { padding-top: 8px; }
 .access-shell {

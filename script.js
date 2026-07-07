@@ -20,6 +20,7 @@ const checkoutMessage = document.getElementById('checkoutMessage');
 const activeAdsList = document.getElementById('activeAdsList');
 const adminAdsList = document.getElementById('adminAdsList');
 const adminPartnerList = document.getElementById('adminPartnerList');
+const adminProcessedPartnerList = document.getElementById('adminProcessedPartnerList');
 const inventoryProductList = document.getElementById('inventoryProductList');
 const inventorySummaryPanel = document.getElementById('inventorySummaryPanel');
 const inventoryRestockList = document.getElementById('inventoryRestockList');
@@ -2373,6 +2374,41 @@ async function approvePartner(id) {
   }
 }
 
+async function denyPartner(id) {
+  try {
+    const response = await fetch(`/api/partners/${id}/deny`, {
+      method: 'POST',
+      headers: {
+        ...getAdminHeaders()
+      }
+    });
+    if (!response.ok) {
+      setAdminAccessMessage('Partner denial failed. Check your owner access and try again.');
+      return;
+    }
+    await loadMarketplaceData();
+  } catch (error) {
+    setAdminAccessMessage('Partner denial failed due to a network error.');
+  }
+}
+
+async function banPartner(id) {
+  try {
+    const response = await fetch(`/api/partners/${id}/ban`, {
+      method: 'POST',
+      headers: {
+        ...getAdminHeaders()
+      }
+    });
+    if (!response.ok) {
+      setAdminAccessMessage('Company ban failed. Check your owner access and try again.');
+      return;
+    }
+    await loadMarketplaceData();
+  } catch (error) {
+    setAdminAccessMessage('Company ban failed due to a network error.');
+  }
+}
 async function approveAd(id) {
   try {
     const response = await fetch(`/api/ads/${id}/approve`, {
@@ -2721,16 +2757,21 @@ if (adminClearKeyBtn) {
 if (adminPartnerList) {
   const renderAdminPartners = () => {
     adminPartnerList.innerHTML = '';
+    if (adminProcessedPartnerList) {
+      adminProcessedPartnerList.innerHTML = '';
+    }
     if (marketplaceLoadError) {
       adminPartnerList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(marketplaceLoadError)}</p>`);
+      if (adminProcessedPartnerList) {
+        adminProcessedPartnerList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(marketplaceLoadError)}</p>`);
+      }
       return;
     }
     if (!adminAccessGranted) {
       adminPartnerList.insertAdjacentHTML('beforeend', '<p>Owner access required to view company requests.</p>');
-      return;
-    }
-    if (!marketplaceState.partners.length) {
-      adminPartnerList.innerHTML = '<p>No partner requests yet.</p>';
+      if (adminProcessedPartnerList) {
+        adminProcessedPartnerList.insertAdjacentHTML('beforeend', '<p>Owner access required to view processed company requests.</p>');
+      }
       return;
     }
 
@@ -2740,24 +2781,80 @@ if (adminPartnerList) {
       return left - right;
     });
 
-    sortedPartners.forEach((partner) => {
+    const pendingPartners = sortedPartners.filter((partner) => {
+      const status = String(partner.requestStatus || '').toLowerCase();
+      if (status) {
+        return status === 'pending';
+      }
+      return !(partner.activeListing && partner.paid && partner.paymentConfirmed);
+    });
+
+    const processedPartners = sortedPartners.filter((partner) => {
+      const status = String(partner.requestStatus || '').toLowerCase();
+      if (status) {
+        return status !== 'pending';
+      }
+      return Boolean(partner.activeListing && partner.paid && partner.paymentConfirmed);
+    });
+
+    if (!pendingPartners.length) {
+      adminPartnerList.innerHTML = '<p>No pending partner requests right now.</p>';
+    }
+
+    pendingPartners.forEach((partner) => {
       const card = document.createElement('div');
       card.className = 'ad-card';
       const safeCompanyName = escapeHtml(partner.companyName || '');
       const safeWebsiteUrl = escapeHtml(partner.websiteUrl || '');
       card.innerHTML = `
         <h4>${safeCompanyName}</h4>
-        <p><strong>Status:</strong> ${partner.activeListing && partner.paid ? 'Live listing' : 'Awaiting payment approval'}</p>
+        <p><strong>Status:</strong> Pending review</p>
         <p>${safeWebsiteUrl}</p>
-        ${adminAccessGranted ? `<button class="btn btn-primary" type="button" data-approve-partner="${partner.id}">Approve placement</button>` : ''}
+        <div class="hero-actions">
+          <button class="btn btn-primary" type="button" data-approve-partner="${partner.id}">Approve placement</button>
+          <button class="btn btn-secondary" type="button" data-deny-partner="${partner.id}">Deny request</button>
+        </div>
       `;
-      if (adminAccessGranted) {
-        card.querySelector('[data-approve-partner]')?.addEventListener('click', () => approvePartner(partner.id));
-      }
+      card.querySelector('[data-approve-partner]')?.addEventListener('click', () => approvePartner(partner.id));
+      card.querySelector('[data-deny-partner]')?.addEventListener('click', () => denyPartner(partner.id));
       adminPartnerList.appendChild(card);
     });
-  };
 
+    if (!adminProcessedPartnerList) {
+      return;
+    }
+
+    if (!processedPartners.length) {
+      adminProcessedPartnerList.innerHTML = '<p>No processed partner requests yet.</p>';
+      return;
+    }
+
+    processedPartners.forEach((partner) => {
+      const card = document.createElement('div');
+      card.className = 'ad-card';
+      const safeCompanyName = escapeHtml(partner.companyName || '');
+      const safeWebsiteUrl = escapeHtml(partner.websiteUrl || '');
+      const status = String(partner.requestStatus || '').toLowerCase();
+      const statusLabel = status === 'approved'
+        ? 'Approved'
+        : status === 'denied'
+          ? 'Denied'
+          : status === 'banned'
+            ? 'Banned'
+            : (partner.activeListing && partner.paid && partner.paymentConfirmed ? 'Approved' : 'Processed');
+
+      card.innerHTML = `
+        <h4>${safeCompanyName}</h4>
+        <p><strong>Status:</strong> ${escapeHtml(statusLabel)}</p>
+        <p>${safeWebsiteUrl}</p>
+        <div class="hero-actions">
+          ${status !== 'banned' ? `<button class="btn btn-secondary" type="button" data-ban-partner="${partner.id}">Ban company</button>` : ''}
+        </div>
+      `;
+      card.querySelector('[data-ban-partner]')?.addEventListener('click', () => banPartner(partner.id));
+      adminProcessedPartnerList.appendChild(card);
+    });
+  };
   const renderAdminProducts = () => {
     if (!document.getElementById('adminProductList')) return;
     const adminProductList = document.getElementById('adminProductList');

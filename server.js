@@ -533,6 +533,24 @@ function saveData(data) {
     .catch(() => fsp.writeFile(dataFile, snapshot));
 }
 
+function getPartnerRequestStatus(entry) {
+  const explicit = String(entry?.requestStatus || '').trim().toLowerCase();
+  if (explicit === 'approved' || explicit === 'denied' || explicit === 'banned' || explicit === 'pending') {
+    return explicit;
+  }
+
+  if (entry?.bannedAt) {
+    return 'banned';
+  }
+  if (entry?.deniedAt) {
+    return 'denied';
+  }
+  if (entry?.approvedAt || (entry?.activeListing && entry?.paid && entry?.paymentConfirmed)) {
+    return 'approved';
+  }
+  return 'pending';
+}
+
 function serializePublicPartner(entry) {
   return {
     id: entry.id,
@@ -540,6 +558,7 @@ function serializePublicPartner(entry) {
     websiteUrl: entry.websiteUrl,
     paid: Boolean(entry.paid),
     activeListing: Boolean(entry.activeListing),
+    requestStatus: getPartnerRequestStatus(entry),
     createdAt: entry.createdAt
   };
 }
@@ -618,6 +637,7 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     paymentConfirmed: false,
     paid: false,
     activeListing: false,
+    requestStatus: 'pending',
     companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
@@ -1012,6 +1032,7 @@ app.post('/api/partner', (req, res) => {
     paymentConfirmed: paymentConfirmed === true || paymentConfirmed === 'true',
     paid: false,
     activeListing: false,
+    requestStatus: 'pending',
     companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
@@ -1020,6 +1041,8 @@ app.post('/api/partner', (req, res) => {
     entry.paymentConfirmed = true;
     entry.paid = true;
     entry.activeListing = true;
+    entry.requestStatus = 'approved';
+    entry.approvedAt = new Date().toISOString();
   }
 
   data.partners.push(entry);
@@ -1051,8 +1074,80 @@ app.post('/api/partners/:id/approve', requireAdmin, (req, res) => {
   partner.paid = true;
   partner.activeListing = true;
   partner.paymentConfirmed = true;
+  partner.requestStatus = 'approved';
+  partner.approvedAt = new Date().toISOString();
+  delete partner.deniedAt;
   saveData(data);
 
+  res.json({ success: true, partner });
+});
+
+app.post('/api/partners/:id/deny', requireAdmin, (req, res) => {
+  const data = loadData();
+  const partner = data.partners.find((entry) => String(entry.id) === String(req.params.id));
+
+  if (!partner) {
+    return res.status(404).json({ success: false, message: 'Partner not found.' });
+  }
+
+  partner.paid = false;
+  partner.activeListing = false;
+  partner.paymentConfirmed = false;
+  partner.requestStatus = 'denied';
+  partner.deniedAt = new Date().toISOString();
+  saveData(data);
+
+  res.json({ success: true, partner });
+});
+
+app.post('/api/partners/:id/ban', requireAdmin, (req, res) => {
+  const data = loadData();
+  const partner = data.partners.find((entry) => String(entry.id) === String(req.params.id));
+
+  if (!partner) {
+    return res.status(404).json({ success: false, message: 'Partner not found.' });
+  }
+
+  const companyKey = normalizeName(partner.companyName || '');
+  const ownerKey = normalizeName(partner.ownerEmail || '');
+
+  partner.paid = false;
+  partner.activeListing = false;
+  partner.paymentConfirmed = false;
+  partner.requestStatus = 'banned';
+  partner.bannedAt = new Date().toISOString();
+
+  data.partners.forEach((entry) => {
+    if (normalizeName(entry.companyName) !== companyKey || normalizeName(entry.ownerEmail) !== ownerKey) {
+      return;
+    }
+    entry.paid = false;
+    entry.activeListing = false;
+    entry.paymentConfirmed = false;
+    entry.requestStatus = 'banned';
+    entry.bannedAt = new Date().toISOString();
+  });
+
+  data.products.forEach((entry) => {
+    if (normalizeName(entry.companyName) !== companyKey || normalizeName(entry.ownerEmail) !== ownerKey) {
+      return;
+    }
+    entry.visible = false;
+    entry.approved = false;
+    entry.updatedAt = new Date().toISOString();
+  });
+
+  data.ads.forEach((entry) => {
+    if (normalizeName(entry.companyName) !== companyKey || normalizeName(entry.ownerEmail) !== ownerKey) {
+      return;
+    }
+    entry.active = false;
+    entry.paid = false;
+    entry.subscriptionStatus = 'inactive';
+    entry.updatedAt = new Date().toISOString();
+  });
+
+  saveData(data);
   res.json({ success: true, partner });
 });
 

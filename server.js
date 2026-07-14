@@ -29,18 +29,18 @@ const _seenSessionIds  = new Set();
 const _SESSION_TTL = 35000; // 35 s — heartbeat fires every 15 s
 
 function getRecommendedPrice(total) {
-  if (total >= 10000) return { label: '$2,500', cents: 250000, advice: 'Over 10,000 visitors — original price is now fully justified.' };
-  if (total >= 5000)  return { label: '$1,999', cents: 199900, advice: 'Strong platform — raise to $1,999.' };
-  if (total >= 2000)  return { label: '$999',   cents: 99900,  advice: 'Proven traction — raise to $999.' };
-  if (total >= 500)   return { label: '$499',   cents: 49900,  advice: 'Growing traffic — consider raising to $499.' };
-  return { label: '$249', cents: 24900, advice: 'Building your audience — $249 is the right entry price right now.' };
+  if (total >= 10000) return { label: '$299', cents: 29900, advice: 'Over 10,000 visitors — the platform can support a higher listing price.' };
+  if (total >= 5000)  return { label: '$149', cents: 14900, advice: 'Strong traction — consider raising to $149.' };
+  if (total >= 2000)  return { label: '$79',  cents: 7900,  advice: 'Momentum is building — test a raise to $79.' };
+  if (total >= 500)   return { label: '$49',  cents: 4900,  advice: 'Early traffic is coming in — $49 could be a good next step.' };
+  return { label: '$20', cents: 2000, advice: 'Right now, keeping the barrier low at $20 gives more companies a reason to try Teyo.' };
 }
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
-  placement: { amount: 24900, description: 'Teyo premium product placement for $249 one-time access.' },
-  monthlyAd: { amount: 12999, description: 'Teyo monthly sponsor ad placement for $129.99/month.' },
+  placement: { amount: 2000, description: 'Teyo premium product placement for $20 one-time access.' },
+  monthlyAd: { amount: 1500, description: 'Teyo monthly sponsor ad placement for $15/month.' },
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
 };
@@ -1050,7 +1050,7 @@ app.post('/api/partner', (req, res) => {
 
   res.json({
     success: true,
-    message: 'Thanks — your placement request has been received. Once your one-time $249 activation fee is confirmed, your company can add unlimited products to Teyo.ca.',
+    message: 'Thanks — your placement request has been received. Once your one-time $20 activation fee is confirmed, your company can add unlimited products to Teyo.ca.',
     companyAccessKey: entry.companyAccessKey
   });
 });
@@ -1247,7 +1247,7 @@ app.post('/api/products', (req, res) => {
   if (!ownerOverride && (!partnerMatch || !partnerMatch.paid || !partnerMatch.activeListing || !partnerMatch.paymentConfirmed)) {
     return res.status(403).json({
       success: false,
-      message: 'Your company must first complete the one-time $249 placement activation and receive approval before adding products. After that, you can add unlimited products.'
+      message: 'Your company must first complete the one-time $20 placement activation and receive approval before adding products. After that, you can add unlimited products.'
     });
   }
 

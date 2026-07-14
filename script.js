@@ -1281,7 +1281,7 @@ function renderResults() {
 
   if (!items.length) {
     const sizeText = getSelectedSizeFilter() === 'ALL' ? '' : ` for size ${escapeHtml(getSelectedSizeFilter())}`;
-    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the $249 placement fee is approved and the product is reviewed.</p>`;
+    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the $20 placement fee is approved and the product is reviewed.</p>`;
     if (selectedProduct) {
       selectedProduct.innerHTML = '<p>Select a verified product to view pricing, store availability, and safety guidance.</p>';
     }

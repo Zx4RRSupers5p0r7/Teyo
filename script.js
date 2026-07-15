@@ -85,6 +85,7 @@ const companyNameStorageKey = 'teyoCompanyNameV1';
 const companyEmailStorageKey = 'teyoCompanyEmailV1';
 const companyKeyStorageKey = 'teyoCompanyKeyV1';
 const stockReminderStorageKey = 'teyoStockRemindersV1';
+const placementFeePaidStorageKey = 'teyoPlacementFeePaidV1';
 const customerStyleClasses = [
   'theme-style-midnight',
   'theme-style-graphite',
@@ -177,6 +178,14 @@ function wait(duration = 0) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
 }
 
+function hasPlacementFeePaid() {
+  return sessionStorage.getItem(placementFeePaidStorageKey) === 'true';
+}
+
+function setPlacementFeePaid(value) {
+  sessionStorage.setItem(placementFeePaidStorageKey, value ? 'true' : 'false');
+}
+
 function setCinematicOnboardingStep({ title, subtext, progress }) {
   if (cinematicOnboardingTitle) {
     cinematicOnboardingTitle.textContent = title;
@@ -186,6 +195,22 @@ function setCinematicOnboardingStep({ title, subtext, progress }) {
   }
   if (cinematicOnboardingProgress) {
     cinematicOnboardingProgress.style.width = `${Math.max(0, Math.min(100, Number(progress) || 0))}%`;
+  }
+}
+
+function initPlacementCheckoutState() {
+  if (!(window.location.pathname.endsWith('/partners.html') || window.location.pathname === '/partners.html')) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search);
+  const checkoutState = String(params.get('checkout') || '').toLowerCase();
+  if (checkoutState === 'success') {
+    setPlacementFeePaid(true);
+    if (checkoutMessage) {
+      checkoutMessage.textContent = 'Payment confirmed. You can now run Teyo\'s Superpower below.';
+    }
+  } else if (checkoutState === 'cancelled' && checkoutMessage) {
+    checkoutMessage.textContent = 'Checkout was cancelled. Complete the one-time setup fee to unlock Teyo\'s Superpower.';
   }
 }
 
@@ -2711,6 +2736,10 @@ if (partnerForm) {
       formMessage.textContent = 'Only real company or business owners with a valid business website can request placement.';
       return;
     }
+    if (!hasPlacementFeePaid()) {
+      formMessage.textContent = 'Pay the one-time setup fee first, then run Teyo\'s Superpower.';
+      return;
+    }
 
     try {
       if (submitBtn) {
@@ -2903,6 +2932,11 @@ async function startStripeCheckout(plan) {
     return;
   }
 
+  if (plan === 'placement' && (!String(placementCompanyName).trim() || !String(placementOwnerEmail).trim())) {
+    checkoutMessage.textContent = 'Fill company name and owner email in the form below first, then pay the one-time setup fee.';
+    return;
+  }
+
   const payload = plan === 'placement'
     ? attachOwnerAuth({ plan, companyName: placementCompanyName, ownerEmail: placementOwnerEmail })
     : attachOwnerAuth({ plan, companyName: adCompanyName, ownerEmail: adOwnerEmail, adId: lastSubmittedAdId });
@@ -2926,7 +2960,7 @@ async function startStripeCheckout(plan) {
 
 if (placementCheckoutBtn) {
   placementCheckoutBtn.addEventListener('click', () => {
-    checkoutMessage.textContent = 'One-time activation is free. Submit your company request below, then click once in Inventory to auto-list and keep products updated.';
+    startStripeCheckout('placement');
   });
 }
 if (monthlyCheckoutBtn) {
@@ -3185,6 +3219,7 @@ async function initializeMarketplace() {
 
 initializeMarketplace();
 initializeCustomerTheme();
+initPlacementCheckoutState();
 syncOwnerOnlyVisibility();
 if (companyNameInput) {
   companyNameInput.value = getCompanySessionName();

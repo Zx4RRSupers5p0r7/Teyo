@@ -39,7 +39,7 @@ const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
-  placement: { amount: 0, description: 'Teyo premium product placement with free one-time activation.' },
+  placement: { amount: 4900, description: 'Teyo one-time company setup fee with AI catalog onboarding.' },
   monthlyAd: { amount: 1500, description: 'Teyo monthly sponsor ad placement for $15/month.' },
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
@@ -2113,14 +2113,24 @@ app.post('/api/create-checkout-session', async (req, res) => {
     let subscriptionData;
 
     if (normalizedPlan === 'placement') {
-      if (!safeCompanyName) {
-        return res.status(400).json({ success: false, message: 'Company name is required for placement checkout.' });
+      if (!safeCompanyName || !safeOwnerEmail) {
+        return res.status(400).json({ success: false, message: 'Company name and owner email are required for one-time setup checkout.' });
       }
-      return res.json({
-        success: true,
-        message: 'One-time activation is free. Submit your listing and it goes live immediately with auto-sync.',
-        url: null,
-        sessionId: null
+      metadata = {
+        plan: normalizedPlan,
+        companyName: safeCompanyName,
+        ownerEmail: safeOwnerEmail
+      };
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Teyo One-Time Company Setup',
+            description: PRICING.placement.description
+          },
+          unit_amount: PRICING.placement.amount
+        },
+        quantity: 1
       });
     } else {
       const data = loadData();

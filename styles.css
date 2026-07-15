@@ -206,6 +206,14 @@ article p,
   font-size: 1.05rem;
   letter-spacing: 0.02em;
 }
+.superpower-title {
+  margin: 10px 0 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
 
 .hero-highlights { display: flex; flex-wrap: wrap; gap: 12px; padding: 0; margin: 0; list-style: none; }
 .hero-highlights li {

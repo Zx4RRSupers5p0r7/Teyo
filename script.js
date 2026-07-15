@@ -39,6 +39,13 @@ const companyAccessKeyInput = document.getElementById('companyAccessKeyInput');
 const companySetAccessBtn = document.getElementById('companySetAccessBtn');
 const companyClearAccessBtn = document.getElementById('companyClearAccessBtn');
 const companyAccessMessage = document.getElementById('companyAccessMessage');
+const storeSyncSourceUrlInput = document.getElementById('storeSyncSourceUrlInput');
+const storeSyncFormatSelect = document.getElementById('storeSyncFormatSelect');
+const storeSyncEnabledInput = document.getElementById('storeSyncEnabledInput');
+const storeSyncSaveBtn = document.getElementById('storeSyncSaveBtn');
+const storeSyncRunBtn = document.getElementById('storeSyncRunBtn');
+const storeSyncMessage = document.getElementById('storeSyncMessage');
+const storeSyncStatusPanel = document.getElementById('storeSyncStatusPanel');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -160,6 +167,7 @@ let marketplaceState = {
 let lastSubmittedAdId = null;
 let adminAccessGranted = false;
 let marketplaceLoadError = '';
+let companyStoreSyncState = null;
 
 function isAdminPage() {
   return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList'));
@@ -212,22 +220,21 @@ function getOwnerHeaders() {
   if (!hasOwnerSession()) {
     return {};
   }
-
-  function getCompanyHeaders() {
-    if (!hasCompanySession()) {
-      return {};
-    }
-
-    return {
-      'x-company-name': getCompanySessionName(),
-      'x-company-email': getCompanySessionEmail(),
-      'x-company-key': getCompanySessionKey()
-    };
-  }
-
   return {
     'x-owner-email': getOwnerEmail(),
     'x-owner-key': getOwnerKey()
+  };
+}
+
+function getCompanyHeaders() {
+  if (!hasCompanySession()) {
+    return {};
+  }
+
+  return {
+    'x-company-name': getCompanySessionName(),
+    'x-company-email': getCompanySessionEmail(),
+    'x-company-key': getCompanySessionKey()
   };
 }
 
@@ -378,6 +385,7 @@ async function verifyCompanyAccess() {
     if (companyAccessMessage) {
       companyAccessMessage.textContent = `Company access unlocked for ${companyName}.`;
     }
+    await loadCompanyStoreSyncConfig();
     return true;
   } catch (error) {
     if (companyAccessMessage) {
@@ -2016,6 +2024,144 @@ function setInventoryRestockMessage(text) {
   }
 }
 
+function setStoreSyncMessage(text) {
+  if (storeSyncMessage) {
+    storeSyncMessage.textContent = text;
+  }
+}
+
+function renderStoreSyncStatus(sync = null, totalAutoProducts = 0) {
+  if (!storeSyncStatusPanel) {
+    return;
+  }
+  if (!sync) {
+    storeSyncStatusPanel.innerHTML = '<p>Unlock company access to manage automatic store sync.</p>';
+    return;
+  }
+
+  const statusLabel = sync.enabled ? 'Enabled' : 'Disabled';
+  const lastSync = sync.lastSyncAt ? new Date(sync.lastSyncAt).toLocaleString() : 'Not yet';
+  const lastSuccess = sync.lastSuccessAt ? new Date(sync.lastSuccessAt).toLocaleString() : 'Not yet';
+  const lastError = String(sync.lastError || '').trim();
+  storeSyncStatusPanel.innerHTML = `
+    <article class="inventory-restock-card">
+      <h4>Store sync status</h4>
+      <p><strong>Status:</strong> ${escapeHtml(statusLabel)}</p>
+      <p><strong>Auto-imported products:</strong> ${Number(totalAutoProducts || 0)}</p>
+      <p><strong>Last sync:</strong> ${escapeHtml(lastSync)}</p>
+      <p><strong>Last successful sync:</strong> ${escapeHtml(lastSuccess)}</p>
+      <p><strong>Last import count:</strong> ${Number(sync.lastImportedCount || 0)} products</p>
+      <p><strong>Last changed count:</strong> ${Number(sync.lastChangedCount || 0)} products</p>
+      ${lastError ? `<p><strong>Last error:</strong> ${escapeHtml(lastError)}</p>` : '<p><strong>Last error:</strong> None</p>'}
+    </article>
+  `;
+}
+
+async function loadCompanyStoreSyncConfig() {
+  if (!storeSyncSourceUrlInput && !storeSyncStatusPanel) {
+    return;
+  }
+  if (!hasCompanySession()) {
+    companyStoreSyncState = null;
+    renderStoreSyncStatus(null, 0);
+    setStoreSyncMessage('Enter company access above to activate one-click catalog sync.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/company/store-sync', {
+      method: 'GET',
+      headers: {
+        ...getCompanyHeaders()
+      }
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      setStoreSyncMessage(result.message || 'Unable to load store sync settings right now.');
+      renderStoreSyncStatus(null, 0);
+      return;
+    }
+
+    companyStoreSyncState = result.sync || null;
+    if (storeSyncSourceUrlInput) {
+      storeSyncSourceUrlInput.value = String(result.sync?.sourceUrl || '');
+    }
+    if (storeSyncFormatSelect) {
+      storeSyncFormatSelect.value = String(result.sync?.format || 'auto');
+    }
+    if (storeSyncEnabledInput) {
+      storeSyncEnabledInput.checked = Boolean(result.sync?.enabled);
+    }
+    renderStoreSyncStatus(result.sync, result.totalAutoProducts || 0);
+    setStoreSyncMessage('Store sync is ready. Save settings once and Teyo will keep your catalog updated automatically.');
+  } catch (error) {
+    setStoreSyncMessage('Unable to load store sync settings right now.');
+    renderStoreSyncStatus(null, 0);
+  }
+}
+
+async function saveCompanyStoreSyncConfig() {
+  if (!hasCompanySession()) {
+    setStoreSyncMessage('Unlock company access first.');
+    return;
+  }
+
+  const sourceUrl = String(storeSyncSourceUrlInput?.value || '').trim();
+  const format = String(storeSyncFormatSelect?.value || 'auto').trim();
+  const enabled = Boolean(storeSyncEnabledInput?.checked);
+
+  try {
+    const response = await fetch('/api/company/store-sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCompanyHeaders()
+      },
+      body: JSON.stringify({ sourceUrl, format, enabled })
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      setStoreSyncMessage(result.message || 'Unable to save store sync settings.');
+      return;
+    }
+
+    setStoreSyncMessage(result.message || 'Store sync settings saved.');
+    await loadMarketplaceData();
+    await loadCompanyStoreSyncConfig();
+  } catch (error) {
+    setStoreSyncMessage('Unable to save store sync settings right now.');
+  }
+}
+
+async function runCompanyStoreSyncNow() {
+  if (!hasCompanySession()) {
+    setStoreSyncMessage('Unlock company access first.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/company/store-sync/run', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getCompanyHeaders()
+      },
+      body: JSON.stringify({})
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      setStoreSyncMessage(result.message || 'Store sync failed.');
+      return;
+    }
+
+    setStoreSyncMessage(`${result.message} Imported ${Number(result.importedCount || 0)} products and changed ${Number(result.changedCount || 0)}.`);
+    await loadMarketplaceData();
+    await loadCompanyStoreSyncConfig();
+  } catch (error) {
+    setStoreSyncMessage('Unable to run store sync right now.');
+  }
+}
+
 function getInventoryScopedProducts() {
   const hasGlobalOwner = hasOwnerSession();
   const companySessionName = normalize(String(getCompanySessionName() || ''));
@@ -2162,6 +2308,9 @@ function renderInventoryManager() {
   }
 
   inventoryProductList.innerHTML = '';
+  if (storeSyncStatusPanel && !hasCompanySession()) {
+    renderStoreSyncStatus(null, 0);
+  }
   setInventorySummaryMessage('Loading your company summary...');
   setInventoryRestockMessage('Loading restock dashboard...');
   if (marketplaceLoadError) {
@@ -2176,7 +2325,13 @@ function renderInventoryManager() {
     inventoryProductList.insertAdjacentHTML('beforeend', `<p>${escapeHtml(accessMessage)}</p>`);
     setInventorySummaryMessage(accessMessage);
     setInventoryRestockMessage(accessMessage);
+    if (storeSyncStatusPanel) {
+      renderStoreSyncStatus(null, 0);
+    }
     return;
+  }
+  if (storeSyncStatusPanel) {
+    loadCompanyStoreSyncConfig();
   }
   renderInventorySummary(products);
   renderRestockSoonDashboard(products);
@@ -2674,7 +2829,7 @@ async function startStripeCheckout(plan) {
 
 if (placementCheckoutBtn) {
   placementCheckoutBtn.addEventListener('click', () => {
-    checkoutMessage.textContent = 'No one-time payment is required. Submit your partnership request and wait for approval.';
+    checkoutMessage.textContent = 'Click Here — Done. One-time activation is free. Submit your company request below, then connect your store URL for automatic product sync.';
   });
 }
 if (monthlyCheckoutBtn) {
@@ -2726,10 +2881,25 @@ if (companySetAccessBtn) {
 if (companyClearAccessBtn) {
   companyClearAccessBtn.addEventListener('click', async () => {
     clearCompanyAccess();
+    companyStoreSyncState = null;
     if (companyAccessMessage) {
       companyAccessMessage.textContent = 'Company access cleared for this browser.';
     }
+    setStoreSyncMessage('Company access cleared. Unlock again to manage auto-sync.');
+    renderStoreSyncStatus(null, 0);
     await initializeMarketplace();
+  });
+}
+
+if (storeSyncSaveBtn) {
+  storeSyncSaveBtn.addEventListener('click', async () => {
+    await saveCompanyStoreSyncConfig();
+  });
+}
+
+if (storeSyncRunBtn) {
+  storeSyncRunBtn.addEventListener('click', async () => {
+    await runCompanyStoreSyncNow();
   });
 }
 

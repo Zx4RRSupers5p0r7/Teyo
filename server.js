@@ -44,6 +44,9 @@ const PRICING = {
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
 };
+const STORE_SYNC_INTERVAL_MS = Math.max(60 * 1000, Number.parseInt(process.env.STORE_SYNC_INTERVAL_MS || '300000', 10) || (5 * 60 * 1000));
+const STORE_SYNC_TIMEOUT_MS = Math.max(3000, Number.parseInt(process.env.STORE_SYNC_TIMEOUT_MS || '12000', 10) || 12000);
+const STORE_SYNC_MAX_PRODUCTS = 250;
 const CUSTOMER_THEME_ENTITLEMENT_DAYS = 30;
 const PUBLIC_FILE_ALLOWLIST = new Set([
   'index.html',
@@ -61,6 +64,7 @@ let inMemoryData = null;
 let writeQueue = Promise.resolve();
 let storageMode = 'file';
 let dbPool = null;
+const storeSyncLocks = new Set();
 
 if (!validStripeKey && stripeSecretKey) {
   console.warn('Stripe secret key appears invalid. Checkout is disabled until STRIPE_SECRET_KEY is corrected.');
@@ -254,6 +258,383 @@ function normalizeWebsite(value) {
   return `https://${trimmed}`;
 }
 
+function stripHtml(value) {
+  return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function formatPrice(value) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    return '';
+  }
+
+  const normalized = raw.replace(/[^0-9.,-]/g, '').replace(',', '.');
+  const parsed = Number.parseFloat(normalized);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return '';
+  }
+  return `$${parsed.toFixed(parsed >= 100 ? 0 : 2).replace(/\.00$/, '')}`;
+}
+
+function normalizeFeedFormat(value) {
+  const raw = sanitizePlainText(value, 40).toLowerCase();
+  if (raw === 'shopify-json' || raw === 'generic-json') {
+    return raw;
+  }
+  return 'auto';
+}
+
+function createDefaultStoreSyncConfig(sourceUrl = '') {
+  const normalizedSourceUrl = isSafeHttpUrl(sourceUrl) ? sourceUrl : '';
+  return {
+    enabled: Boolean(normalizedSourceUrl),
+    format: 'auto',
+    sourceUrl: normalizedSourceUrl,
+    lastSyncAt: '',
+    lastSuccessAt: '',
+    lastError: '',
+    lastImportedCount: 0,
+    lastChangedCount: 0
+  };
+}
+
+function getPartnerStoreSyncConfig(partner) {
+  const existing = (partner && typeof partner.storeSync === 'object' && partner.storeSync) ? partner.storeSync : null;
+  const fallbackSource = normalizeWebsite(partner?.storeCatalogUrl || partner?.websiteUrl || '');
+  const defaults = createDefaultStoreSyncConfig(fallbackSource);
+  if (!existing) {
+    return defaults;
+  }
+
+  return {
+    enabled: Boolean(existing.enabled) && Boolean(isSafeHttpUrl(existing.sourceUrl || fallbackSource)),
+    format: normalizeFeedFormat(existing.format),
+    sourceUrl: isSafeHttpUrl(existing.sourceUrl || fallbackSource) ? normalizeWebsite(existing.sourceUrl || fallbackSource) : '',
+    lastSyncAt: sanitizePlainText(existing.lastSyncAt, 40),
+    lastSuccessAt: sanitizePlainText(existing.lastSuccessAt, 40),
+    lastError: sanitizePlainText(existing.lastError, 400),
+    lastImportedCount: Number.isInteger(existing.lastImportedCount) ? existing.lastImportedCount : 0,
+    lastChangedCount: Number.isInteger(existing.lastChangedCount) ? existing.lastChangedCount : 0
+  };
+}
+
+function buildStoreSyncAttemptUrls(sourceUrl) {
+  const attempts = [];
+  const normalized = normalizeWebsite(sourceUrl);
+  if (!isSafeHttpUrl(normalized)) {
+    return attempts;
+  }
+
+  attempts.push(normalized);
+  try {
+    const parsed = new URL(normalized);
+    if (parsed.pathname === '/' || parsed.pathname === '') {
+      attempts.push(`${parsed.origin}/products.json?limit=250`);
+      attempts.push(`${parsed.origin}/collections/all/products.json?limit=250`);
+    }
+  } catch (error) {
+    return attempts;
+  }
+
+  return Array.from(new Set(attempts));
+}
+
+async function fetchJsonWithTimeout(urlValue, timeoutMs = STORE_SYNC_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(urlValue, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return await response.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function normalizeShopifyProducts(payload, partner, sourceUrl) {
+  const products = Array.isArray(payload?.products) ? payload.products : [];
+  const websiteBase = normalizeWebsite(partner?.websiteUrl || sourceUrl);
+  const sourceHost = (() => {
+    try {
+      return new URL(websiteBase).origin;
+    } catch (error) {
+      return '';
+    }
+  })();
+  const onlineStoreName = `${sanitizePlainText(partner?.companyName, 120) || 'Store'} Online`;
+
+  return products.map((product) => {
+    const title = sanitizePlainText(product?.title, 180);
+    if (!title) {
+      return null;
+    }
+
+    const variants = Array.isArray(product?.variants) ? product.variants : [];
+    const firstVariant = variants[0] || {};
+    const handle = sanitizePlainText(product?.handle, 180);
+    const productPath = handle ? `/products/${handle}` : '';
+    const websiteUrl = (sourceHost && productPath) ? `${sourceHost}${productPath}` : normalizeWebsite(sourceUrl);
+    const imageUrl = normalizeWebsite(product?.image?.src || product?.images?.[0]?.src || '');
+    const price = formatPrice(firstVariant?.price || product?.price || '');
+    const sizeOptions = Array.from(new Set(
+      variants
+        .map((variant) => sanitizeSizeToken(variant?.option1 || ''))
+        .filter(Boolean)
+    )).slice(0, 40);
+    const sizeInventory = variants
+      .map((variant) => {
+        const size = sanitizeSizeToken(variant?.option1 || '');
+        if (!size) {
+          return null;
+        }
+        const available = Boolean(variant?.available);
+        return {
+          storeName: onlineStoreName,
+          size,
+          stockStatus: available ? 'In stock' : 'Out of stock',
+          restockDate: ''
+        };
+      })
+      .filter(Boolean)
+      .slice(0, 500);
+
+    const inStock = variants.some((variant) => Boolean(variant?.available));
+    const externalId = sanitizePlainText(
+      product?.id || product?.admin_graphql_api_id || `${title}-${websiteUrl}`,
+      200
+    );
+
+    return {
+      sourceProductId: externalId,
+      productName: title,
+      category: sanitizePlainText(product?.product_type || 'general', 80) || 'general',
+      price: price || '$0',
+      websiteUrl: websiteUrl || normalizeWebsite(sourceUrl),
+      description: sanitizePlainText(stripHtml(product?.body_html || product?.description || ''), 3000),
+      imageUrl: isSafeHttpUrl(imageUrl) ? imageUrl : '',
+      stockStatus: inStock ? 'In stock' : 'Out of stock',
+      stores: [onlineStoreName],
+      sizeOptions,
+      sizeInventory
+    };
+  }).filter(Boolean);
+}
+
+function normalizeGenericProducts(payload, sourceUrl) {
+  const list = Array.isArray(payload)
+    ? payload
+    : (Array.isArray(payload?.products) ? payload.products : (Array.isArray(payload?.items) ? payload.items : []));
+  const websiteFallback = normalizeWebsite(sourceUrl);
+  const onlineStoreName = 'Online store';
+
+  return list.map((product) => {
+    const productName = sanitizePlainText(
+      product?.productName || product?.title || product?.name || product?.label,
+      180
+    );
+    if (!productName) {
+      return null;
+    }
+
+    const websiteUrl = normalizeWebsite(product?.websiteUrl || product?.url || product?.link || websiteFallback);
+    const imageUrl = normalizeWebsite(product?.imageUrl || product?.image || product?.thumbnail || '');
+    const price = formatPrice(product?.price || product?.amount || product?.cost || '');
+    const sizeOptions = sanitizeSizeOptions(product?.sizeOptions || product?.sizes || []);
+    const sizeInventory = sanitizeSizeInventory(product?.sizeInventory || [], product?.stockStatus || product?.status || 'In stock');
+    const stockStatus = sanitizePlainText(product?.stockStatus || product?.status || (sizeInventory.length ? '' : 'In stock'), 120)
+      || (sizeInventory.some((entry) => String(entry.stockStatus || '').toLowerCase().includes('in')) ? 'In stock' : 'Out of stock');
+    const stores = Array.isArray(product?.stores)
+      ? product.stores.map((value) => sanitizePlainText(value, 120)).filter(Boolean).slice(0, 20)
+      : [onlineStoreName];
+
+    const externalId = sanitizePlainText(product?.id || product?.sku || `${productName}-${websiteUrl}`, 200);
+    return {
+      sourceProductId: externalId,
+      productName,
+      category: sanitizePlainText(product?.category || 'general', 80) || 'general',
+      price: price || '$0',
+      websiteUrl: websiteUrl || websiteFallback,
+      description: sanitizePlainText(stripHtml(product?.description || product?.summary || ''), 3000),
+      imageUrl: isSafeHttpUrl(imageUrl) ? imageUrl : '',
+      stockStatus,
+      stores,
+      sizeOptions,
+      sizeInventory
+    };
+  }).filter(Boolean);
+}
+
+function normalizeStoreFeedProducts(payload, partner, sourceUrl, format = 'auto') {
+  const normalizedFormat = normalizeFeedFormat(format);
+  if (normalizedFormat === 'shopify-json') {
+    return normalizeShopifyProducts(payload, partner, sourceUrl);
+  }
+  if (normalizedFormat === 'generic-json') {
+    return normalizeGenericProducts(payload, sourceUrl);
+  }
+
+  if (Array.isArray(payload?.products) && payload.products.some((product) => product && (product.variants || product.handle || product.body_html))) {
+    return normalizeShopifyProducts(payload, partner, sourceUrl);
+  }
+
+  return normalizeGenericProducts(payload, sourceUrl);
+}
+
+function buildStoreSyncProductKey(companyName, ownerEmail, sourceProductId, websiteUrl, productName) {
+  const companyKey = normalizeName(companyName);
+  const ownerKey = normalizeName(ownerEmail);
+  const sourceKey = sanitizePlainText(sourceProductId, 200) || sanitizePlainText(websiteUrl, 300) || sanitizePlainText(productName, 180);
+  return `${companyKey}::${ownerKey}::${normalizeName(sourceKey)}`;
+}
+
+function isPartnerActive(partner) {
+  return Boolean(partner && partner.paid && partner.activeListing && partner.paymentConfirmed && getPartnerRequestStatus(partner) === 'approved');
+}
+
+function applyStoreSyncProducts(data, partner, importedProducts) {
+  const companyKey = normalizeName(partner.companyName);
+  const ownerKey = normalizeName(partner.ownerEmail);
+  const existingAutoProducts = data.products.filter((entry) =>
+    normalizeName(entry.companyName) === companyKey
+    && normalizeName(entry.ownerEmail) === ownerKey
+    && entry.sourceType === 'store-sync'
+  );
+
+  const existingByKey = new Map();
+  existingAutoProducts.forEach((entry) => {
+    const key = buildStoreSyncProductKey(
+      entry.companyName,
+      entry.ownerEmail,
+      entry.sourceProductId || '',
+      entry.websiteUrl || '',
+      entry.productName || ''
+    );
+    existingByKey.set(key, entry);
+  });
+
+  let changedCount = 0;
+  let createdCount = 0;
+  const nowIso = new Date().toISOString();
+  const visibleByDefault = isPartnerActive(partner);
+  const incomingKeys = new Set();
+  let idCounter = 0;
+
+  importedProducts.slice(0, STORE_SYNC_MAX_PRODUCTS).forEach((product) => {
+    const key = buildStoreSyncProductKey(
+      partner.companyName,
+      partner.ownerEmail,
+      product.sourceProductId || '',
+      product.websiteUrl || '',
+      product.productName || ''
+    );
+    incomingKeys.add(key);
+    const current = existingByKey.get(key);
+    const nextValues = {
+      productName: sanitizePlainText(product.productName, 180),
+      companyName: sanitizePlainText(partner.companyName, 120),
+      ownerEmail: sanitizeEmail(partner.ownerEmail),
+      category: sanitizePlainText(product.category || 'general', 80) || 'general',
+      price: sanitizePlainText(product.price || '$0', 80) || '$0',
+      websiteUrl: normalizeWebsite(product.websiteUrl || partner.websiteUrl || ''),
+      description: sanitizePlainText(product.description || '', 3000),
+      imageUrl: isSafeHttpUrl(product.imageUrl) ? product.imageUrl : '',
+      stockStatus: sanitizePlainText(product.stockStatus || 'In stock', 120),
+      safetyNote: '',
+      stores: Array.isArray(product.stores) ? product.stores.map((value) => sanitizePlainText(value, 120)).filter(Boolean).slice(0, 20) : [],
+      sizeOptions: sanitizeSizeOptions(product.sizeOptions || []),
+      sizeInventory: sanitizeSizeInventory(product.sizeInventory || [], product.stockStatus || 'In stock'),
+      rating: '',
+      reviewCount: '',
+      verifiedSeller: false,
+      verificationStatus: 'Auto-synced listing',
+      trustSummary: 'Automatically synced from company catalog feed.',
+      approved: visibleByDefault,
+      visible: visibleByDefault,
+      sourceType: 'store-sync',
+      sourceProductId: sanitizePlainText(product.sourceProductId, 200),
+      sourceUpdatedAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    if (current) {
+      const before = JSON.stringify({
+        productName: current.productName,
+        category: current.category,
+        price: current.price,
+        websiteUrl: current.websiteUrl,
+        description: current.description,
+        imageUrl: current.imageUrl,
+        stockStatus: current.stockStatus,
+        stores: current.stores,
+        sizeOptions: current.sizeOptions,
+        sizeInventory: current.sizeInventory,
+        approved: current.approved,
+        visible: current.visible
+      });
+      Object.assign(current, nextValues);
+      const after = JSON.stringify({
+        productName: current.productName,
+        category: current.category,
+        price: current.price,
+        websiteUrl: current.websiteUrl,
+        description: current.description,
+        imageUrl: current.imageUrl,
+        stockStatus: current.stockStatus,
+        stores: current.stores,
+        sizeOptions: current.sizeOptions,
+        sizeInventory: current.sizeInventory,
+        approved: current.approved,
+        visible: current.visible
+      });
+      if (before !== after) {
+        changedCount += 1;
+      }
+      return;
+    }
+
+    idCounter += 1;
+    data.products.push({
+      id: Date.now() + idCounter,
+      createdAt: nowIso,
+      ...nextValues
+    });
+    createdCount += 1;
+    changedCount += 1;
+  });
+
+  existingAutoProducts.forEach((entry) => {
+    const key = buildStoreSyncProductKey(
+      entry.companyName,
+      entry.ownerEmail,
+      entry.sourceProductId || '',
+      entry.websiteUrl || '',
+      entry.productName || ''
+    );
+    if (incomingKeys.has(key)) {
+      return;
+    }
+    if (entry.visible || entry.approved) {
+      changedCount += 1;
+    }
+    entry.visible = false;
+    entry.approved = false;
+    entry.archivedAt = nowIso;
+    entry.updatedAt = nowIso;
+  });
+
+  return {
+    importedCount: importedProducts.length,
+    createdCount,
+    changedCount
+  };
+}
+
 function isValidBusinessWebsite(value) {
   const trimmed = String(value || '').trim();
   if (!trimmed) {
@@ -351,6 +732,43 @@ function getCompanyHeaderAuth(req, options = {}) {
     companyName,
     ownerEmail
   };
+}
+
+function resolveCompanyPartnerContext(req, options = {}) {
+  const data = loadData();
+  const ownerAccess = hasOwnerHeader(req);
+
+  if (ownerAccess) {
+    const companyName = sanitizePlainText(req.body?.companyName || req.query?.companyName, 120);
+    const ownerEmailFromRequest = sanitizeEmail(req.body?.ownerEmail || req.query?.ownerEmail);
+    if (!companyName) {
+      return { data, partner: null, message: 'Company name is required for owner-managed sync requests.' };
+    }
+    const partner = findLatestPartner(data, companyName, ownerEmailFromRequest)
+      || findLatestPartner(data, companyName);
+    if (!partner) {
+      return { data, partner: null, message: 'No partner listing was found for that company.' };
+    }
+    if (options.requireActiveListing && !isPartnerActive(partner)) {
+      return { data, partner: null, message: 'This company listing must be approved before sync is available.' };
+    }
+    return { data, partner, message: '' };
+  }
+
+  const companyAuth = getCompanyHeaderAuth(req, { requireActiveListing: options.requireActiveListing });
+  if (!companyAuth) {
+    return { data, partner: null, message: 'Company access is required for this request.' };
+  }
+
+  const partner = findLatestPartner(data, companyAuth.companyName, companyAuth.ownerEmail);
+  if (!partner) {
+    return { data, partner: null, message: 'No matching company listing was found for this session.' };
+  }
+  if (options.requireActiveListing && !isPartnerActive(partner)) {
+    return { data, partner: null, message: 'This company listing must be approved before sync is available.' };
+  }
+
+  return { data, partner, message: '' };
 }
 
 function hasPrivilegedAccess(req) {
@@ -624,6 +1042,7 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     if (!existing.companyAccessKey) {
       existing.companyAccessKey = generateCompanyAccessKey();
     }
+    existing.storeSync = getPartnerStoreSyncConfig(existing);
     saveData(data);
     return existing;
   }
@@ -633,11 +1052,13 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     companyName: safeCompanyName,
     ownerEmail: safeOwnerEmail,
     websiteUrl: '',
+    storeCatalogUrl: '',
     details: '',
     paymentConfirmed: false,
     paid: false,
     activeListing: false,
     requestStatus: 'pending',
+    storeSync: createDefaultStoreSyncConfig(''),
     companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
@@ -667,6 +1088,131 @@ function markPartnerPaid(companyName, ownerEmail = '') {
   partner.paymentConfirmed = true;
   saveData(data);
   return partner;
+}
+
+async function runPartnerStoreSync(partner, data, options = {}) {
+  const lockKey = `${normalizeName(partner.companyName)}::${normalizeName(partner.ownerEmail)}`;
+  if (storeSyncLocks.has(lockKey)) {
+    return { success: false, message: 'A sync is already running for this company.', importedCount: 0, changedCount: 0 };
+  }
+  storeSyncLocks.add(lockKey);
+  try {
+    const nowIso = new Date().toISOString();
+    const sync = getPartnerStoreSyncConfig(partner);
+    partner.storeSync = sync;
+    partner.storeCatalogUrl = sync.sourceUrl || partner.storeCatalogUrl || '';
+    partner.storeSync.lastSyncAt = nowIso;
+
+    if (!sync.enabled || !sync.sourceUrl) {
+      partner.storeSync.lastError = 'Auto-sync is disabled or missing a source URL.';
+      partner.storeSync.lastImportedCount = 0;
+      partner.storeSync.lastChangedCount = 0;
+      return { success: false, message: partner.storeSync.lastError, importedCount: 0, changedCount: 0 };
+    }
+
+    if (!isPartnerActive(partner)) {
+      partner.storeSync.lastError = 'Partner listing must be approved before auto-sync can run.';
+      partner.storeSync.lastImportedCount = 0;
+      partner.storeSync.lastChangedCount = 0;
+      return { success: false, message: partner.storeSync.lastError, importedCount: 0, changedCount: 0 };
+    }
+
+    const attempts = buildStoreSyncAttemptUrls(sync.sourceUrl);
+    if (!attempts.length) {
+      partner.storeSync.lastError = 'Invalid store URL. Use a valid http(s) URL.';
+      partner.storeSync.lastImportedCount = 0;
+      partner.storeSync.lastChangedCount = 0;
+      return { success: false, message: partner.storeSync.lastError, importedCount: 0, changedCount: 0 };
+    }
+
+    let payload = null;
+    let selectedUrl = '';
+    let lastError = 'Store source could not be reached.';
+    for (const candidate of attempts) {
+      try {
+        payload = await fetchJsonWithTimeout(candidate);
+        selectedUrl = candidate;
+        break;
+      } catch (error) {
+        lastError = `${candidate}: ${sanitizePlainText(error.message, 240) || 'fetch failed'}`;
+      }
+    }
+
+    if (!payload) {
+      partner.storeSync.lastError = lastError;
+      partner.storeSync.lastImportedCount = 0;
+      partner.storeSync.lastChangedCount = 0;
+      return { success: false, message: lastError, importedCount: 0, changedCount: 0 };
+    }
+
+    const importedProducts = normalizeStoreFeedProducts(payload, partner, selectedUrl, sync.format)
+      .filter((entry) => entry && entry.productName && entry.websiteUrl)
+      .slice(0, STORE_SYNC_MAX_PRODUCTS);
+
+    if (!importedProducts.length) {
+      partner.storeSync.lastError = 'No supported products were found in the provided feed.';
+      partner.storeSync.lastImportedCount = 0;
+      partner.storeSync.lastChangedCount = 0;
+      return { success: false, message: partner.storeSync.lastError, importedCount: 0, changedCount: 0 };
+    }
+
+    const result = applyStoreSyncProducts(data, partner, importedProducts);
+    partner.storeSync.lastSuccessAt = nowIso;
+    partner.storeSync.lastError = '';
+    partner.storeSync.lastImportedCount = result.importedCount;
+    partner.storeSync.lastChangedCount = result.changedCount;
+    partner.storeSync.sourceUrl = selectedUrl;
+    partner.storeCatalogUrl = selectedUrl;
+    return {
+      success: true,
+      message: options.reason === 'manual'
+        ? 'Store sync completed successfully.'
+        : 'Store sync refreshed successfully.',
+      importedCount: result.importedCount,
+      changedCount: result.changedCount
+    };
+  } finally {
+    storeSyncLocks.delete(lockKey);
+  }
+}
+
+let storeSyncRunning = false;
+async function runScheduledStoreSync() {
+  if (storeSyncRunning) {
+    return;
+  }
+  storeSyncRunning = true;
+  try {
+    const data = loadData();
+    const eligiblePartners = data.partners.filter((partner) => {
+      const sync = getPartnerStoreSyncConfig(partner);
+      return Boolean(sync.enabled && sync.sourceUrl && isPartnerActive(partner));
+    });
+
+    for (const partner of eligiblePartners) {
+      await runPartnerStoreSync(partner, data, { reason: 'scheduled' });
+    }
+
+    if (eligiblePartners.length > 0) {
+      saveData(data);
+    }
+  } finally {
+    storeSyncRunning = false;
+  }
+}
+
+function scheduleStoreSyncWorker() {
+  setTimeout(() => {
+    runScheduledStoreSync().catch((error) => {
+      console.warn(`Store sync warm-up failed: ${error.message}`);
+    });
+  }, 20000);
+
+  setInterval(() => {
+    runScheduledStoreSync().catch((error) => {
+      console.warn(`Scheduled store sync failed: ${error.message}`);
+    });
+  }, STORE_SYNC_INTERVAL_MS);
 }
 
 function markAdPaidByAdId(adId, paymentMeta = {}) {
@@ -1006,13 +1552,123 @@ app.post('/api/company/verify', adminLimiter, (req, res) => {
   return res.json({ success: true, company: true });
 });
 
-app.post('/api/partner', (req, res) => {
+app.get('/api/company/store-sync', adminLimiter, (req, res) => {
+  const { data, partner, message } = resolveCompanyPartnerContext(req, { requireActiveListing: true });
+  if (!partner) {
+    return res.status(401).json({ success: false, message });
+  }
+
+  const sync = getPartnerStoreSyncConfig(partner);
+  const totalAutoProducts = data.products.filter((entry) =>
+    normalizeName(entry.companyName) === normalizeName(partner.companyName)
+    && normalizeName(entry.ownerEmail) === normalizeName(partner.ownerEmail)
+    && entry.sourceType === 'store-sync'
+  ).length;
+
+  return res.json({
+    success: true,
+    sync: {
+      enabled: sync.enabled,
+      format: sync.format,
+      sourceUrl: sync.sourceUrl,
+      lastSyncAt: sync.lastSyncAt,
+      lastSuccessAt: sync.lastSuccessAt,
+      lastError: sync.lastError,
+      lastImportedCount: sync.lastImportedCount,
+      lastChangedCount: sync.lastChangedCount
+    },
+    totalAutoProducts
+  });
+});
+
+app.post('/api/company/store-sync', adminLimiter, async (req, res) => {
+  const { data, partner, message } = resolveCompanyPartnerContext(req, { requireActiveListing: true });
+  if (!partner) {
+    return res.status(401).json({ success: false, message });
+  }
+
+  const sourceUrlRaw = sanitizePlainText(req.body.sourceUrl, 2048);
+  const normalizedSourceUrl = normalizeWebsite(sourceUrlRaw || partner.storeCatalogUrl || partner.websiteUrl || '');
+  const enabled = req.body.enabled === true || req.body.enabled === 'true';
+  const format = normalizeFeedFormat(req.body.format);
+  if (enabled && !isSafeHttpUrl(normalizedSourceUrl)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid store URL or product feed URL.' });
+  }
+
+  partner.storeSync = {
+    ...getPartnerStoreSyncConfig(partner),
+    enabled,
+    format,
+    sourceUrl: enabled ? normalizedSourceUrl : '',
+    lastError: enabled ? '' : 'Auto-sync is disabled.',
+    lastImportedCount: enabled ? partner.storeSync?.lastImportedCount || 0 : 0,
+    lastChangedCount: enabled ? partner.storeSync?.lastChangedCount || 0 : 0
+  };
+  partner.storeCatalogUrl = partner.storeSync.sourceUrl;
+
+  let syncResult = null;
+  if (partner.storeSync.enabled && partner.storeSync.sourceUrl) {
+    syncResult = await runPartnerStoreSync(partner, data, { reason: 'manual' });
+    if (!syncResult.success) {
+      saveData(data);
+      return res.status(400).json({
+        success: false,
+        message: syncResult.message,
+        sync: getPartnerStoreSyncConfig(partner)
+      });
+    }
+  }
+
+  saveData(data);
+  return res.json({
+    success: true,
+    message: syncResult?.message || 'Store sync settings saved.',
+    sync: getPartnerStoreSyncConfig(partner),
+    importedCount: syncResult?.importedCount || 0,
+    changedCount: syncResult?.changedCount || 0
+  });
+});
+
+app.post('/api/company/store-sync/run', adminLimiter, async (req, res) => {
+  const { data, partner, message } = resolveCompanyPartnerContext(req, { requireActiveListing: true });
+  if (!partner) {
+    return res.status(401).json({ success: false, message });
+  }
+
+  const sync = getPartnerStoreSyncConfig(partner);
+  if (!sync.enabled || !sync.sourceUrl) {
+    return res.status(400).json({ success: false, message: 'Enable auto-sync and set a valid source URL first.' });
+  }
+
+  const result = await runPartnerStoreSync(partner, data, { reason: 'manual' });
+  saveData(data);
+
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message: result.message,
+      sync: getPartnerStoreSyncConfig(partner)
+    });
+  }
+
+  return res.json({
+    success: true,
+    message: result.message,
+    importedCount: result.importedCount,
+    changedCount: result.changedCount,
+    sync: getPartnerStoreSyncConfig(partner)
+  });
+});
+
+app.post('/api/partner', async (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
+  const storeCatalogUrl = sanitizePlainText(req.body.storeCatalogUrl, 2048);
   const details = sanitizePlainText(req.body.details, 4000);
   const ownerKey = String(req.body.ownerKey || '').trim();
   const normalizedWebsite = normalizeWebsite(websiteUrl);
+  const normalizedStoreCatalogUrl = normalizeWebsite(storeCatalogUrl || normalizedWebsite);
 
   if (!companyName || !ownerEmail || !normalizedWebsite || !isBusinessOwnerSubmission(companyName, normalizedWebsite)) {
     return res.status(400).json({
@@ -1027,11 +1683,13 @@ app.post('/api/partner', (req, res) => {
     companyName,
     ownerEmail,
     websiteUrl: normalizedWebsite,
+    storeCatalogUrl: isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '',
     details: details || '',
     paymentConfirmed: true,
     paid: false,
     activeListing: false,
     requestStatus: 'pending',
+    storeSync: createDefaultStoreSyncConfig(isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : ''),
     companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
   };
@@ -1045,11 +1703,14 @@ app.post('/api/partner', (req, res) => {
   }
 
   data.partners.push(entry);
+  if (entry.requestStatus === 'approved' && entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
+    await runPartnerStoreSync(entry, data, { reason: 'owner-override' });
+  }
   saveData(data);
 
   res.json({
     success: true,
-    message: 'Thanks — your listing request has been received. One-time activation is free, and once approved your company can add unlimited products to Teyo.ca.',
+    message: 'Thanks — your listing request has been received. One-time activation is free, and once approved your company can auto-sync products from your store URL.',
     companyAccessKey: entry.companyAccessKey
   });
 });
@@ -1062,7 +1723,7 @@ app.get('/api/partners', (req, res) => {
   res.json(data.partners.map(serializePublicPartner));
 });
 
-app.post('/api/partners/:id/approve', requireAdmin, (req, res) => {
+app.post('/api/partners/:id/approve', requireAdmin, async (req, res) => {
   const data = loadData();
   const partner = data.partners.find((entry) => String(entry.id) === String(req.params.id));
 
@@ -1075,6 +1736,10 @@ app.post('/api/partners/:id/approve', requireAdmin, (req, res) => {
   partner.paymentConfirmed = true;
   partner.requestStatus = 'approved';
   partner.approvedAt = new Date().toISOString();
+  partner.storeSync = getPartnerStoreSyncConfig(partner);
+  if (partner.storeSync.enabled && partner.storeSync.sourceUrl) {
+    await runPartnerStoreSync(partner, data, { reason: 'partner-approve' });
+  }
   delete partner.deniedAt;
   saveData(data);
 
@@ -1569,6 +2234,7 @@ async function startServer() {
       console.log(`Teyo server running on http://localhost:${port} using ${storageMode} storage`);
     });
     await initializeStorage();
+    scheduleStoreSyncWorker();
   } catch (error) {
     console.error('Failed to initialize storage. Server aborted.', error.message);
     process.exit(1);

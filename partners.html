@@ -38,7 +38,7 @@
             <div class="plan-card featured-plan">
               <h3>Premium partner listing</h3>
               <p class="price">Free <span>one-time activation</span></p>
-              <p>One-time activation is now free and unlocks your company listing after approval.</p>
+              <p>One-time activation is now free and unlocks your company listing after approval, with automatic catalog sync built in and background refreshes every few minutes.</p>
               <ul>
                 <li>✅ Free product listings</li>
                 <li>✅ More customers discovering your products</li>
@@ -46,7 +46,7 @@
                 <li>✅ Keep your own website</li>
                 <li>✅ Reach new shoppers.</li>
               </ul>
-              <button id="placementCheckoutBtn" class="btn btn-primary" type="button">One-time activation is free</button>
+              <button id="placementCheckoutBtn" class="btn btn-primary" type="button">Activate free listing</button>
               <p id="checkoutMessage" class="form-message" aria-live="polite"></p>
             </div>
             <div class="plan-card">
@@ -65,12 +65,13 @@
           <div class="partner-form-card" id="partner-request">
             <div>
               <h3>Request a brand listing</h3>
-              <p>New company listings stay hidden until approval. One-time activation is free, and once approved your company can add unlimited products and route buyers to your website or local stores.</p>
+              <p>New company listings stay hidden until approval. One-time activation is free, and once approved your products can auto-sync from your store URL so changes appear on Teyo with minimal work.</p>
             </div>
             <form id="partnerForm" class="partner-form">
               <input name="companyName" type="text" placeholder="Company name" required />
               <input name="ownerEmail" type="email" placeholder="Owner email" required />
               <input name="websiteUrl" type="text" placeholder="Company website URL" required />
+              <input name="storeCatalogUrl" type="text" placeholder="Store catalog URL (optional, for auto-sync)" />
               <textarea name="details" rows="4" placeholder="Tell us what products or offers you want to feature"></textarea>
               <button class="btn btn-primary" type="submit">Request partnership</button>
               <p class="form-help">After submission, save your company access key from the confirmation message. You will need it on the Inventory page.</p>

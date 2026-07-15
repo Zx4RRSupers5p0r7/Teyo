@@ -1191,6 +1191,17 @@ article { padding: 24px; }
 .color-row input[type='color'] { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 12px; background: transparent; padding: 4px; }
 .form-message { min-height: 20px; color: #c7ffd2; }
 .form-help { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.sync-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.store-sync-status {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.03);
+}
+.store-sync-status p {
+  margin: 0 0 6px;
+  color: var(--muted);
+}
 .ad-list { display: flex; flex-direction: column; gap: 12px; }
 .ad-card {
   padding: 16px;

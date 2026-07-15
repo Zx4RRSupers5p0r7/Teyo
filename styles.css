@@ -44,8 +44,8 @@ body::before {
   mask-position: center 44%;
   -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
   mask-size: min(58vw, 620px) min(58vw, 620px);
-  opacity: 0.2;
-  filter: none;
+  opacity: 0.42;
+  filter: saturate(1.35) contrast(1.08);
 }
 
 body::after {
@@ -58,8 +58,8 @@ body::after {
   mask-position: center 44%;
   -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
   mask-size: min(58vw, 620px) min(58vw, 620px);
-  opacity: 0.2;
-  filter: none;
+  opacity: 0.42;
+  filter: saturate(1.35) contrast(1.08);
 }
 
 section[id], [id] {

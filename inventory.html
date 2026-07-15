@@ -81,9 +81,8 @@
                 <input id="storeSyncEnabledInput" type="checkbox" checked />
                 Keep automatic updates enabled
               </label>
-              <div class="color-row">
-                <button id="storeSyncSaveBtn" class="btn btn-primary" type="button">Click Here — Done</button>
-                <button id="storeSyncRunBtn" class="btn btn-secondary" type="button">Run sync now</button>
+              <div class="sync-actions">
+                <button id="storeSyncSaveBtn" class="btn btn-primary" type="button">Click once to auto-list and sync</button>
               </div>
               <p id="storeSyncMessage" class="form-message" aria-live="polite"></p>
               <div id="storeSyncStatusPanel" class="ad-list"></div>
@@ -96,37 +95,6 @@
               <p>Quick totals for your submitted products and inventory pressure points.</p>
             </div>
             <div id="inventorySummaryPanel" class="ad-list"></div>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Automatic store sync</h3>
-              <p>Connect your store/feed URL once, and Teyo keeps your catalog updated automatically in the background.</p>
-            </div>
-            <div class="partner-form">
-              <label>
-                Store or feed URL
-                <input id="storeSyncSourceUrlInput" type="text" placeholder="https://yourstore.com/products.json" />
-              </label>
-              <label>
-                Feed format
-                <select id="storeSyncFormatSelect">
-                  <option value="auto">Auto-detect (Recommended)</option>
-                  <option value="shopify-json">Shopify JSON</option>
-                  <option value="generic-json">Generic JSON</option>
-                </select>
-              </label>
-              <label class="checkbox-row">
-                <input id="storeSyncEnabledInput" type="checkbox" />
-                Keep auto-sync enabled
-              </label>
-              <div class="sync-actions">
-                <button id="storeSyncSaveBtn" class="btn btn-primary" type="button">Save sync settings</button>
-                <button id="storeSyncRunBtn" class="btn btn-secondary" type="button">Sync now</button>
-              </div>
-              <p id="storeSyncMessage" class="form-message" aria-live="polite"></p>
-              <div id="storeSyncStatusPanel" class="ad-list"></div>
-            </div>
           </div>
 
           <div class="partner-form-card">

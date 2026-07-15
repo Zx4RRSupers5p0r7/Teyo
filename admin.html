@@ -30,26 +30,26 @@
       <main>
         <section class="section">
           <div class="section-heading">
-            <p class="eyebrow">Owner console</p>
+            <p class="eyebrow">Admin console</p>
             <h2>Approve company listings, sponsor campaigns, and custom creatives for Teyo.ca.</h2>
           </div>
 
           <div class="partner-form-card owner-access-card">
             <div>
-              <h3>Owner access controls</h3>
-              <p>This is the only role that can unlock everything on the site. Both the email and the owner key must match the server settings.</p>
+              <h3>Admin access controls</h3>
+              <p>This is the protected admin role for platform moderation. Both the email and admin key must match server settings.</p>
             </div>
             <div class="partner-form">
               <label>
-                Owner email
+                Admin email
                 <input id="ownerEmailInput" type="email" placeholder="you@yourdomain.com" />
               </label>
               <label>
-                Owner key
-                <input id="ownerKeyInput" type="password" placeholder="Owner access key" />
+                Admin key
+                <input id="ownerKeyInput" type="password" placeholder="Admin access key" />
               </label>
-              <button id="ownerSetKeyBtn" class="btn btn-primary" type="button">Unlock owner access</button>
-              <button id="ownerClearKeyBtn" class="btn btn-secondary" type="button">Clear owner access</button>
+              <button id="ownerSetKeyBtn" class="btn btn-primary" type="button">Unlock admin access</button>
+              <button id="ownerClearKeyBtn" class="btn btn-secondary" type="button">Clear admin access</button>
               <p id="ownerAccessMessage" class="form-message" aria-live="polite"></p>
             </div>
           </div>
@@ -64,7 +64,7 @@
 
           <div class="partner-form-card">
             <div>
-              <h3>Processed partner requests (owner only)</h3>
+              <h3>Processed partner requests (admin only)</h3>
               <p>Approved and denied companies move here after review. Use this list if you need to ban and remove a company later.</p>
             </div>
             <div id="adminProcessedPartnerList" class="ad-list"></div>
@@ -74,7 +74,7 @@
           <div class="partner-form-card">
             <div>
               <h3>Product review queue</h3>
-              <p>Approve submitted products only after the company listing is approved and the product information has been reviewed.</p>
+              <p>Approve legitimate products and delete harmful or unwanted listings from this admin section.</p>
             </div>
             <div id="adminProductList" class="ad-list"></div>
           </div>

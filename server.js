@@ -421,7 +421,13 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
       stockStatus: inStock ? 'In stock' : 'Out of stock',
       stores: [onlineStoreName],
       sizeOptions,
-      sizeInventory
+      sizeInventory,
+      safetyNote: sanitizePlainText(stripHtml(product?.safetyNote || product?.safety || ''), 500),
+      trustSummary: sanitizePlainText(stripHtml(product?.trustSummary || product?.brandPromise || ''), 500),
+      rating: sanitizePlainText(product?.rating || product?.ratingAverage || '', 40),
+      reviewCount: sanitizePlainText(product?.reviewCount || product?.reviews || '', 40),
+      verificationStatus: sanitizePlainText(product?.verificationStatus || '', 80),
+      verifiedSeller: product?.verifiedSeller === true || product?.verified === true
     };
   }).filter(Boolean);
 }
@@ -465,7 +471,13 @@ function normalizeGenericProducts(payload, sourceUrl) {
       stockStatus,
       stores,
       sizeOptions,
-      sizeInventory
+      sizeInventory,
+      safetyNote: sanitizePlainText(stripHtml(product?.safetyNote || product?.safety || ''), 500),
+      trustSummary: sanitizePlainText(stripHtml(product?.trustSummary || product?.brandPromise || ''), 500),
+      rating: sanitizePlainText(product?.rating || product?.ratingAverage || '', 40),
+      reviewCount: sanitizePlainText(product?.reviewCount || product?.reviews || '', 40),
+      verificationStatus: sanitizePlainText(product?.verificationStatus || '', 80),
+      verifiedSeller: product?.verifiedSeller === true || product?.verified === true
     };
   }).filter(Boolean);
 }
@@ -535,6 +547,20 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
     );
     incomingKeys.add(key);
     const current = existingByKey.get(key);
+    const resolvedSafetyNote = sanitizePlainText(product.safetyNote || current?.safetyNote || '', 500);
+    const resolvedTrustSummary = sanitizePlainText(
+      product.trustSummary || current?.trustSummary || 'Automatically synced from company catalog feed.',
+      500
+    );
+    const resolvedRating = sanitizePlainText(product.rating || current?.rating || '', 40);
+    const resolvedReviewCount = sanitizePlainText(product.reviewCount || current?.reviewCount || '', 40);
+    const resolvedVerificationStatus = sanitizePlainText(
+      product.verificationStatus
+      || current?.verificationStatus
+      || (product.verifiedSeller ? 'Verified seller' : 'Auto-synced listing'),
+      80
+    );
+    const resolvedVerifiedSeller = Boolean(product.verifiedSeller || current?.verifiedSeller);
     const nextValues = {
       productName: sanitizePlainText(product.productName, 180),
       companyName: sanitizePlainText(partner.companyName, 120),
@@ -545,15 +571,15 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
       description: sanitizePlainText(product.description || '', 3000),
       imageUrl: isSafeHttpUrl(product.imageUrl) ? product.imageUrl : '',
       stockStatus: sanitizePlainText(product.stockStatus || 'In stock', 120),
-      safetyNote: '',
+      safetyNote: resolvedSafetyNote,
       stores: Array.isArray(product.stores) ? product.stores.map((value) => sanitizePlainText(value, 120)).filter(Boolean).slice(0, 20) : [],
       sizeOptions: sanitizeSizeOptions(product.sizeOptions || []),
       sizeInventory: sanitizeSizeInventory(product.sizeInventory || [], product.stockStatus || 'In stock'),
-      rating: '',
-      reviewCount: '',
-      verifiedSeller: false,
-      verificationStatus: 'Auto-synced listing',
-      trustSummary: 'Automatically synced from company catalog feed.',
+      rating: resolvedRating,
+      reviewCount: resolvedReviewCount,
+      verifiedSeller: resolvedVerifiedSeller,
+      verificationStatus: resolvedVerificationStatus,
+      trustSummary: resolvedTrustSummary,
       approved: visibleByDefault,
       visible: visibleByDefault,
       sourceType: 'store-sync',
@@ -571,6 +597,12 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
         description: current.description,
         imageUrl: current.imageUrl,
         stockStatus: current.stockStatus,
+        safetyNote: current.safetyNote,
+        trustSummary: current.trustSummary,
+        rating: current.rating,
+        reviewCount: current.reviewCount,
+        verifiedSeller: current.verifiedSeller,
+        verificationStatus: current.verificationStatus,
         stores: current.stores,
         sizeOptions: current.sizeOptions,
         sizeInventory: current.sizeInventory,
@@ -586,6 +618,12 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
         description: current.description,
         imageUrl: current.imageUrl,
         stockStatus: current.stockStatus,
+        safetyNote: current.safetyNote,
+        trustSummary: current.trustSummary,
+        rating: current.rating,
+        reviewCount: current.reviewCount,
+        verifiedSeller: current.verifiedSeller,
+        verificationStatus: current.verificationStatus,
         stores: current.stores,
         sizeOptions: current.sizeOptions,
         sizeInventory: current.sizeInventory,
@@ -1978,6 +2016,18 @@ app.post('/api/products/:id/approve', requireAdmin, (req, res) => {
   saveData(data);
 
   res.json({ success: true, product });
+});
+
+app.delete('/api/products/:id', requireAdmin, (req, res) => {
+  const data = loadData();
+  const index = data.products.findIndex((entry) => String(entry.id) === String(req.params.id));
+  if (index < 0) {
+    return res.status(404).json({ success: false, message: 'Product not found.' });
+  }
+
+  const [deletedProduct] = data.products.splice(index, 1);
+  saveData(data);
+  return res.json({ success: true, product: deletedProduct });
 });
 
 app.post('/api/products/:id/inventory', (req, res) => {

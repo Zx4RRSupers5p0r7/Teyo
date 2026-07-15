@@ -298,12 +298,12 @@ async function ensureAdminAccess() {
 
   if (hasOwnerSession()) {
     adminAccessGranted = true;
-    setAdminAccessMessage('Owner access verified. All approval controls are enabled.');
+    setAdminAccessMessage('Admin access verified. All moderation controls are enabled.');
     return true;
   }
 
   adminAccessGranted = false;
-  setAdminAccessMessage('Owner access is required for this page.');
+  setAdminAccessMessage('Admin access is required for this page.');
   return false;
 
 }
@@ -314,7 +314,7 @@ async function verifyOwnerAccess() {
 
   if (!email || !key) {
     if (ownerAccessMessage) {
-      ownerAccessMessage.textContent = 'Enter both your owner email and owner key.';
+      ownerAccessMessage.textContent = 'Enter both your admin email and admin key.';
     }
     return false;
   }
@@ -331,7 +331,7 @@ async function verifyOwnerAccess() {
       clearOwnerAccess();
       adminAccessGranted = false;
       if (ownerAccessMessage) {
-        ownerAccessMessage.textContent = result.message || 'Owner access was rejected.';
+        ownerAccessMessage.textContent = result.message || 'Admin access was rejected.';
       }
       return false;
     }
@@ -341,13 +341,13 @@ async function verifyOwnerAccess() {
     syncOwnerOnlyVisibility();
     initViewerBeacon();
     if (ownerAccessMessage) {
-      ownerAccessMessage.textContent = 'Owner access unlocked. You now have the full privileged role.';
+      ownerAccessMessage.textContent = 'Admin access unlocked. You can now moderate listings and products.';
     }
-    setAdminAccessMessage('Owner access verified. Approval controls are enabled.');
+    setAdminAccessMessage('Admin access verified. Moderation controls are enabled.');
     return true;
   } catch (error) {
     if (ownerAccessMessage) {
-      ownerAccessMessage.textContent = 'Unable to verify owner access right now.';
+      ownerAccessMessage.textContent = 'Unable to verify admin access right now.';
     }
     return false;
   }
@@ -1999,7 +1999,7 @@ function renderAds() {
   }
   if (adminAdsList) {
     if (!adminAccessGranted) {
-      adminAdsList.innerHTML = '<p>Owner access required to view ad requests.</p>';
+      adminAdsList.innerHTML = '<p>Admin access required to view ad requests.</p>';
       return;
     }
     renderTarget(adminAdsList, marketplaceState.ads, adminAccessGranted);
@@ -2093,7 +2093,7 @@ async function loadCompanyStoreSyncConfig() {
       storeSyncEnabledInput.checked = Boolean(result.sync?.enabled);
     }
     renderStoreSyncStatus(result.sync, result.totalAutoProducts || 0);
-    setStoreSyncMessage('Store sync is ready. Save settings once and Teyo will keep your catalog updated automatically.');
+    setStoreSyncMessage('Store sync is ready. Click once to auto-list products and keep updates running automatically.');
   } catch (error) {
     setStoreSyncMessage('Unable to load store sync settings right now.');
     renderStoreSyncStatus(null, 0);
@@ -2538,7 +2538,7 @@ async function denyPartner(id) {
       }
     });
     if (!response.ok) {
-      setAdminAccessMessage('Partner denial failed. Check your owner access and try again.');
+      setAdminAccessMessage('Partner denial failed. Check your admin access and try again.');
       return;
     }
     await loadMarketplaceData();
@@ -2556,7 +2556,7 @@ async function banPartner(id) {
       }
     });
     if (!response.ok) {
-      setAdminAccessMessage('Company ban failed. Check your owner access and try again.');
+      setAdminAccessMessage('Company ban failed. Check your admin access and try again.');
       return;
     }
     await loadMarketplaceData();
@@ -2597,6 +2597,24 @@ async function approveProduct(id) {
     await loadMarketplaceData();
   } catch (error) {
     setAdminAccessMessage('Product approval failed due to a network error.');
+  }
+}
+
+async function deleteProduct(id) {
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      method: 'DELETE',
+      headers: {
+        ...getAdminHeaders()
+      }
+    });
+    if (!response.ok) {
+      setAdminAccessMessage('Product deletion failed. Check your admin access and try again.');
+      return;
+    }
+    await loadMarketplaceData();
+  } catch (error) {
+    setAdminAccessMessage('Product deletion failed due to a network error.');
   }
 }
 
@@ -2829,7 +2847,7 @@ async function startStripeCheckout(plan) {
 
 if (placementCheckoutBtn) {
   placementCheckoutBtn.addEventListener('click', () => {
-    checkoutMessage.textContent = 'Click Here — Done. One-time activation is free. Submit your company request below, then connect your store URL for automatic product sync.';
+    checkoutMessage.textContent = 'One-time activation is free. Submit your company request below, then click once in Inventory to auto-list and keep products updated.';
   });
 }
 if (monthlyCheckoutBtn) {
@@ -2897,19 +2915,13 @@ if (storeSyncSaveBtn) {
   });
 }
 
-if (storeSyncRunBtn) {
-  storeSyncRunBtn.addEventListener('click', async () => {
-    await runCompanyStoreSyncNow();
-  });
-}
-
 if (ownerClearKeyBtn) {
   ownerClearKeyBtn.addEventListener('click', async () => {
     clearOwnerAccess();
     adminAccessGranted = false;
     syncOwnerOnlyVisibility();
     if (ownerAccessMessage) {
-      ownerAccessMessage.textContent = 'Owner access cleared. The site is back to the default public role.';
+      ownerAccessMessage.textContent = 'Admin access cleared.';
     }
     setAdminAccessMessage('View-only mode enabled. Enter admin key to approve requests.');
     await initializeMarketplace();
@@ -2940,9 +2952,9 @@ if (adminPartnerList) {
       return;
     }
     if (!adminAccessGranted) {
-      adminPartnerList.insertAdjacentHTML('beforeend', '<p>Owner access required to view company requests.</p>');
+      adminPartnerList.insertAdjacentHTML('beforeend', '<p>Admin access required to view company requests.</p>');
       if (adminProcessedPartnerList) {
-        adminProcessedPartnerList.insertAdjacentHTML('beforeend', '<p>Owner access required to view processed company requests.</p>');
+        adminProcessedPartnerList.insertAdjacentHTML('beforeend', '<p>Admin access required to view processed company requests.</p>');
       }
       return;
     }
@@ -3036,7 +3048,7 @@ if (adminPartnerList) {
       return;
     }
     if (!adminAccessGranted) {
-      adminProductList.insertAdjacentHTML('beforeend', '<p>Owner access required to view product requests.</p>');
+      adminProductList.insertAdjacentHTML('beforeend', '<p>Admin access required to view product requests.</p>');
       return;
     }
     if (!marketplaceState.products.length) {
@@ -3056,10 +3068,16 @@ if (adminPartnerList) {
         <p><strong>Status:</strong> ${product.approved && product.visible ? 'Live product' : 'Awaiting approval'}</p>
         <p><strong>Verification:</strong> ${product.verifiedSeller ? 'Verified seller' : 'Manual review needed'}</p>
         <p>${safeWebsiteUrl}</p>
-        ${adminAccessGranted ? `<button class="btn btn-primary" type="button" data-approve-product="${product.id}">Approve product</button>` : ''}
+        ${adminAccessGranted ? `
+          <div class="hero-actions">
+            <button class="btn btn-primary" type="button" data-approve-product="${product.id}">Approve product</button>
+            <button class="btn btn-secondary" type="button" data-delete-product="${product.id}">Delete product</button>
+          </div>
+        ` : ''}
       `;
       if (adminAccessGranted) {
         card.querySelector('[data-approve-product]')?.addEventListener('click', () => approveProduct(product.id));
+        card.querySelector('[data-delete-product]')?.addEventListener('click', () => deleteProduct(product.id));
       }
       adminProductList.appendChild(card);
     });
@@ -3080,7 +3098,7 @@ async function initializeMarketplace() {
 
   const accessGranted = await ensureAdminAccess();
   if (!accessGranted && isAdminPage() && adminAdsList) {
-    adminAdsList.innerHTML = '<p>Owner access required to view ad requests.</p>';
+    adminAdsList.innerHTML = '<p>Admin access required to view ad requests.</p>';
   }
 
   await loadMarketplaceData();

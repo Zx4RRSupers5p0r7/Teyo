@@ -33,13 +33,13 @@ function getRecommendedPrice(total) {
   if (total >= 5000)  return { label: '$149', cents: 14900, advice: 'Strong traction — consider raising to $149.' };
   if (total >= 2000)  return { label: '$79',  cents: 7900,  advice: 'Momentum is building — test a raise to $79.' };
   if (total >= 500)   return { label: '$49',  cents: 4900,  advice: 'Early traffic is coming in — $49 could be a good next step.' };
-  return { label: '$20', cents: 2000, advice: 'Right now, keeping the barrier low at $20 gives more companies a reason to try Teyo.' };
+  return { label: 'Free', cents: 0, advice: 'One-time activation is currently free to help more companies join early.' };
 }
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
 const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
-  placement: { amount: 2000, description: 'Teyo premium product placement for $20 one-time access.' },
+  placement: { amount: 0, description: 'Teyo premium product placement with free one-time activation.' },
   monthlyAd: { amount: 1500, description: 'Teyo monthly sponsor ad placement for $15/month.' },
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
@@ -1000,7 +1000,7 @@ app.post('/api/company/verify', adminLimiter, (req, res) => {
   }
 
   if (!partner.paid || !partner.activeListing || !partner.paymentConfirmed) {
-    return res.status(403).json({ success: false, message: 'Your company listing must be approved and paid before inventory access is enabled.' });
+    return res.status(403).json({ success: false, message: 'Your company listing must be approved before inventory access is enabled.' });
   }
 
   return res.json({ success: true, company: true });
@@ -1011,7 +1011,6 @@ app.post('/api/partner', (req, res) => {
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
   const details = sanitizePlainText(req.body.details, 4000);
-  const paymentConfirmed = req.body.paymentConfirmed;
   const ownerKey = String(req.body.ownerKey || '').trim();
   const normalizedWebsite = normalizeWebsite(websiteUrl);
 
@@ -1029,7 +1028,7 @@ app.post('/api/partner', (req, res) => {
     ownerEmail,
     websiteUrl: normalizedWebsite,
     details: details || '',
-    paymentConfirmed: paymentConfirmed === true || paymentConfirmed === 'true',
+    paymentConfirmed: true,
     paid: false,
     activeListing: false,
     requestStatus: 'pending',
@@ -1050,7 +1049,7 @@ app.post('/api/partner', (req, res) => {
 
   res.json({
     success: true,
-    message: 'Thanks — your placement request has been received. Once your one-time $20 activation fee is confirmed, your company can add unlimited products to Teyo.ca.',
+    message: 'Thanks — your listing request has been received. One-time activation is free, and once approved your company can add unlimited products to Teyo.ca.',
     companyAccessKey: entry.companyAccessKey
   });
 });
@@ -1247,7 +1246,7 @@ app.post('/api/products', (req, res) => {
   if (!ownerOverride && (!partnerMatch || !partnerMatch.paid || !partnerMatch.activeListing || !partnerMatch.paymentConfirmed)) {
     return res.status(403).json({
       success: false,
-      message: 'Your company must first complete the one-time $20 placement activation and receive approval before adding products. After that, you can add unlimited products.'
+      message: 'Your company must first receive listing approval before adding products. After that, you can add unlimited products.'
     });
   }
 
@@ -1401,26 +1400,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
       if (!safeCompanyName) {
         return res.status(400).json({ success: false, message: 'Company name is required for placement checkout.' });
       }
-      const existingPartner = ensurePartnerRecord(safeCompanyName, safeOwnerEmail);
-      if (existingPartner.paid && existingPartner.activeListing) {
-        return res.json({
-          success: true,
-          message: 'Your one-time placement is already active. You can add unlimited products now.',
-          url: null,
-          sessionId: null
-        });
-      }
-      metadata = { plan: normalizedPlan, companyName: safeCompanyName, ownerEmail: safeOwnerEmail };
-      lineItems.push({
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: 'Teyo Premium Listing',
-            description: PRICING.placement.description
-          },
-          unit_amount: PRICING.placement.amount
-        },
-        quantity: 1
+      return res.json({
+        success: true,
+        message: 'One-time activation is free. Submit your listing request and wait for owner approval.',
+        url: null,
+        sessionId: null
       });
     } else {
       const data = loadData();

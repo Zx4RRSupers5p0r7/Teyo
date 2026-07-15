@@ -1281,7 +1281,7 @@ function renderResults() {
 
   if (!items.length) {
     const sizeText = getSelectedSizeFilter() === 'ALL' ? '' : ` for size ${escapeHtml(getSelectedSizeFilter())}`;
-    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the $20 placement fee is approved and the product is reviewed.</p>`;
+    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the company is approved and the product is reviewed.</p>`;
     if (selectedProduct) {
       selectedProduct.innerHTML = '<p>Select a verified product to view pricing, store availability, and safety guidance.</p>';
     }
@@ -2673,7 +2673,9 @@ async function startStripeCheckout(plan) {
 }
 
 if (placementCheckoutBtn) {
-  placementCheckoutBtn.addEventListener('click', () => startStripeCheckout('placement'));
+  placementCheckoutBtn.addEventListener('click', () => {
+    checkoutMessage.textContent = 'No one-time payment is required. Submit your partnership request and wait for approval.';
+  });
 }
 if (monthlyCheckoutBtn) {
   monthlyCheckoutBtn.addEventListener('click', () => startStripeCheckout('monthly-ad'));

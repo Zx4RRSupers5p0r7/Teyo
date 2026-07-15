@@ -44,12 +44,12 @@ body::before {
   mask-position: center 44%;
   -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
   mask-size: min(58vw, 620px) min(58vw, 620px);
-  opacity: 0.22;
-  filter: brightness(0.28) saturate(0.75);
+  opacity: 0.2;
+  filter: none;
 }
 
 body::after {
-  background-color: var(--accent-soft);
+  background-color: var(--accent);
   -webkit-mask-image: url("teyo-watermark-secondary.svg");
   mask-image: url("teyo-watermark-secondary.svg");
   -webkit-mask-repeat: no-repeat;
@@ -58,8 +58,8 @@ body::after {
   mask-position: center 44%;
   -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
   mask-size: min(58vw, 620px) min(58vw, 620px);
-  opacity: 0.22;
-  filter: brightness(0.28) saturate(0.75);
+  opacity: 0.2;
+  filter: none;
 }
 
 section[id], [id] {

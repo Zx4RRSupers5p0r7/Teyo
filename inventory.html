@@ -31,7 +31,7 @@
         <section class="section">
           <div class="section-heading">
             <p class="eyebrow">Inventory manager</p>
-            <h2>Update size stock, store availability, and restock dates without re-submitting products.</h2>
+            <h2>Add your whole store with one click and let Teyo keep products updated automatically.</h2>
           </div>
 
           <div class="partner-form-card owner-access-card">
@@ -50,7 +50,7 @@
               </label>
               <label>
                 Company access key
-                <input id="companyAccessKeyInput" type="password" placeholder="Company access key from listing approval" />
+                <input id="companyAccessKeyInput" type="password" placeholder="Company access key from setup" />
               </label>
               <button id="companySetAccessBtn" class="btn btn-primary" type="button">Unlock company access</button>
               <button id="companyClearAccessBtn" class="btn btn-secondary" type="button">Clear company access</button>
@@ -88,31 +88,6 @@
               <div id="storeSyncStatusPanel" class="ad-list"></div>
             </div>
           </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>My company products</h3>
-              <p>Quick totals for your submitted products and inventory pressure points.</p>
-            </div>
-            <div id="inventorySummaryPanel" class="ad-list"></div>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Restock soon dashboard</h3>
-              <p>Upcoming restock targets in the next 14 days for out-of-stock or low-stock sizes.</p>
-            </div>
-            <div id="inventoryRestockList" class="ad-list"></div>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Product inventory editor</h3>
-              <p>Use one line per size entry: <code>Store Name|Size|Stock Status|YYYY-MM-DD</code>.</p>
-            </div>
-            <p id="inventoryStatusMessage" class="form-message" aria-live="polite"></p>
-            <div id="inventoryProductList" class="ad-list"></div>
-          </div>
         </section>
       </main>
 
@@ -122,10 +97,11 @@
         <a href="partners.html">Partners</a>
         <a href="inventory.html" class="active">Company inventory</a>
         <a href="contact.html">Contact</a>
+        <a href="admin.html" data-owner-only hidden>Admin</a>
       </nav>
 
       <footer class="footer">
-        <p>© 2026 Teyo.ca — inventory controls for accurate size-aware availability.</p>
+        <p>© 2026 Teyo.ca — one-click company setup with automatic catalog sync.</p>
       </footer>
     </div>
 

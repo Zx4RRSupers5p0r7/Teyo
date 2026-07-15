@@ -38,7 +38,7 @@
             <div class="plan-card featured-plan">
               <h3>Premium partner listing</h3>
               <p class="price">Free <span>one-time activation</span></p>
-              <p>One-time activation is free and unlocks AI-assisted auto-listing after approval, with background catalog refreshes every few minutes.</p>
+              <p>One-time activation is free and unlocks AI-assisted auto-listing immediately, with background catalog refreshes every few minutes.</p>
               <ul>
                 <li>✅ Free product listings</li>
                 <li>✅ More customers discovering your products</li>
@@ -64,49 +64,18 @@
 
           <div class="partner-form-card" id="partner-request">
             <div>
-              <h3>Request a brand listing</h3>
-              <p>New company listings stay hidden until approval. One-time activation is free, and once approved your products auto-sync from your store URL so changes appear on Teyo automatically.</p>
+              <h3>One-click AI store setup</h3>
+              <p>There is no wait. Add your company info, click one button, and Teyo automatically sets up your store listings with ongoing updates.</p>
             </div>
             <form id="partnerForm" class="partner-form">
               <input name="companyName" type="text" placeholder="Company name" required />
               <input name="ownerEmail" type="email" placeholder="Owner email" required />
               <input name="websiteUrl" type="text" placeholder="Company website URL" required />
-              <input name="storeCatalogUrl" type="text" placeholder="Store catalog URL (optional, for auto-sync)" />
-              <textarea name="details" rows="4" placeholder="Tell us what products or offers you want to feature"></textarea>
-              <button class="btn btn-primary" type="submit">Request partnership</button>
-              <p class="form-help">After submission, save your company access key from the confirmation message. You will need it on the Inventory page.</p>
+              <input name="storeCatalogUrl" type="text" placeholder="Store catalog URL (optional, use if different from website)" />
+              <textarea name="details" rows="4" placeholder="Optional notes for your store setup"></textarea>
+              <button class="btn btn-primary btn-cinematic-cta" type="submit">Click Here and Done</button>
+              <p class="form-help">We auto-import products and keep updates running in the background.</p>
               <p id="formMessage" class="form-message" aria-live="polite"></p>
-            </form>
-          </div>
-
-          <div class="partner-form-card">
-            <div>
-              <h3>Submit a product for review</h3>
-              <p>Only approved companies can submit products. Each listing is reviewed before it can appear publicly, and product images and safety notes are shown to shoppers. Brand stores are auto-discovered on the map, and you can still provide manual store overrides.</p>
-            </div>
-            <form id="productForm" class="partner-form">
-              <input name="productName" type="text" placeholder="Product name" required />
-              <input name="companyName" type="text" placeholder="Company name" required />
-              <input name="category" type="text" placeholder="Category (for example: electronics)" />
-              <input name="price" type="text" placeholder="Price" required />
-              <input name="websiteUrl" type="text" placeholder="Company or product URL" required />
-              <input name="imageUrl" type="text" placeholder="Product image URL" />
-              <input name="sizeOptions" type="text" placeholder="Sizes sold (for example: XS, S, M, L, XL or 8, 9, 10)" />
-              <input name="stockStatus" type="text" placeholder="Stock status (for example: in stock, low stock, out of stock)" />
-              <input name="rating" type="text" placeholder="Average rating (for example 4.8/5)" />
-              <input name="reviewCount" type="text" placeholder="Review count (for example 184 reviews)" />
-              <input name="verificationStatus" type="text" placeholder="Verification label (for example Verified seller)" />
-              <label class="checkbox-row">
-                <input name="verifiedSeller" type="checkbox" value="true" />
-                Mark this seller as verified for display
-              </label>
-              <textarea name="description" rows="4" placeholder="Describe the product and any key features"></textarea>
-              <textarea name="safetyNote" rows="3" placeholder="Add safety guidance or compliance note"></textarea>
-              <textarea name="trustSummary" rows="3" placeholder="Share your seller promise, shipping policy, or return confidence"></textarea>
-              <textarea name="stores" rows="2" placeholder="Optional manual store overrides: Store Name|Stock, Store Name|Stock"></textarea>
-              <textarea name="sizeInventory" rows="4" placeholder="Per-size store inventory (one per line): Store Name|Size|Stock Status|YYYY-MM-DD"></textarea>
-              <button class="btn btn-primary" type="submit">Submit product</button>
-              <p id="productFormMessage" class="form-message" aria-live="polite"></p>
             </form>
           </div>
 
@@ -149,11 +118,22 @@
         <a href="partners.html" class="active">Partners</a>
         <a href="inventory.html">Company inventory</a>
         <a href="contact.html">Contact</a>
+        <a href="admin.html" data-owner-only hidden>Admin</a>
       </nav>
 
       <footer class="footer">
         <p>© 2026 Teyo.ca — Premium discovery for company owners and modern buyers.</p>
       </footer>
+    </div>
+    <div id="cinematicOnboardingOverlay" class="cinematic-onboarding-overlay" hidden>
+      <div class="cinematic-onboarding-content">
+        <p class="cinematic-kicker">Teyo AI Setup</p>
+        <h3 id="cinematicOnboardingTitle">Scanning your store</h3>
+        <p id="cinematicOnboardingSubtext">Preparing automatic product import and live updates.</p>
+        <div class="cinematic-progress-track">
+          <span id="cinematicOnboardingProgress" class="cinematic-progress-fill"></span>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>

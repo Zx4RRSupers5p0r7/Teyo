@@ -46,6 +46,10 @@ const storeSyncSaveBtn = document.getElementById('storeSyncSaveBtn');
 const storeSyncRunBtn = document.getElementById('storeSyncRunBtn');
 const storeSyncMessage = document.getElementById('storeSyncMessage');
 const storeSyncStatusPanel = document.getElementById('storeSyncStatusPanel');
+const cinematicOnboardingOverlay = document.getElementById('cinematicOnboardingOverlay');
+const cinematicOnboardingTitle = document.getElementById('cinematicOnboardingTitle');
+const cinematicOnboardingSubtext = document.getElementById('cinematicOnboardingSubtext');
+const cinematicOnboardingProgress = document.getElementById('cinematicOnboardingProgress');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -168,6 +172,62 @@ let lastSubmittedAdId = null;
 let adminAccessGranted = false;
 let marketplaceLoadError = '';
 let companyStoreSyncState = null;
+
+function wait(duration = 0) {
+  return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
+}
+
+function setCinematicOnboardingStep({ title, subtext, progress }) {
+  if (cinematicOnboardingTitle) {
+    cinematicOnboardingTitle.textContent = title;
+  }
+  if (cinematicOnboardingSubtext) {
+    cinematicOnboardingSubtext.textContent = subtext;
+  }
+  if (cinematicOnboardingProgress) {
+    cinematicOnboardingProgress.style.width = `${Math.max(0, Math.min(100, Number(progress) || 0))}%`;
+  }
+}
+
+async function runCinematicOnboarding(task) {
+  if (!cinematicOnboardingOverlay) {
+    return task();
+  }
+
+  cinematicOnboardingOverlay.hidden = false;
+  setCinematicOnboardingStep({
+    title: 'Scanning your store',
+    subtext: 'Reading products from your website and feed.',
+    progress: 18
+  });
+  await wait(380);
+  setCinematicOnboardingStep({
+    title: 'Building your Teyo catalog',
+    subtext: 'Preparing product cards, sizes, and store visibility.',
+    progress: 58
+  });
+
+  try {
+    const result = await task();
+    setCinematicOnboardingStep({
+      title: 'Store setup complete',
+      subtext: 'Your products are now being updated automatically on Teyo.',
+      progress: 100
+    });
+    await wait(620);
+    return result;
+  } catch (error) {
+    setCinematicOnboardingStep({
+      title: 'Setup paused',
+      subtext: 'We could not finish setup right now. Please try again.',
+      progress: 100
+    });
+    await wait(700);
+    throw error;
+  } finally {
+    cinematicOnboardingOverlay.hidden = true;
+  }
+}
 
 function isAdminPage() {
   return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList'));
@@ -2645,7 +2705,7 @@ if (partnerForm) {
     const payload = Object.fromEntries(formData.entries());
     const companyName = String(payload.companyName || '').trim();
     const websiteUrl = String(payload.websiteUrl || '').trim();
-    payload.paymentConfirmed = Boolean(payload.paymentConfirmed);
+    const submitBtn = partnerForm.querySelector('button[type="submit"]');
 
     if (!isBusinessOwnerSubmission(companyName, websiteUrl)) {
       formMessage.textContent = 'Only real company or business owners with a valid business website can request placement.';
@@ -2653,23 +2713,42 @@ if (partnerForm) {
     }
 
     try {
-      const response = await fetch('/api/partner', {
+      if (submitBtn) {
+        submitBtn.disabled = true;
+      }
+      const response = await runCinematicOnboarding(() => fetch('/api/partner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(attachOwnerAuth(payload))
-      });
+        body: JSON.stringify(attachOwnerAuth(payload))
+      }));
 
       const result = await response.json();
+      if (result.success) {
+        sessionStorage.setItem(companyNameStorageKey, String(payload.companyName || '').trim());
+        sessionStorage.setItem(companyEmailStorageKey, String(payload.ownerEmail || '').trim());
+        if (result.companyAccessKey) {
+          sessionStorage.setItem(companyKeyStorageKey, String(result.companyAccessKey).trim());
+          if (companyAccessKeyInput) {
+            companyAccessKeyInput.value = String(result.companyAccessKey).trim();
+          }
+        }
+      }
+
       const accessKeyNotice = result.companyAccessKey
-        ? ` Save this company access key: ${result.companyAccessKey}`
+        ? ` Company access key: ${result.companyAccessKey}`
         : '';
-      formMessage.textContent = `${result.message || 'Thanks — your request was submitted.'}${accessKeyNotice}`;
+      formMessage.textContent = `${result.message || 'Your store setup is complete.'}${accessKeyNotice}`;
       if (result.success) {
         partnerForm.reset();
         await loadMarketplaceData();
+        await loadCompanyStoreSyncConfig();
       }
     } catch (error) {
       formMessage.textContent = 'Unable to submit right now. Please try again shortly.';
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
     }
   });
 }

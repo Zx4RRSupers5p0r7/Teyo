@@ -1584,7 +1584,7 @@ app.post('/api/company/verify', adminLimiter, (req, res) => {
   }
 
   if (!partner.paid || !partner.activeListing || !partner.paymentConfirmed) {
-    return res.status(403).json({ success: false, message: 'Your company listing must be approved before inventory access is enabled.' });
+    return res.status(403).json({ success: false, message: 'Your company listing is not active yet. Complete one-click setup to unlock inventory access.' });
   }
 
   return res.json({ success: true, company: true });
@@ -1724,32 +1724,31 @@ app.post('/api/partner', async (req, res) => {
     storeCatalogUrl: isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '',
     details: details || '',
     paymentConfirmed: true,
-    paid: false,
-    activeListing: false,
-    requestStatus: 'pending',
+    paid: true,
+    activeListing: true,
+    requestStatus: 'approved',
     storeSync: createDefaultStoreSyncConfig(isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : ''),
     companyAccessKey: generateCompanyAccessKey(),
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    approvedAt: new Date().toISOString()
   };
 
-  if (hasOwnerKeyAccess(ownerEmail, ownerKey)) {
-    entry.paymentConfirmed = true;
-    entry.paid = true;
-    entry.activeListing = true;
-    entry.requestStatus = 'approved';
-    entry.approvedAt = new Date().toISOString();
-  }
-
   data.partners.push(entry);
-  if (entry.requestStatus === 'approved' && entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
-    await runPartnerStoreSync(entry, data, { reason: 'owner-override' });
+  let syncResult = null;
+  if (entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
+    syncResult = await runPartnerStoreSync(entry, data, { reason: hasOwnerKeyAccess(ownerEmail, ownerKey) ? 'owner-override' : 'auto-setup' });
   }
   saveData(data);
 
   res.json({
     success: true,
-    message: 'Thanks — your listing request has been received. One-time activation is free, and once approved your company can auto-sync products from your store URL.',
-    companyAccessKey: entry.companyAccessKey
+    message: syncResult?.success
+      ? `Store setup complete. Imported ${syncResult.importedCount} products and updated ${syncResult.changedCount}.`
+      : 'Store setup complete. Your listing is live and automatic product sync is enabled.',
+    companyAccessKey: entry.companyAccessKey,
+    importedCount: syncResult?.importedCount || 0,
+    changedCount: syncResult?.changedCount || 0,
+    syncWarning: syncResult && !syncResult.success ? syncResult.message : ''
   });
 });
 
@@ -2117,7 +2116,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
       }
       return res.json({
         success: true,
-        message: 'One-time activation is free. Submit your listing request and wait for owner approval.',
+        message: 'One-time activation is free. Submit your listing and it goes live immediately with auto-sync.',
         url: null,
         sessionId: null
       });

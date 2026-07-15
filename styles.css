@@ -18,7 +18,8 @@ html {
 body {
   margin: 0;
   font-family: 'Inter', sans-serif;
-  background: radial-gradient(circle at top, #151515 0%, var(--bg) 40%, #020202 100%);
+  background:
+    radial-gradient(circle at top, #101010 0%, #070707 36%, #040404 100%);
   color: var(--text);
   position: relative;
   min-height: 100vh;
@@ -35,30 +36,20 @@ body::after {
 }
 
 body::before {
-  background:
-    radial-gradient(circle at 18% 22%, var(--accent) 0%, transparent 55%),
-    radial-gradient(circle at 78% 72%, var(--accent) 0%, transparent 52%);
-  filter: blur(28px);
-  opacity: 0.18;
-  animation: teyoFlowOne 16s ease-in-out infinite alternate;
+  background-image:
+    url("favicon.svg"),
+    radial-gradient(circle at 50% 30%, rgba(255,255,255,0.04), transparent 64%);
+  background-repeat: no-repeat, no-repeat;
+  background-position: center 44%, center;
+  background-size: min(58vw, 620px) min(58vw, 620px), 100% 100%;
+  opacity: 0.08;
+  filter: grayscale(1) contrast(1.05);
 }
 
 body::after {
   background:
-    conic-gradient(from 0deg at 60% 40%, var(--accent), transparent, var(--accent), transparent);
-  mix-blend-mode: screen;
-  opacity: 0.14;
-  animation: teyoFlowTwo 20s linear infinite;
-}
-
-@keyframes teyoFlowOne {
-  0% { transform: translate3d(-2%, -1%, 0) scale(1); }
-  100% { transform: translate3d(2%, 1%, 0) scale(1.08); }
-}
-
-@keyframes teyoFlowTwo {
-  0% { transform: rotate(0deg) scale(1); }
-  100% { transform: rotate(360deg) scale(1.08); }
+    linear-gradient(180deg, rgba(0,0,0,0.32), rgba(0,0,0,0.55));
+  opacity: 0.65;
 }
 
 section[id], [id] {

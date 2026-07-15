@@ -58,7 +58,8 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'styles.css',
   'script.js',
   'favicon.svg',
-  'teyo-watermark.svg'
+  'teyo-watermark.svg',
+  'teyo-watermark-secondary.svg'
 ]);
 
 let inMemoryData = null;

@@ -286,6 +286,11 @@ function normalizeFeedFormat(value) {
   return 'auto';
 }
 
+function normalizePhysicalStoreFlag(value) {
+  const raw = String(value || '').trim().toLowerCase();
+  return raw === 'yes' || raw === 'true' || raw === '1';
+}
+
 function createDefaultStoreSyncConfig(sourceUrl = '') {
   const normalizedSourceUrl = isSafeHttpUrl(sourceUrl) ? sourceUrl : '';
   return {
@@ -370,6 +375,9 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
     }
   })();
   const onlineStoreName = `${sanitizePlainText(partner?.companyName, 120) || 'Store'} Online`;
+  const hasPhysicalStore = normalizePhysicalStoreFlag(partner?.hasPhysicalStore);
+  const physicalStoreLocation = sanitizePlainText(partner?.storeLocation, 220);
+  const physicalStoreName = sanitizePlainText(partner?.companyName, 120) ? `${sanitizePlainText(partner?.companyName, 120)} Store` : 'Physical store';
 
   return products.map((product) => {
     const title = sanitizePlainText(product?.title, 180);
@@ -412,6 +420,11 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
       200
     );
 
+    const stores = [onlineStoreName];
+    if (hasPhysicalStore && physicalStoreLocation) {
+      stores.push(`${physicalStoreName}|In stock`);
+    }
+
     return {
       sourceProductId: externalId,
       productName: title,
@@ -421,7 +434,7 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
       description: sanitizePlainText(stripHtml(product?.body_html || product?.description || ''), 3000),
       imageUrl: isSafeHttpUrl(imageUrl) ? imageUrl : '',
       stockStatus: inStock ? 'In stock' : 'Out of stock',
-      stores: [onlineStoreName],
+      stores,
       sizeOptions,
       sizeInventory,
       safetyNote: sanitizePlainText(stripHtml(product?.safetyNote || product?.safety || ''), 500),
@@ -429,17 +442,21 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
       rating: sanitizePlainText(product?.rating || product?.ratingAverage || '', 40),
       reviewCount: sanitizePlainText(product?.reviewCount || product?.reviews || '', 40),
       verificationStatus: sanitizePlainText(product?.verificationStatus || '', 80),
-      verifiedSeller: product?.verifiedSeller === true || product?.verified === true
+      verifiedSeller: product?.verifiedSeller === true || product?.verified === true,
+      hasPhysicalStore,
+      physicalStoreLocation
     };
   }).filter(Boolean);
 }
 
-function normalizeGenericProducts(payload, sourceUrl) {
+function normalizeGenericProducts(payload, sourceUrl, partner = null) {
   const list = Array.isArray(payload)
     ? payload
     : (Array.isArray(payload?.products) ? payload.products : (Array.isArray(payload?.items) ? payload.items : []));
   const websiteFallback = normalizeWebsite(sourceUrl);
   const onlineStoreName = 'Online store';
+  const hasPhysicalStore = normalizePhysicalStoreFlag(partner?.hasPhysicalStore);
+  const physicalStoreLocation = sanitizePlainText(partner?.storeLocation, 220);
 
   return list.map((product) => {
     const productName = sanitizePlainText(
@@ -480,6 +497,9 @@ function normalizeGenericProducts(payload, sourceUrl) {
       reviewCount: sanitizePlainText(product?.reviewCount || product?.reviews || '', 40),
       verificationStatus: sanitizePlainText(product?.verificationStatus || '', 80),
       verifiedSeller: product?.verifiedSeller === true || product?.verified === true
+      ,
+      hasPhysicalStore,
+      physicalStoreLocation
     };
   }).filter(Boolean);
 }
@@ -490,14 +510,14 @@ function normalizeStoreFeedProducts(payload, partner, sourceUrl, format = 'auto'
     return normalizeShopifyProducts(payload, partner, sourceUrl);
   }
   if (normalizedFormat === 'generic-json') {
-    return normalizeGenericProducts(payload, sourceUrl);
+    return normalizeGenericProducts(payload, sourceUrl, partner);
   }
 
   if (Array.isArray(payload?.products) && payload.products.some((product) => product && (product.variants || product.handle || product.body_html))) {
     return normalizeShopifyProducts(payload, partner, sourceUrl);
   }
 
-  return normalizeGenericProducts(payload, sourceUrl);
+  return normalizeGenericProducts(payload, sourceUrl, partner);
 }
 
 function buildStoreSyncProductKey(companyName, ownerEmail, sourceProductId, websiteUrl, productName) {
@@ -582,6 +602,8 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
       verifiedSeller: resolvedVerifiedSeller,
       verificationStatus: resolvedVerificationStatus,
       trustSummary: resolvedTrustSummary,
+      hasPhysicalStore: Boolean(product.hasPhysicalStore),
+      physicalStoreLocation: sanitizePlainText(product.physicalStoreLocation || '', 220),
       approved: visibleByDefault,
       visible: visibleByDefault,
       sourceType: 'store-sync',
@@ -1063,6 +1085,8 @@ function serializePublicProduct(entry) {
     verifiedSeller: Boolean(entry.verifiedSeller),
     verificationStatus: entry.verificationStatus || '',
     trustSummary: entry.trustSummary || '',
+    hasPhysicalStore: Boolean(entry.hasPhysicalStore),
+    physicalStoreLocation: entry.physicalStoreLocation || '',
     approved: Boolean(entry.approved),
     visible: Boolean(entry.visible),
     createdAt: entry.createdAt
@@ -1706,6 +1730,8 @@ app.post('/api/partner', async (req, res) => {
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
   const storeCatalogUrl = sanitizePlainText(req.body.storeCatalogUrl, 2048);
   const details = sanitizePlainText(req.body.details, 4000);
+  const hasPhysicalStore = normalizePhysicalStoreFlag(req.body.hasPhysicalStore);
+  const storeLocation = sanitizePlainText(req.body.storeLocation, 220);
   const ownerKey = String(req.body.ownerKey || '').trim();
   const normalizedWebsite = normalizeWebsite(websiteUrl);
   const normalizedStoreCatalogUrl = normalizeWebsite(storeCatalogUrl || normalizedWebsite);
@@ -1725,6 +1751,8 @@ app.post('/api/partner', async (req, res) => {
     websiteUrl: normalizedWebsite,
     storeCatalogUrl: isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '',
     details: details || '',
+    hasPhysicalStore,
+    storeLocation: hasPhysicalStore ? storeLocation : '',
     paymentConfirmed: true,
     paid: true,
     activeListing: true,

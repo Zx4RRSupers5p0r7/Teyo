@@ -10,6 +10,10 @@ const selectedProduct = document.getElementById('selectedProduct');
 const storeList = document.getElementById('storeList');
 const partnerForm = document.getElementById('partnerForm');
 const formMessage = document.getElementById('formMessage');
+const partnerHasStoreYes = document.getElementById('partnerHasStoreYes');
+const partnerHasStoreNo = document.getElementById('partnerHasStoreNo');
+const partnerStoreLocationInput = document.getElementById('partnerStoreLocationInput');
+const partnerPreviewPanel = document.getElementById('partnerPreviewPanel');
 const adForm = document.getElementById('adForm');
 const adFormMessage = document.getElementById('adFormMessage');
 const productForm = document.getElementById('productForm');
@@ -202,6 +206,52 @@ function initPlacementCheckoutState() {
   if (!(window.location.pathname.endsWith('/partners.html') || window.location.pathname === '/partners.html')) {
     return;
   }
+
+  function syncPhysicalStoreLocationVisibility() {
+    if (!partnerStoreLocationInput) {
+      return;
+    }
+    const hasStore = Boolean(partnerHasStoreYes?.checked);
+    partnerStoreLocationInput.hidden = !hasStore;
+    partnerStoreLocationInput.required = hasStore;
+    if (!hasStore) {
+      partnerStoreLocationInput.value = '';
+    }
+  }
+
+  function renderPartnerPreview(companyName) {
+    if (!partnerPreviewPanel) {
+      return;
+    }
+    const normalizedCompany = normalize(companyName);
+    const ownProducts = marketplaceState.products.filter((product) => normalize(product.companyName || product.company) === normalizedCompany);
+    if (!ownProducts.length) {
+      partnerPreviewPanel.innerHTML = '<p class="form-message">No product preview is ready yet. Sync can take a moment on some stores.</p>';
+      return;
+    }
+
+    partnerPreviewPanel.innerHTML = `
+      <p class="form-help"><strong>Thank you for choosing Teyo.</strong> Here is a live preview of your listed products:</p>
+      <div class="partner-preview-grid">
+        ${ownProducts.slice(0, 12).map((product) => {
+          const safeName = escapeHtml(product.productName || product.name || 'Product');
+          const safePrice = escapeHtml(product.price || '');
+          const safeImage = safeUrl(product.imageUrl || '');
+          const imageMarkup = product.imageUrl
+            ? `<img src="${safeImage}" alt="${safeName}" />`
+            : '';
+          return `
+            <article class="partner-preview-card">
+              ${imageMarkup}
+              <h4>${safeName}</h4>
+              <p><strong>${safePrice}</strong></p>
+              <p class="form-help">Your product on Teyo</p>
+            </article>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
   const params = new URLSearchParams(window.location.search);
   const startNowMode = String(params.get('start') || '').toLowerCase() === 'now';
   if (startNowMode) {
@@ -263,7 +313,7 @@ async function runCinematicOnboarding(task) {
     const result = await taskPromise;
     setCinematicOnboardingStep({
       title: 'Superpower complete',
-      subtext: 'Your store is now live with automatic updates.',
+      subtext: 'Thank you for choosing Teyo. Your store is now live with automatic updates.',
       progress: 100
     });
     await wait(520);
@@ -1419,6 +1469,7 @@ function renderResults() {
     const safeDescription = escapeHtml(product.description || 'Approved listing pending review details.');
     const safePrice = escapeHtml(product.price || '');
     const safeImageUrl = safeUrl(product.imageUrl || '');
+    const isOwnProduct = hasCompanySession() && normalize(product.companyName || product.company) === normalize(getCompanySessionName());
     const thumbnailMarkup = product.imageUrl
       ? `<img src="${safeImageUrl}" alt="${safeProductName}" class="result-thumb" />`
       : '<div class="result-thumb result-thumb-placeholder" aria-hidden="true">No image</div>';
@@ -1432,6 +1483,7 @@ function renderResults() {
       </div>
       <div class="result-meta">
         <span class="badge">${safePrice}</span>
+        ${hasCompanySession() ? `<span class="badge">${isOwnProduct ? 'Your product' : 'Other company'}</span>` : ''}
         ${product.verifiedSeller ? '<span class="badge success-badge">Verified seller</span>' : ''}
       </div>
     `;
@@ -1614,6 +1666,42 @@ async function fetchAutoStoresFromNominatim(brandName, productName, fallbackStoc
     return [];
   }
 
+  async function fetchStoreFromProvidedLocation(brandName, locationText, fallbackStockStatus = '') {
+    const safeLocation = String(locationText || '').trim();
+    if (!safeLocation) {
+      return [];
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(safeLocation)}&format=json&limit=1`,
+        { headers: { 'Accept-Language': 'en', 'User-Agent': 'Teyo-marketplace/1.0' } }
+      );
+      if (!response.ok) {
+        return [];
+      }
+      const payload = await response.json();
+      const first = Array.isArray(payload) ? payload[0] : null;
+      if (!first) {
+        return [];
+      }
+      const lat = Number(first.lat);
+      const lng = Number(first.lon);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return [];
+      }
+      return [{
+        name: `${String(brandName || 'Company').trim() || 'Company'} Physical Store`,
+        lat,
+        lng,
+        stockStatus: fallbackStockStatus || 'Check in store',
+        source: 'physical-store'
+      }];
+    } catch (error) {
+      return [];
+    }
+  }
+
   const query = `${safeBrand} ${String(productName || '').trim()} store`;
   try {
     const response = await fetch(
@@ -1706,14 +1794,18 @@ async function resolveStoreEntriesForProduct(product, stores, sizeFilter = 'ALL'
     source: 'manual-size'
   }));
   const manualMerged = mergeStoreEntries(inventoryEntries, manualEntries);
+  const physicalStoreEntries = product?.hasPhysicalStore && product?.physicalStoreLocation
+    ? await fetchStoreFromProvidedLocation(brandName, product.physicalStoreLocation, fallbackStockStatus)
+    : [];
+  const mergedWithPhysicalStore = mergeStoreEntries(manualMerged, physicalStoreEntries);
 
   if (!brandName) {
-    return manualMerged;
+    return mergedWithPhysicalStore;
   }
 
   const cacheKey = `${normalize(brandName)}|${normalize(productName)}`;
   if (_autoStoreCache.has(cacheKey)) {
-    return mergeStoreEntries(manualMerged, _autoStoreCache.get(cacheKey));
+    return mergeStoreEntries(mergedWithPhysicalStore, _autoStoreCache.get(cacheKey));
   }
 
   const [overpassEntries, nominatimEntries] = await Promise.all([
@@ -1723,7 +1815,7 @@ async function resolveStoreEntriesForProduct(product, stores, sizeFilter = 'ALL'
 
   const autoEntries = mergeStoreEntries(overpassEntries, nominatimEntries);
   _autoStoreCache.set(cacheKey, autoEntries);
-  return mergeStoreEntries(manualMerged, autoEntries);
+  return mergeStoreEntries(mergedWithPhysicalStore, autoEntries);
 }
 
 function upsertStockReminder(reminder) {
@@ -2749,6 +2841,12 @@ if (sizeFilterSelect) {
 if (sizeInStockOnly) {
   sizeInStockOnly.addEventListener('change', renderResults);
 }
+if (partnerHasStoreYes) {
+  partnerHasStoreYes.addEventListener('change', syncPhysicalStoreLocationVisibility);
+}
+if (partnerHasStoreNo) {
+  partnerHasStoreNo.addEventListener('change', syncPhysicalStoreLocationVisibility);
+}
 if (partnerForm) {
   partnerForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -2757,6 +2855,8 @@ if (partnerForm) {
     const payload = Object.fromEntries(formData.entries());
     const companyName = String(payload.companyName || '').trim();
     const websiteUrl = String(payload.websiteUrl || '').trim();
+    const hasPhysicalStore = String(payload.hasPhysicalStore || '').toLowerCase() === 'yes';
+    const storeLocation = String(payload.storeLocation || '').trim();
     const submitBtn = partnerForm.querySelector('button[type="submit"]');
 
     if (!isBusinessOwnerSubmission(companyName, websiteUrl)) {
@@ -2765,6 +2865,10 @@ if (partnerForm) {
     }
     if (!hasPlacementFeePaid()) {
       formMessage.textContent = 'Confirm the $0 one-time setup fee first, then run Teyo\'s Superpower.';
+      return;
+    }
+    if (hasPhysicalStore && !storeLocation) {
+      formMessage.textContent = 'Please enter your physical store location before running Teyo\'s Superpower.';
       return;
     }
 
@@ -2796,8 +2900,13 @@ if (partnerForm) {
       formMessage.textContent = `${result.message || 'Your store setup is complete.'}${accessKeyNotice}`;
       if (result.success) {
         partnerForm.reset();
+        if (partnerHasStoreNo) {
+          partnerHasStoreNo.checked = true;
+        }
+        syncPhysicalStoreLocationVisibility();
         await loadMarketplaceData();
         await loadCompanyStoreSyncConfig();
+        renderPartnerPreview(companyName);
       }
     } catch (error) {
       formMessage.textContent = 'Unable to submit right now. Please try again shortly.';
@@ -3254,6 +3363,7 @@ async function initializeMarketplace() {
 initializeMarketplace();
 initializeCustomerTheme();
 initPlacementCheckoutState();
+syncPhysicalStoreLocationVisibility();
 syncOwnerOnlyVisibility();
 if (companyNameInput) {
   companyNameInput.value = getCompanySessionName();

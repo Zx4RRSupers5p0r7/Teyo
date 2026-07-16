@@ -73,12 +73,19 @@
               <input name="ownerEmail" type="email" placeholder="Owner email" required />
               <input name="websiteUrl" type="text" placeholder="Company website URL" required />
               <input name="storeCatalogUrl" type="text" placeholder="Store catalog URL (optional, use if different from website)" />
+              <div class="physical-store-choice">
+                <p class="form-help">Do you have a real physical store location?</p>
+                <label><input id="partnerHasStoreYes" name="hasPhysicalStore" type="radio" value="yes" /> Yes</label>
+                <label><input id="partnerHasStoreNo" name="hasPhysicalStore" type="radio" value="no" checked /> No</label>
+              </div>
+              <input id="partnerStoreLocationInput" name="storeLocation" type="text" placeholder="Physical store address (required if yes)" hidden />
               <textarea name="details" rows="4" placeholder="Optional notes for your store setup"></textarea>
               <p class="superpower-title">Teyo's Superpower</p>
               <button class="btn btn-primary btn-cinematic-cta" type="submit">Run Teyo's Superpower</button>
               <p class="form-help">We auto-import products and keep updates running in the background.</p>
               <p id="formMessage" class="form-message" aria-live="polite"></p>
             </form>
+            <div id="partnerPreviewPanel" class="partner-preview-panel"></div>
           </div>
 
           <div class="partner-form-card">

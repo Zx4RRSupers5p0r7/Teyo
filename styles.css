@@ -214,6 +214,44 @@ article p,
   text-transform: uppercase;
   color: var(--accent);
 }
+.physical-store-choice {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.physical-store-choice .form-help {
+  margin: 0;
+}
+.physical-store-choice label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+}
+.partner-preview-panel {
+  margin-top: 14px;
+}
+.partner-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+.partner-preview-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--surface-2);
+}
+.partner-preview-card img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  margin-bottom: 8px;
+}
 
 .hero-highlights { display: flex; flex-wrap: wrap; gap: 12px; padding: 0; margin: 0; list-style: none; }
 .hero-highlights li {

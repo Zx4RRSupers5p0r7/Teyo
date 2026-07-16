@@ -2922,18 +2922,14 @@ if (partnerForm) {
 
 if (superpowerDemoBtn) {
   superpowerDemoBtn.addEventListener('click', async () => {
-    if (!hasOwnerSession()) {
-      return;
-    }
-
     superpowerDemoBtn.disabled = true;
     try {
       await runCinematicOnboarding(async () => {
-        await wait(2200);
+        await wait(4200);
         return true;
       });
       if (formMessage) {
-        formMessage.textContent = 'Owner demo finished. This preview is only visible when your owner session is active.';
+        formMessage.textContent = 'Demo finished. This preview button is only visible when your owner session is active.';
       }
     } finally {
       superpowerDemoBtn.disabled = false;

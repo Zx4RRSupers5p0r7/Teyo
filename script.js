@@ -54,6 +54,7 @@ const cinematicOnboardingOverlay = document.getElementById('cinematicOnboardingO
 const cinematicOnboardingTitle = document.getElementById('cinematicOnboardingTitle');
 const cinematicOnboardingSubtext = document.getElementById('cinematicOnboardingSubtext');
 const cinematicOnboardingProgress = document.getElementById('cinematicOnboardingProgress');
+const cinematicFutureLine = document.getElementById('cinematicFutureLine');
 const cinematicThankYou = document.getElementById('cinematicThankYou');
 const cinematicLogoReveal = document.getElementById('cinematicLogoReveal');
 const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
@@ -293,8 +294,12 @@ async function runCinematicOnboarding(task) {
 
   cinematicOnboardingOverlay.hidden = false;
   cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
+  cinematicOnboardingOverlay.classList.remove('is-future-build');
   if (cinematicThankYou) {
     cinematicThankYou.textContent = 'Thank you for choosing';
+  }
+  if (cinematicFutureLine) {
+    cinematicFutureLine.textContent = 'The future of retail begins now.';
   }
   if (cinematicLogoReveal) {
     cinematicLogoReveal.setAttribute('aria-hidden', 'true');
@@ -309,12 +314,19 @@ async function runCinematicOnboarding(task) {
 
   try {
     await wait(220);
+    cinematicOnboardingOverlay.classList.add('is-future-build');
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'Live intelligence is mapping your entire catalog.';
+    }
     setCinematicOnboardingStep({
       title: 'Mapping your product universe',
       subtext: 'Finding product pages, variants, pricing, and stock details.',
       progress: 42
     });
     await wait(260);
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'Your storefront is becoming a future-ready discovery engine.';
+    }
     setCinematicOnboardingStep({
       title: 'Building your Teyo storefront',
       subtext: 'Publishing your listings and syncing updates for shoppers.',
@@ -331,6 +343,9 @@ async function runCinematicOnboarding(task) {
     if (cinematicThankYou) {
       cinematicThankYou.textContent = 'Thank you for choosing';
     }
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'Welcome to the future of shopping.';
+    }
     if (cinematicLogoReveal) {
       cinematicLogoReveal.setAttribute('aria-hidden', 'false');
     }
@@ -346,6 +361,7 @@ async function runCinematicOnboarding(task) {
     throw error;
   } finally {
     cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
+    cinematicOnboardingOverlay.classList.remove('is-future-build');
     if (cinematicLogoReveal) {
       cinematicLogoReveal.setAttribute('aria-hidden', 'true');
     }

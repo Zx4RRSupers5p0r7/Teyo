@@ -881,6 +881,27 @@ article { padding: 24px; }
   animation: cinematicBackdropPulse 2.8s ease-in-out infinite alternate;
 }
 
+.cinematic-onboarding-overlay::before,
+.cinematic-onboarding-overlay::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12vh;
+  background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(0,0,0,0.7));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cinematic-onboarding-overlay::before {
+  top: 0;
+}
+
+.cinematic-onboarding-overlay::after {
+  bottom: 0;
+  transform: rotate(180deg);
+}
+
 .cinematic-onboarding-overlay[hidden] {
   display: none !important;
 }
@@ -895,6 +916,30 @@ article { padding: 24px; }
   text-align: center;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
+}
+
+.cinematic-horizon {
+  position: absolute;
+  inset: auto -20% -24% -20%;
+  height: 55%;
+  background:
+    repeating-linear-gradient(
+      to right,
+      rgba(255,255,255,0.15) 0 1px,
+      transparent 1px 26px
+    ),
+    linear-gradient(
+      to top,
+      rgba(255,255,255,0.16) 0%,
+      rgba(255,255,255,0.04) 30%,
+      transparent 75%
+    );
+  transform: perspective(260px) rotateX(74deg);
+  opacity: 0.2;
+  filter: blur(0.3px);
+  animation: cinematicHorizonMove 2.4s linear infinite;
+  z-index: -1;
 }
 
 .cinematic-light-tracks {
@@ -997,6 +1042,16 @@ article { padding: 24px; }
   color: var(--muted);
 }
 
+.cinematic-future-line {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.74);
+  text-shadow: 0 0 14px rgba(255,255,255,0.25);
+  animation: cinematicFuturePulse 1.6s ease-in-out infinite;
+}
+
 .cinematic-thank-you {
   margin: 0;
   font-size: 0.92rem;
@@ -1006,6 +1061,14 @@ article { padding: 24px; }
   opacity: 0.42;
   transform: translateY(5px);
   animation: cinematicThankYouPulse 1.5s ease-in-out infinite;
+}
+
+.cinematic-onboarding-overlay.is-future-build .cinematic-horizon {
+  opacity: 0.34;
+}
+
+.cinematic-onboarding-overlay.is-future-build .cinematic-light-tracks span {
+  animation-duration: 1.35s;
 }
 
 .cinematic-onboarding-content h3 {
@@ -1095,6 +1158,16 @@ article { padding: 24px; }
   0% { opacity: 0; transform: scale(0.85) translateY(12px); filter: blur(2px); }
   60% { opacity: 1; transform: scale(1.04) translateY(0); filter: blur(0); }
   100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+
+@keyframes cinematicHorizonMove {
+  0% { background-position: 0 0, 0 0; }
+  100% { background-position: 26px 0, 0 0; }
+}
+
+@keyframes cinematicFuturePulse {
+  0%, 100% { opacity: 0.5; transform: translateY(0); }
+  50% { opacity: 0.92; transform: translateY(-1px); }
 }
 
 @keyframes partnersNebulaFloat {

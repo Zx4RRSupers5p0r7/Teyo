@@ -811,6 +811,10 @@ article { padding: 24px; }
   backdrop-filter: blur(8px);
 }
 
+.cinematic-onboarding-overlay[hidden] {
+  display: none !important;
+}
+
 .cinematic-onboarding-content {
   width: min(560px, 90vw);
   border: 1px solid rgba(255,255,255,0.2);

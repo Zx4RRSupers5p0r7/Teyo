@@ -233,43 +233,10 @@ function initPlacementCheckoutState() {
 }
 
 async function runCinematicOnboarding(task) {
-  if (!cinematicOnboardingOverlay) {
-    return task();
-  }
-
-  cinematicOnboardingOverlay.hidden = false;
-  setCinematicOnboardingStep({
-    title: 'Scanning your store',
-    subtext: 'Reading products from your website and feed.',
-    progress: 18
-  });
-  await wait(380);
-  setCinematicOnboardingStep({
-    title: 'Building your Teyo catalog',
-    subtext: 'Preparing product cards, sizes, and store visibility.',
-    progress: 58
-  });
-
-  try {
-    const result = await task();
-    setCinematicOnboardingStep({
-      title: 'Store setup complete',
-      subtext: 'Your products are now being updated automatically on Teyo.',
-      progress: 100
-    });
-    await wait(620);
-    return result;
-  } catch (error) {
-    setCinematicOnboardingStep({
-      title: 'Setup paused',
-      subtext: 'We could not finish setup right now. Please try again.',
-      progress: 100
-    });
-    await wait(700);
-    throw error;
-  } finally {
+  if (cinematicOnboardingOverlay) {
     cinematicOnboardingOverlay.hidden = true;
   }
+  return task();
 }
 
 function isAdminPage() {

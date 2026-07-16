@@ -2722,7 +2722,7 @@ if (partnerForm) {
       return;
     }
     if (!hasPlacementFeePaid()) {
-      formMessage.textContent = 'Pay the one-time setup fee first, then run Teyo\'s Superpower.';
+      formMessage.textContent = 'Confirm the $0 one-time setup fee first, then run Teyo\'s Superpower.';
       return;
     }
 
@@ -2945,7 +2945,14 @@ async function startStripeCheckout(plan) {
 
 if (placementCheckoutBtn) {
   placementCheckoutBtn.addEventListener('click', () => {
-    startStripeCheckout('placement');
+    const placementCompanyName = document.querySelector('#partnerForm input[name="companyName"]')?.value || '';
+    const placementOwnerEmail = document.querySelector('#partnerForm input[name="ownerEmail"]')?.value || '';
+    if (!String(placementCompanyName).trim() || !String(placementOwnerEmail).trim()) {
+      checkoutMessage.textContent = 'Fill company name and owner email in the form below first, then confirm the $0 setup fee.';
+      return;
+    }
+    setPlacementFeePaid(true);
+    checkoutMessage.textContent = 'Confirmed: one-time setup fee is $0. You can now run Teyo\'s Superpower below.';
   });
 }
 if (monthlyCheckoutBtn) {

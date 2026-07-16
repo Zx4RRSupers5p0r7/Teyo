@@ -54,6 +54,7 @@ const cinematicOnboardingOverlay = document.getElementById('cinematicOnboardingO
 const cinematicOnboardingTitle = document.getElementById('cinematicOnboardingTitle');
 const cinematicOnboardingSubtext = document.getElementById('cinematicOnboardingSubtext');
 const cinematicOnboardingProgress = document.getElementById('cinematicOnboardingProgress');
+const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -2915,6 +2916,27 @@ if (partnerForm) {
       if (submitBtn) {
         submitBtn.disabled = false;
       }
+    }
+  });
+}
+
+if (superpowerDemoBtn) {
+  superpowerDemoBtn.addEventListener('click', async () => {
+    if (!hasOwnerSession()) {
+      return;
+    }
+
+    superpowerDemoBtn.disabled = true;
+    try {
+      await runCinematicOnboarding(async () => {
+        await wait(2200);
+        return true;
+      });
+      if (formMessage) {
+        formMessage.textContent = 'Owner demo finished. This preview is only visible when your owner session is active.';
+      }
+    } finally {
+      superpowerDemoBtn.disabled = false;
     }
   });
 }

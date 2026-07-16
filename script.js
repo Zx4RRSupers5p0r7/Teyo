@@ -202,6 +202,18 @@ function initPlacementCheckoutState() {
   if (!(window.location.pathname.endsWith('/partners.html') || window.location.pathname === '/partners.html')) {
     return;
   }
+  const params = new URLSearchParams(window.location.search);
+  const startNowMode = String(params.get('start') || '').toLowerCase() === 'now';
+  if (startNowMode) {
+    if (checkoutMessage) {
+      checkoutMessage.textContent = '';
+    }
+    if (formMessage) {
+      formMessage.textContent = '';
+    }
+    const cleanUrl = `${window.location.pathname}${window.location.hash || ''}`;
+    window.history.replaceState({}, '', cleanUrl);
+  }
   if (window.location.hash === '#partner-request') {
     checkoutMessage.textContent = '';
     const firstField = document.querySelector('#partnerForm input[name="companyName"]');
@@ -209,7 +221,6 @@ function initPlacementCheckoutState() {
       firstField.focus();
     }
   }
-  const params = new URLSearchParams(window.location.search);
   const checkoutState = String(params.get('checkout') || '').toLowerCase();
   if (checkoutState === 'success') {
     setPlacementFeePaid(true);

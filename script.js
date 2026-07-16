@@ -295,6 +295,7 @@ async function runCinematicOnboarding(task) {
   cinematicOnboardingOverlay.hidden = false;
   cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
   cinematicOnboardingOverlay.classList.remove('is-future-build');
+  cinematicOnboardingOverlay.classList.remove('is-climax');
   if (cinematicThankYou) {
     cinematicThankYou.textContent = 'Thank you for choosing';
   }
@@ -339,6 +340,7 @@ async function runCinematicOnboarding(task) {
       subtext: 'Your store is now live with automatic updates.',
       progress: 100
     });
+    cinematicOnboardingOverlay.classList.add('is-climax');
     cinematicOnboardingOverlay.classList.add('is-logo-reveal');
     if (cinematicThankYou) {
       cinematicThankYou.textContent = 'Thank you for choosing';
@@ -349,7 +351,7 @@ async function runCinematicOnboarding(task) {
     if (cinematicLogoReveal) {
       cinematicLogoReveal.setAttribute('aria-hidden', 'false');
     }
-    await wait(980);
+    await wait(1400);
     return result;
   } catch (error) {
     setCinematicOnboardingStep({
@@ -362,6 +364,7 @@ async function runCinematicOnboarding(task) {
   } finally {
     cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
     cinematicOnboardingOverlay.classList.remove('is-future-build');
+    cinematicOnboardingOverlay.classList.remove('is-climax');
     if (cinematicLogoReveal) {
       cinematicLogoReveal.setAttribute('aria-hidden', 'true');
     }

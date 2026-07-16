@@ -202,56 +202,57 @@ function setCinematicOnboardingStep({ title, subtext, progress }) {
   }
 }
 
+function syncPhysicalStoreLocationVisibility() {
+  if (!partnerStoreLocationInput) {
+    return;
+  }
+  const hasStore = Boolean(partnerHasStoreYes?.checked);
+  partnerStoreLocationInput.hidden = !hasStore;
+  partnerStoreLocationInput.required = hasStore;
+  if (!hasStore) {
+    partnerStoreLocationInput.value = '';
+  }
+}
+
+function renderPartnerPreview(companyName) {
+  if (!partnerPreviewPanel) {
+    return;
+  }
+  const normalizedCompany = normalize(companyName);
+  const ownProducts = marketplaceState.products.filter((product) => normalize(product.companyName || product.company) === normalizedCompany);
+  if (!ownProducts.length) {
+    partnerPreviewPanel.innerHTML = '<p class="form-message">No product preview is ready yet. Sync can take a moment on some stores.</p>';
+    return;
+  }
+
+  partnerPreviewPanel.innerHTML = `
+    <p class="form-help"><strong>Thank you for choosing Teyo.</strong> Here is a live preview of your listed products:</p>
+    <div class="partner-preview-grid">
+      ${ownProducts.slice(0, 12).map((product) => {
+        const safeName = escapeHtml(product.productName || product.name || 'Product');
+        const safePrice = escapeHtml(product.price || '');
+        const safeImage = safeUrl(product.imageUrl || '');
+        const imageMarkup = product.imageUrl
+          ? `<img src="${safeImage}" alt="${safeName}" />`
+          : '';
+        return `
+          <article class="partner-preview-card">
+            ${imageMarkup}
+            <h4>${safeName}</h4>
+            <p><strong>${safePrice}</strong></p>
+            <p class="form-help">Your product on Teyo</p>
+          </article>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
 function initPlacementCheckoutState() {
   if (!(window.location.pathname.endsWith('/partners.html') || window.location.pathname === '/partners.html')) {
     return;
   }
 
-  function syncPhysicalStoreLocationVisibility() {
-    if (!partnerStoreLocationInput) {
-      return;
-    }
-    const hasStore = Boolean(partnerHasStoreYes?.checked);
-    partnerStoreLocationInput.hidden = !hasStore;
-    partnerStoreLocationInput.required = hasStore;
-    if (!hasStore) {
-      partnerStoreLocationInput.value = '';
-    }
-  }
-
-  function renderPartnerPreview(companyName) {
-    if (!partnerPreviewPanel) {
-      return;
-    }
-    const normalizedCompany = normalize(companyName);
-    const ownProducts = marketplaceState.products.filter((product) => normalize(product.companyName || product.company) === normalizedCompany);
-    if (!ownProducts.length) {
-      partnerPreviewPanel.innerHTML = '<p class="form-message">No product preview is ready yet. Sync can take a moment on some stores.</p>';
-      return;
-    }
-
-    partnerPreviewPanel.innerHTML = `
-      <p class="form-help"><strong>Thank you for choosing Teyo.</strong> Here is a live preview of your listed products:</p>
-      <div class="partner-preview-grid">
-        ${ownProducts.slice(0, 12).map((product) => {
-          const safeName = escapeHtml(product.productName || product.name || 'Product');
-          const safePrice = escapeHtml(product.price || '');
-          const safeImage = safeUrl(product.imageUrl || '');
-          const imageMarkup = product.imageUrl
-            ? `<img src="${safeImage}" alt="${safeName}" />`
-            : '';
-          return `
-            <article class="partner-preview-card">
-              ${imageMarkup}
-              <h4>${safeName}</h4>
-              <p><strong>${safePrice}</strong></p>
-              <p class="form-help">Your product on Teyo</p>
-            </article>
-          `;
-        }).join('')}
-      </div>
-    `;
-  }
   const params = new URLSearchParams(window.location.search);
   const startNowMode = String(params.get('start') || '').toLowerCase() === 'now';
   if (startNowMode) {

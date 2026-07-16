@@ -54,6 +54,8 @@ const cinematicOnboardingOverlay = document.getElementById('cinematicOnboardingO
 const cinematicOnboardingTitle = document.getElementById('cinematicOnboardingTitle');
 const cinematicOnboardingSubtext = document.getElementById('cinematicOnboardingSubtext');
 const cinematicOnboardingProgress = document.getElementById('cinematicOnboardingProgress');
+const cinematicThankYou = document.getElementById('cinematicThankYou');
+const cinematicLogoReveal = document.getElementById('cinematicLogoReveal');
 const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
@@ -290,6 +292,13 @@ async function runCinematicOnboarding(task) {
   }
 
   cinematicOnboardingOverlay.hidden = false;
+  cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
+  if (cinematicThankYou) {
+    cinematicThankYou.textContent = 'Thank you for choosing';
+  }
+  if (cinematicLogoReveal) {
+    cinematicLogoReveal.setAttribute('aria-hidden', 'true');
+  }
   setCinematicOnboardingStep({
     title: 'Igniting your storefront engine',
     subtext: 'Verifying your company details and preparing secure import.',
@@ -314,11 +323,18 @@ async function runCinematicOnboarding(task) {
 
     const result = await taskPromise;
     setCinematicOnboardingStep({
-      title: 'Superpower complete',
-      subtext: 'Thank you for choosing Teyo. Your store is now live with automatic updates.',
+      title: 'Thank you for choosing Teyo',
+      subtext: 'Your store is now live with automatic updates.',
       progress: 100
     });
-    await wait(520);
+    cinematicOnboardingOverlay.classList.add('is-logo-reveal');
+    if (cinematicThankYou) {
+      cinematicThankYou.textContent = 'Thank you for choosing';
+    }
+    if (cinematicLogoReveal) {
+      cinematicLogoReveal.setAttribute('aria-hidden', 'false');
+    }
+    await wait(980);
     return result;
   } catch (error) {
     setCinematicOnboardingStep({
@@ -329,6 +345,10 @@ async function runCinematicOnboarding(task) {
     await wait(620);
     throw error;
   } finally {
+    cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
+    if (cinematicLogoReveal) {
+      cinematicLogoReveal.setAttribute('aria-hidden', 'true');
+    }
     cinematicOnboardingOverlay.hidden = true;
   }
 }

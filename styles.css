@@ -897,6 +897,30 @@ article { padding: 24px; }
   overflow: hidden;
 }
 
+.cinematic-light-tracks {
+  position: absolute;
+  inset: -18% -10%;
+  pointer-events: none;
+}
+
+.cinematic-light-tracks span {
+  position: absolute;
+  width: 240%;
+  height: 3px;
+  left: -70%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.96) 50%, transparent 90%);
+  filter: blur(1px);
+  opacity: 0;
+  animation: cinematicLightTrack 1.9s ease-in-out infinite;
+}
+
+.cinematic-light-tracks span:nth-child(1) { top: 18%; --track-angle: -16deg; animation-delay: 0s; }
+.cinematic-light-tracks span:nth-child(2) { top: 32%; --track-angle: -8deg; animation-delay: .22s; }
+.cinematic-light-tracks span:nth-child(3) { top: 50%; --track-angle: 0deg; animation-delay: .44s; }
+.cinematic-light-tracks span:nth-child(4) { top: 66%; --track-angle: 8deg; animation-delay: .66s; }
+.cinematic-light-tracks span:nth-child(5) { top: 82%; --track-angle: 16deg; animation-delay: .88s; }
+
 .cinematic-onboarding-content::before {
   content: '';
   position: absolute;
@@ -973,6 +997,17 @@ article { padding: 24px; }
   color: var(--muted);
 }
 
+.cinematic-thank-you {
+  margin: 0;
+  font-size: 0.92rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.88);
+  opacity: 0.42;
+  transform: translateY(5px);
+  animation: cinematicThankYouPulse 1.5s ease-in-out infinite;
+}
+
 .cinematic-onboarding-content h3 {
   margin: 0;
   font-size: clamp(1.4rem, 3vw, 1.9rem);
@@ -1001,10 +1036,65 @@ article { padding: 24px; }
   box-shadow: 0 0 18px var(--accent);
 }
 
+.cinematic-logo-reveal {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0;
+  transform: scale(0.85) translateY(12px);
+  pointer-events: none;
+}
+
+.cinematic-logo-mark {
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.86);
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  box-shadow: 0 0 24px rgba(255,255,255,0.35);
+}
+
+.cinematic-logo-name {
+  color: #ffffff;
+  font-size: 1.05rem;
+  letter-spacing: 0.42em;
+  font-weight: 800;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(255,255,255,0.36);
+}
+
+.cinematic-onboarding-overlay.is-logo-reveal .cinematic-logo-reveal {
+  animation: cinematicLogoRevealIn 0.65s cubic-bezier(.2, .78, .26, 1) forwards;
+}
+
 @keyframes superpowerSweep {
   0% { transform: translateX(-70%); opacity: 0.2; }
   50% { opacity: 0.45; }
   100% { transform: translateX(70%); opacity: 0.2; }
+}
+
+@keyframes cinematicLightTrack {
+  0% { transform: rotate(var(--track-angle, 0deg)) translateX(-24%) scaleX(0.85); opacity: 0; }
+  22% { opacity: 0.9; }
+  60% { opacity: 0.56; }
+  100% { transform: rotate(var(--track-angle, 0deg)) translateX(24%) scaleX(1.08); opacity: 0; }
+}
+
+@keyframes cinematicThankYouPulse {
+  0%, 100% { opacity: 0.42; transform: translateY(5px); }
+  50% { opacity: 0.95; transform: translateY(0); }
+}
+
+@keyframes cinematicLogoRevealIn {
+  0% { opacity: 0; transform: scale(0.85) translateY(12px); filter: blur(2px); }
+  60% { opacity: 1; transform: scale(1.04) translateY(0); filter: blur(0); }
+  100% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
 }
 
 @keyframes partnersNebulaFloat {

@@ -804,7 +804,10 @@ article { padding: 24px; }
   z-index: 1200;
   display: grid;
   place-items: center;
-  background: radial-gradient(circle at 25% 20%, rgba(255,255,255,0.2), transparent 45%), rgba(0,0,0,0.92);
+  background:
+    radial-gradient(circle at 18% 20%, rgba(120,170,255,0.24), transparent 42%),
+    radial-gradient(circle at 82% 72%, rgba(255,255,255,0.16), transparent 46%),
+    rgba(0,0,0,0.9);
   backdrop-filter: blur(8px);
 }
 
@@ -816,6 +819,18 @@ article { padding: 24px; }
   box-shadow: 0 24px 80px rgba(0,0,0,0.48);
   padding: 28px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.cinematic-onboarding-content::before {
+  content: '';
+  position: absolute;
+  inset: -40% -10%;
+  background: linear-gradient(95deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 80%);
+  transform: translateX(-60%);
+  animation: superpowerSweep 1.8s linear infinite;
+  pointer-events: none;
 }
 
 .cinematic-kicker {
@@ -851,6 +866,12 @@ article { padding: 24px; }
   border-radius: inherit;
   background: linear-gradient(90deg, var(--accent), #ffffff);
   transition: width 0.45s ease;
+}
+
+@keyframes superpowerSweep {
+  0% { transform: translateX(-70%); opacity: 0.2; }
+  50% { opacity: 0.45; }
+  100% { transform: translateX(70%); opacity: 0.2; }
 }
 /* Pet character — no box, just the drawn creature at bottom-left */
 .pet-character {

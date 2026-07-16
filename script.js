@@ -233,10 +233,52 @@ function initPlacementCheckoutState() {
 }
 
 async function runCinematicOnboarding(task) {
-  if (cinematicOnboardingOverlay) {
+  if (!cinematicOnboardingOverlay) {
+    return task();
+  }
+
+  cinematicOnboardingOverlay.hidden = false;
+  setCinematicOnboardingStep({
+    title: 'Igniting your storefront engine',
+    subtext: 'Verifying your company details and preparing secure import.',
+    progress: 14
+  });
+
+  const taskPromise = task();
+
+  try {
+    await wait(220);
+    setCinematicOnboardingStep({
+      title: 'Mapping your product universe',
+      subtext: 'Finding product pages, variants, pricing, and stock details.',
+      progress: 42
+    });
+    await wait(260);
+    setCinematicOnboardingStep({
+      title: 'Building your Teyo storefront',
+      subtext: 'Publishing your listings and syncing updates for shoppers.',
+      progress: 78
+    });
+
+    const result = await taskPromise;
+    setCinematicOnboardingStep({
+      title: 'Superpower complete',
+      subtext: 'Your store is now live with automatic updates.',
+      progress: 100
+    });
+    await wait(520);
+    return result;
+  } catch (error) {
+    setCinematicOnboardingStep({
+      title: 'Superpower paused',
+      subtext: 'Setup hit an issue. Please review your details and try again.',
+      progress: 100
+    });
+    await wait(620);
+    throw error;
+  } finally {
     cinematicOnboardingOverlay.hidden = true;
   }
-  return task();
 }
 
 function isAdminPage() {

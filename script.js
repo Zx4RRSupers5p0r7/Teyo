@@ -144,16 +144,16 @@ const customerPresetClasses = [
   'theme-preset-sunset'
 ];
 const plushieSymbols = {
-  bunny: '🐰',
-  bear: '🧸',
-  cat: '🐱',
-  frog: '🐸',
-  star: '⭐',
-  dog: '🐶',
-  hamster: '🐹',
-  panda: '🐼',
-  fox: '🦊',
-  duck: '🐥'
+  bunny: 'ðŸ°',
+  bear: 'ðŸ§¸',
+  cat: 'ðŸ±',
+  frog: 'ðŸ¸',
+  star: 'â­',
+  dog: 'ðŸ¶',
+  hamster: 'ðŸ¹',
+  panda: 'ðŸ¼',
+  fox: 'ðŸ¦Š',
+  duck: 'ðŸ¥'
 };
 const customerCuteThemes = {
   kawaii: { accent: '#ff9ad5', style: 'kawaii', plushie: 'bear' },
@@ -310,7 +310,7 @@ function setCinematicVisibility(element, visible) {
   element.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
-/* ── Easing helpers ─────────────────────────────────────────────── */
+/* â”€â”€ Easing helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function easeOutCubic(t) {
   const s = Math.max(0, Math.min(1, t));
   return 1 - Math.pow(1 - s, 3);
@@ -324,7 +324,7 @@ function easeInCubic(t) {
   return s * s * s;
 }
 
-/* ── Three.js 3D star ────────────────────────────────────────────── */
+/* â”€â”€ Three.js 3D star â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function createThreeStarScene(mount) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
@@ -402,11 +402,11 @@ function disposeThreeStarScene(ts) {
   try { if (ts.renderer.domElement.parentNode) ts.renderer.domElement.parentNode.removeChild(ts.renderer.domElement); } catch (e) { /* ignore */ }
 }
 
-/* ── Canvas particle engine ──────────────────────────────────────── */
+/* â”€â”€ Canvas particle engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function createParticleCanvas(mount) {
   if (!mount) return null;
   const canvas = document.createElement('canvas');
-  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;';
   mount.appendChild(canvas);
   const ctx = canvas.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -429,31 +429,93 @@ function createParticleCanvas(mount) {
     wobble: (Math.random() - 0.5) * 0.5,
   }));
 
-  /* Subtle star-background dust */
-  const dust = Array.from({ length: 1050 }, () => ({
+  /* Star-stage background particles */
+  const dust = Array.from({ length: 1350 }, () => ({
     x: Math.random() * W, y: Math.random() * H,
-    size: Math.random() * 1.4 + 0.22, alpha: Math.random() * 0.36 + 0.1,
-    dx: (Math.random() - 0.5) * 0.16, dy: (Math.random() - 0.5) * 0.1,
+    size: Math.random() * 1.6 + 0.2, alpha: Math.random() * 0.42 + 0.08,
+    dx: (Math.random() - 0.5) * 0.14, dy: (Math.random() - 0.5) * 0.085,
     phase: Math.random() * Math.PI * 2,
   }));
 
-  return { canvas, ctx, dpr, particles, dust, resize };
+  const clouds = Array.from({ length: 16 }, () => ({
+    x: Math.random(),
+    y: Math.random(),
+    r: 0.22 + Math.random() * 0.26,
+    alpha: 0.08 + Math.random() * 0.16,
+    speed: 0.045 + Math.random() * 0.06,
+    phase: Math.random() * Math.PI * 2,
+    tone: 152 + Math.floor(Math.random() * 92)
+  }));
+
+  return { canvas, ctx, dpr, particles, dust, clouds, resize };
+}
+
+function drawStarAtmosphere(pState, elapsed) {
+  if (!pState) return;
+  const { ctx, clouds } = pState;
+  const W = window.innerWidth, H = window.innerHeight;
+
+  const base = ctx.createLinearGradient(0, 0, W, H);
+  base.addColorStop(0, '#212635');
+  base.addColorStop(0.25, '#343a4b');
+  base.addColorStop(0.52, '#4c5366');
+  base.addColorStop(0.74, '#2f3545');
+  base.addColorStop(1, '#1d2230');
+  ctx.fillStyle = base;
+  ctx.fillRect(0, 0, W, H);
+
+  clouds.forEach((c, i) => {
+    const cx = (c.x + Math.sin(elapsed * c.speed + c.phase) * 0.08) * W;
+    const cy = (c.y + Math.cos(elapsed * (c.speed * 0.82) + c.phase * 1.3) * 0.07) * H;
+    const radius = c.r * Math.min(W, H);
+
+    const g = ctx.createRadialGradient(cx, cy, radius * 0.06, cx, cy, radius);
+    const whiteAlpha = c.alpha * (0.7 + Math.sin(elapsed * 0.7 + c.phase) * 0.2);
+    const midTone = c.tone;
+
+    g.addColorStop(0, `rgba(255,255,255,${whiteAlpha})`);
+    g.addColorStop(0.34, `rgba(${midTone},${midTone + 3},${midTone + 12},${c.alpha * 0.88})`);
+    g.addColorStop(0.7, `rgba(${Math.max(90, midTone - 48)},${Math.max(92, midTone - 46)},${Math.max(102, midTone - 38)},${c.alpha * 0.46})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const veil = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.96);
+  veil.addColorStop(0, 'rgba(255,255,255,0.05)');
+  veil.addColorStop(0.35, 'rgba(255,255,255,0.015)');
+  veil.addColorStop(0.7, 'rgba(10,10,15,0.16)');
+  veil.addColorStop(1, 'rgba(0,0,0,0.33)');
+  ctx.fillStyle = veil;
+  ctx.fillRect(0, 0, W, H);
+
+  const vignette = ctx.createRadialGradient(W * 0.5, H * 0.5, Math.min(W, H) * 0.24, W * 0.5, H * 0.5, Math.max(W, H) * 0.74);
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.36)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, W, H);
 }
 
 function drawStarDust(pState, elapsed) {
   if (!pState) return;
   const { ctx, dust } = pState;
   const W = window.innerWidth, H = window.innerHeight;
-  ctx.clearRect(0, 0, W, H);
+
+  drawStarAtmosphere(pState, elapsed);
+
   ctx.save();
   dust.forEach((p) => {
-    p.x += p.dx + Math.sin(elapsed * 0.34 + p.phase) * 0.06;
-    p.y += p.dy + Math.cos(elapsed * 0.28 + p.phase) * 0.05;
-    if (p.x < -5) p.x = W + 5; if (p.x > W + 5) p.x = -5;
-    if (p.y < -5) p.y = H + 5; if (p.y > H + 5) p.y = -5;
-    const tw = p.alpha * (0.62 + Math.sin(elapsed * 1.12 + p.phase) * 0.34);
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.62, tw + 0.04)})`;
+    p.x += p.dx + Math.sin(elapsed * 0.28 + p.phase) * 0.06;
+    p.y += p.dy + Math.cos(elapsed * 0.22 + p.phase) * 0.045;
+    if (p.x < -8) p.x = W + 8; if (p.x > W + 8) p.x = -8;
+    if (p.y < -8) p.y = H + 8; if (p.y > H + 8) p.y = -8;
+
+    const tw = p.alpha * (0.68 + Math.sin(elapsed * 1.05 + p.phase) * 0.25);
+    ctx.shadowBlur = 14;
+    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.76, tw + 0.09)})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${tw})`;
@@ -501,9 +563,9 @@ function drawSpaceParticles(pState, elapsed, intensity) {
   });
 }
 
-/* ── White fire sweep (drawn to a temp canvas) ───────────────────── */
+/* â”€â”€ White fire sweep (drawn to a temp canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function drawFireSweep(ctx, W, H, progress) {
-  /* progress 0→1 sweeps left→right */
+  /* progress 0â†’1 sweeps leftâ†’right */
   const cx = W * (-0.2 + 1.4 * progress);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
@@ -538,7 +600,7 @@ function drawFireSweep(ctx, W, H, progress) {
   ctx.restore();
 }
 
-/* ── Audio tones ─────────────────────────────────────────────────── */
+/* â”€â”€ Audio tones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function playCinematicTone(frequency, duration, gainValue = 0.00018) {
   if (!window.AudioContext && !window.webkitAudioContext) return;
   try {
@@ -555,7 +617,7 @@ function playCinematicTone(frequency, duration, gainValue = 0.00018) {
   } catch (e) { /* audio not available */ }
 }
 
-/* ── Flash word (ONE / CLICK) ────────────────────────────────────── */
+/* â”€â”€ Flash word (ONE / CLICK) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 async function flashWord(word, holdMs = 2000, exitMs = 200) {
   if (!cinematicFlashWord) return;
   cinematicFlashWord.textContent = word;
@@ -572,9 +634,9 @@ async function flashWord(word, holdMs = 2000, exitMs = 200) {
   await wait(exitMs);
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MAIN CINEMATIC SEQUENCE
-═══════════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 async function runCinematicOnboarding(task) {
   if (!cinematicOnboardingOverlay) return task();
 
@@ -603,11 +665,11 @@ async function runCinematicOnboarding(task) {
   const SEQ_START = performance.now();
   const MIN_MS = 28000;
 
-  /* ── PHASE 1: 3D Star on pure white ──────────────────────────────
-     Stage A (0–3.4s):  Star ZOOMS OUT — starts huge (z=4, very close)
+  /* â”€â”€ PHASE 1: 3D Star on pure white â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+     Stage A (0â€“3.4s):  Star ZOOMS OUT â€” starts huge (z=4, very close)
                         and pulls back to settled centre (z=0).
-     Stage B (3.4–7.8s): Star spins elegantly in place.
-     Stage C (7.8–9.6s): Star slowly zooms INTO camera (z → 4.8).  */
+     Stage B (3.4â€“7.8s): Star spins elegantly in place.
+     Stage C (7.8â€“9.6s): Star slowly zooms INTO camera (z â†’ 4.8).  */
   const starLoopStart = performance.now();
   const starLoop = (ts) => {
     if (stopped) return;
@@ -646,10 +708,10 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    /* ── Wait for full star sequence ─────────────────────────────── */
+    /* â”€â”€ Wait for full star sequence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     await wait(9800);
 
-    /* ── BIG FLASH TRANSITION ──────────────────────────────────── */
+    /* â”€â”€ BIG FLASH TRANSITION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     stopped = true; cancelAnimationFrame(rafId);
     disposeThreeStarScene(threeState);
     if (pState) pState.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -661,7 +723,7 @@ async function runCinematicOnboarding(task) {
     setCinematicOverlayMode('flash-flicker-2'); await wait(55);
     setCinematicOverlayMode('flash-black');
 
-    /* ── PHASE 2: Deep space — particles stream upward ─────────── */
+    /* â”€â”€ PHASE 2: Deep space â€” particles stream upward â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     const spaceLoopStart = performance.now();
     stopped = false;
     if (pState) {
@@ -676,13 +738,13 @@ async function runCinematicOnboarding(task) {
     rafId = requestAnimationFrame(spaceLoop);
     await wait(3600);
 
-    /* ── PHASE 3: Teyo logo blooms in ──────────────────────────── */
+    /* â”€â”€ PHASE 3: Teyo logo blooms in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     setCinematicOverlayMode('logo-stage');
     playCinematicTone(660, 0.58, 0.00026);
     setCinematicVisibility(cinematicLogoReveal, true);
     await wait(2600);
 
-    /* ── PHASE 4: White fire sweep across screen ──────────────── */
+    /* â”€â”€ PHASE 4: White fire sweep across screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     const FIRE_DUR = 1900;
     const fireCanvas = document.createElement('canvas');
     fireCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;';
@@ -705,7 +767,7 @@ async function runCinematicOnboarding(task) {
     playCinematicTone(520, 1.0, 0.00024);
     await wait(FIRE_DUR);
 
-    /* ── PHASE 5: Thank you + taglines ────────────────────────── */
+    /* â”€â”€ PHASE 5: Thank you + taglines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     setCinematicVisibility(cinematicThankYou, true);
     await wait(700);
     if (cinematicFutureLine) {
@@ -717,21 +779,21 @@ async function runCinematicOnboarding(task) {
     setCinematicVisibility(cinematicInstallLine, true);
     await wait(1700);
 
-    /* ── PHASE 6: ONE — flash & slow zoom ─────────────────────── */
+    /* â”€â”€ PHASE 6: ONE â€” flash & slow zoom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     stopped = true; cancelAnimationFrame(rafId);
     if (pState) drawSpaceParticles(pState, 9999, 1.0); /* freeze bg */
     await flashWord('ONE', 2200, 160);
 
-    /* ── PHASE 7: CLICK — flash & slow zoom ───────────────────── */
+    /* â”€â”€ PHASE 7: CLICK â€” flash & slow zoom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     await flashWord('CLICK', 2300, 220);
 
     taskResult = await taskPromise;
 
-    /* ── Pad to minimum duration ───────────────────────────────── */
+    /* â”€â”€ Pad to minimum duration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     const used = performance.now() - SEQ_START;
     if (used < MIN_MS) await wait(MIN_MS - used);
 
-    /* ── Final white flash out ─────────────────────────────────── */
+    /* â”€â”€ Final white flash out â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
     playCinematicTone(960, 0.45, 0.0003);
     setCinematicOverlayMode('final-flash');
     await wait(750);
@@ -1357,7 +1419,7 @@ function ensureCuteDecorLayer() {
   return layer;
 }
 
-/* ── SVG Pet builder ───────────────────────────────────────────────── */
+/* â”€â”€ SVG Pet builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const petPartDefaults = {
   cat:     { ear: 'perky',  tail: 'long',   nose: 'button', leg: 'stubby' },
@@ -1444,7 +1506,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
   const noses = _petNoseSVG(nose, c, c2);
   const legs  = _petLegSVG(leg, c);
 
-  // Large cartoon eyes — head centred at cy=40
+  // Large cartoon eyes â€” head centred at cy=40
   const eyesSt = `<circle class="pet-eye-l" cx="38" cy="38" r="8" fill="${wh}"/><circle class="pet-eye-r" cx="62" cy="38" r="8" fill="${wh}"/>`
                + `<circle cx="39" cy="38" r="5" fill="${dk}"/><circle cx="63" cy="38" r="5" fill="${dk}"/>`
                + `<circle cx="41" cy="36" r="2" fill="${wh}"/><circle cx="65" cy="36" r="2" fill="${wh}"/>`;
@@ -1554,10 +1616,10 @@ function buildPetSVG(type, c, c2, opts = {}) {
   + catWhiskers + dogTongue
   + (type !== 'dog' ? mouth : ''));
 }
-/* ───────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 
-/* ── Pet animation system ────────────────────────────────────────── */
+/* â”€â”€ Pet animation system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 const petActionSeq = {
   cat:     [{cls:'pet-action-idle',ms:3200},{cls:'pet-action-a',ms:1800},{cls:'pet-action-idle',ms:2400},{cls:'pet-action-b',ms:2200},{cls:'pet-action-idle',ms:4000},{cls:'pet-action-c',ms:900}],
   dog:     [{cls:'pet-action-idle',ms:2200},{cls:'pet-action-a',ms:1200},{cls:'pet-action-idle',ms:2800},{cls:'pet-action-b',ms:1000}],
@@ -1599,7 +1661,7 @@ function _runNextPetFrame() {
   petChar.className = petChar.className.replace(/\bpet-action-\S+/g, '').trim() + ' ' + frame.cls;
   _petTimer = setTimeout(_runNextPetFrame, frame.ms);
 }
-/* ────────────────────────────────────────────────────────────────── */
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 function updateCuteDecorLayer(theme) {
   const layer = ensureCuteDecorLayer();
@@ -1897,7 +1959,7 @@ function renderResults() {
         ${thumbnailMarkup}
         <div class="result-item-copy">
           <h4>${safeProductName}</h4>
-          <p>${safeCompanyName} • ${safeDescription}</p>
+          <p>${safeCompanyName} â€¢ ${safeDescription}</p>
         </div>
       </div>
       <div class="result-meta">
@@ -1932,7 +1994,7 @@ function classifyStockBadge(status, fallbackStatus = '', restockDate = '') {
     : (status || fallbackStatus || 'Check availability');
   const restockLabel = formatDateLabel(restockDate);
   const label = restockLabel && (raw.includes('out') || raw.includes('low'))
-    ? `${baseLabel} • Restock ${restockLabel}`
+    ? `${baseLabel} â€¢ Restock ${restockLabel}`
     : baseLabel;
   return { cls, label };
 }
@@ -2336,7 +2398,7 @@ async function renderProduct(product) {
     : '<p class="form-message">No explicit size data provided for this product yet.</p>';
   const sizeStatusLine = sizeFilter === 'ALL'
     ? '<p><strong>Size filter:</strong> All sizes</p>'
-    : `<p><strong>Size filter:</strong> ${escapeHtml(sizeFilter)} • ${selectedInventory.length} matching store entries.</p>`;
+    : `<p><strong>Size filter:</strong> ${escapeHtml(sizeFilter)} â€¢ ${selectedInventory.length} matching store entries.</p>`;
   const safeProductName = escapeHtml(product.productName || product.name);
   const safeCompanyName = escapeHtml(product.companyName || product.company);
   const safeCategory = escapeHtml((product.category || 'general').toUpperCase());
@@ -2446,7 +2508,7 @@ function renderStores(storeEntries, stockStatus, sizeFilter = 'ALL') {
   });
 }
 
-// ── Leaflet map ──────────────────────────────────────────────────────
+// â”€â”€ Leaflet map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let _leafletMap = null;
 let _userMarker = null;
 let _storeMarkers = [];
@@ -2459,7 +2521,7 @@ function initMap() {
 
   _leafletMap = L.map('mapLeaflet', { zoomControl: true }).setView([43.65, -79.38], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+    attribution: 'Â© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
     maxZoom: 18
   }).addTo(_leafletMap);
 
@@ -2470,7 +2532,7 @@ function initMap() {
         if (_userMarker) _userMarker.remove();
         _userMarker = L.circleMarker([coords.latitude, coords.longitude], {
           radius: 10, fillColor: '#7c7cff', color: '#fff', weight: 2.5, fillOpacity: 0.9
-        }).addTo(_leafletMap).bindPopup('📍 You are here').openPopup();
+        }).addTo(_leafletMap).bindPopup('ðŸ“ You are here').openPopup();
       },
       () => {}
     );
@@ -2512,7 +2574,7 @@ async function updateMapForProduct(storeEntries, stockStatus, sizeFilter = 'ALL'
     return;
   }
 
-  if (mapStatus) mapStatus.title = 'Finding stores on map…';
+  if (mapStatus) mapStatus.title = 'Finding stores on mapâ€¦';
 
   const coords = [];
   for (const storeEntry of real.slice(0, 25)) {
@@ -2901,7 +2963,7 @@ function renderRestockSoonDashboard(products) {
     <article class="inventory-restock-card">
       <h4>${escapeHtml(row.productName)}</h4>
       <p><strong>Company:</strong> ${escapeHtml(row.companyName)}</p>
-      <p><strong>Store:</strong> ${escapeHtml(row.storeName)} • <strong>Size:</strong> ${escapeHtml(row.size)}</p>
+      <p><strong>Store:</strong> ${escapeHtml(row.storeName)} â€¢ <strong>Size:</strong> ${escapeHtml(row.size)}</p>
       <p><strong>Status:</strong> ${escapeHtml(row.stockStatus || 'Check availability')}</p>
       <p><strong>Restock date:</strong> ${escapeHtml(formatDateLabel(row.restockDate) || row.restockDate)}</p>
     </article>
@@ -3087,7 +3149,7 @@ async function checkStockReminders() {
       triggeredCount += 1;
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Teyo stock reminder', {
-          body: `${reminder.productName} (${reminder.size}) — ${result.reason}`
+          body: `${reminder.productName} (${reminder.size}) â€” ${result.reason}`
         });
       }
 
@@ -3820,7 +3882,7 @@ if (document.getElementById('mapLeaflet')) {
   }, 60000);
 }
 
-// ── Live viewer beacon (runs on every page) ───────────────────────
+// â”€â”€ Live viewer beacon (runs on every page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initViewerBeacon() {
   if (document.getElementById('ownerViewerBadge')) return;
 
@@ -3845,7 +3907,7 @@ function initViewerBeacon() {
 
   if (!hasOwnerSession()) return;
 
-  // — Badge —
+  // â€” Badge â€”
   const badge = document.createElement('div');
   badge.id = 'ownerViewerBadge';
   badge.title = 'Click to open Teyo dashboard';
@@ -3861,7 +3923,7 @@ function initViewerBeacon() {
   badge.textContent = '\u{1F441} \u2014 live';
   document.body.appendChild(badge);
 
-  // — Stats panel —
+  // â€” Stats panel â€”
   const panel = document.createElement('div');
   panel.id = 'ownerStatsPanel';
   panel.style.cssText = [
@@ -3873,7 +3935,7 @@ function initViewerBeacon() {
     'box-shadow:0 4px 24px rgba(124,124,255,0.3)',
     'min-width:250px', 'display:none'
   ].join(';');
-  panel.innerHTML = '<p style="margin:0;opacity:0.5;font-size:0.72rem">Loading…</p>';
+  panel.innerHTML = '<p style="margin:0;opacity:0.5;font-size:0.72rem">Loadingâ€¦</p>';
   document.body.appendChild(panel);
 
   let panelOpen = false;
@@ -3881,15 +3943,15 @@ function initViewerBeacon() {
   function renderPanel(d) {
     const raise = d.recommendedPriceCents > d.currentPriceCents;
     panel.innerHTML =
-      `<div style="font-weight:800;font-size:0.9rem;margin-bottom:10px;color:#7c7cff">📊 Teyo Dashboard</div>`
-      + `<div>👁 Live viewers: <strong>${d.liveViewers}</strong></div>`
-      + `<div>📈 Total visitors: <strong>${(d.totalVisitors || 0).toLocaleString()}</strong></div>`
+      `<div style="font-weight:800;font-size:0.9rem;margin-bottom:10px;color:#7c7cff">ðŸ“Š Teyo Dashboard</div>`
+      + `<div>ðŸ‘ Live viewers: <strong>${d.liveViewers}</strong></div>`
+      + `<div>ðŸ“ˆ Total visitors: <strong>${(d.totalVisitors || 0).toLocaleString()}</strong></div>`
       + `<hr style="border:0;border-top:1px solid rgba(124,124,255,0.25);margin:10px 0"/>`
-      + `<div>💰 Listing price: <strong>$${Math.round(d.currentPriceCents / 100)}</strong></div>`
+      + `<div>ðŸ’° Listing price: <strong>$${Math.round(d.currentPriceCents / 100)}</strong></div>`
       + `<div style="font-size:0.78rem;color:#aaa;margin-top:2px">${escapeHtml(d.priceAdvice)}</div>`
       + (raise
         ? `<div style="margin-top:10px;padding:8px 10px;background:rgba(50,200,100,0.12);border:1px solid rgba(50,200,100,0.3);border-radius:10px;color:#32c864;font-size:0.78rem">`
-          + `💡 Suggested raise → <strong>${escapeHtml(d.recommendedPrice)}</strong></div>`
+          + `ðŸ’¡ Suggested raise â†’ <strong>${escapeHtml(d.recommendedPrice)}</strong></div>`
         : '');
   }
 

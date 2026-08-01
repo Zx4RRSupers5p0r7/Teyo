@@ -371,12 +371,6 @@ function createThreeStarScene(mount) {
   const starMesh = new THREE.Mesh(geo, mat);
   scene.add(starMesh);
 
-  /* Soft glow sphere behind the star */
-  const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
-  const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(2.2, 24, 24), glowMat);
-  glowSphere.position.z = -0.4;
-  scene.add(glowSphere);
-
   /* Lights */
   scene.add(new THREE.AmbientLight(0xffffff, 1.1));
   const key = new THREE.DirectionalLight(0xffffff, 4.0); key.position.set(3, 4, 7); scene.add(key);
@@ -391,7 +385,7 @@ function createThreeStarScene(mount) {
   };
   window.addEventListener('resize', onResize);
 
-  return { renderer, scene, camera, starMesh, glowMat, onResize, disposed: false };
+  return { renderer, scene, camera, starMesh, onResize, disposed: false };
 }
 
 function disposeThreeStarScene(ts) {
@@ -675,13 +669,12 @@ async function runCinematicOnboarding(task) {
     if (stopped) return;
     const el = (ts - starLoopStart) / 1000;
     if (threeState && !threeState.disposed) {
-      const { renderer, scene, camera, starMesh, glowMat } = threeState;
+      const { renderer, scene, camera, starMesh } = threeState;
       if (el < 3.4) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
         starMesh.rotation.x = el * 0.48; starMesh.rotation.y = el * 0.82; starMesh.rotation.z = el * 0.24;
-        glowMat.opacity = t * 0.42;
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
@@ -689,13 +682,11 @@ async function runCinematicOnboarding(task) {
         starMesh.rotation.x = 3.4 * 0.48 + sp * 0.52;
         starMesh.rotation.y = 3.4 * 0.82 + sp * 1.08;
         starMesh.rotation.z = 3.4 * 0.24 + sp * 0.28;
-        glowMat.opacity = 0.42 + Math.sin(sp * 1.9) * 0.14;
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
         starMesh.rotation.x += 0.017; starMesh.rotation.y += 0.024; starMesh.rotation.z += 0.009;
-        glowMat.opacity = 0.56 + Math.min(1, zi / 1.9) * 0.44;
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

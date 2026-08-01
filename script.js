@@ -379,13 +379,13 @@ function createCinematicRendererState() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.3;
+  renderer.toneMappingExposure = 1.48;
   cinematicThreeMount.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf3f3f3);
 
-  const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 300);
+  const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 300);
   camera.position.set(0, 0, 11.25);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
@@ -450,7 +450,8 @@ function createCinematicRendererState() {
     rafId: null,
     startedAt: performance.now(),
     stopped: false,
-    resizeHandler: null
+    resizeHandler: null,
+    baseFov: 48
   };
 
   state.resizeHandler = () => {
@@ -520,30 +521,33 @@ function renderCinematicFrame(state, timestamp) {
   const delta = Math.min(0.04, Math.max(0.001, elapsed - (state.lastElapsed || 0)));
   state.lastElapsed = elapsed;
 
-  state.camera.position.x = Math.sin(elapsed * 0.18) * 0.08;
-  state.camera.position.y = Math.cos(elapsed * 0.22) * 0.05;
+  state.camera.position.x = Math.sin(elapsed * 0.16) * 0.1;
+  state.camera.position.y = Math.cos(elapsed * 0.21) * 0.06;
+  const fovWave = state.mode === 'star-stage' ? 0.5 : 0.24;
+  state.camera.fov = (state.baseFov || 48) + Math.sin(elapsed * 0.24) * fovWave;
+  state.camera.updateProjectionMatrix();
 
   if (state.mode === 'star-stage') {
     state.star.visible = true;
     state.streamParticles.visible = false;
 
-    if (modeElapsed < 3.2) {
-      const t = modeElapsed / 3.2;
-      state.star.scale.setScalar(1.8 - (0.86 * t));
-      state.star.position.z = -14 + (6.5 * t);
-    } else if (modeElapsed < 8.2) {
-      state.star.scale.setScalar(0.94);
-      state.star.position.z = -7.5;
-      state.star.rotation.x += delta * 0.48;
-      state.star.rotation.y += delta * 0.42;
-      state.star.rotation.z += delta * 0.34;
+    if (modeElapsed < 4.2) {
+      const t = modeElapsed / 4.2;
+      state.star.scale.setScalar(2.2 - (1.22 * t));
+      state.star.position.z = -18 + (10.2 * t);
+    } else if (modeElapsed < 9.6) {
+      state.star.scale.setScalar(0.98);
+      state.star.position.z = -7.8;
+      state.star.rotation.x += delta * 0.42;
+      state.star.rotation.y += delta * 0.38;
+      state.star.rotation.z += delta * 0.3;
     } else {
-      const t = Math.min(1, (modeElapsed - 8.2) / 4.8);
-      state.star.scale.setScalar(0.94 + (0.76 * t));
-      state.star.position.z = -7.5 + (6.9 * t);
-      state.star.rotation.x += delta * 0.62;
-      state.star.rotation.y += delta * 0.56;
-      state.star.rotation.z += delta * 0.45;
+      const t = Math.min(1, (modeElapsed - 9.6) / 5.8);
+      state.star.scale.setScalar(0.98 + (0.96 * t));
+      state.star.position.z = -7.8 + (8.6 * t);
+      state.star.rotation.x += delta * 0.56;
+      state.star.rotation.y += delta * 0.51;
+      state.star.rotation.z += delta * 0.4;
     }
 
     updateParticleField(state.driftParticles, delta, 1, 65, 0.0024);
@@ -642,12 +646,12 @@ async function runCinematicOnboarding(task) {
   setCinematicVisibility(cinematicFireSweep, false);
 
   if (cinematicFutureLine) {
-    cinematicFutureLine.textContent = 'White light ignition sequence started.';
+    cinematicFutureLine.textContent = 'Cinematic ignition sequence started.';
   }
 
   setCinematicOnboardingStep({
-    title: 'Teyo Superpower Initiated',
-    subtext: 'Locking your star into launch position.',
+    title: 'Teyo Superpower Initiated' ,
+    subtext: 'Locking your star into position before full launch.',
     progress: 8
   });
 
@@ -660,10 +664,10 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    await wait(11800);
+    await wait(12800);
     setCinematicOnboardingStep({
-      title: 'Approaching the launch core',
-      subtext: 'Preparing flash transition into the live marketplace stream.',
+      title: 'Approaching the launch core' ,
+      subtext: 'Preparing the flash transition into the live marketplace stream.',
       progress: 38
     });
 
@@ -677,7 +681,7 @@ async function runCinematicOnboarding(task) {
     }
     setCinematicVisibility(cinematicInstallLine, true);
 
-    await wait(3000);
+    await wait(3600);
     setCinematicOverlayMode('logo-stage');
     if (rendererState) {
       setRendererMode(rendererState, 'logo-stage');
@@ -691,14 +695,14 @@ async function runCinematicOnboarding(task) {
     }
 
     setCinematicOnboardingStep({
-      title: 'Teyo marketplace signature online',
+      title: 'Teyo marketplace signature online' ,
       subtext: 'Syncing your products so shoppers can discover them instantly.',
       progress: 72
     });
 
-    await wait(3300);
-    await flashWord('ONE', 1320, 260);
-    await flashWord('CLICK', 1320, 260);
+    await wait(3800);
+    await flashWord('ONE', 1580, 340);
+    await flashWord('CLICK', 1620, 360);
 
     taskResult = await taskPromise;
 
@@ -708,7 +712,7 @@ async function runCinematicOnboarding(task) {
       progress: 100
     });
 
-    await wait(1300);
+    await wait(1900);
 
     setCinematicOverlayMode('final-flash');
     if (rendererState) {
@@ -719,7 +723,7 @@ async function runCinematicOnboarding(task) {
       cinematicFireSweep.classList.remove('is-animating');
     }
 
-    await wait(520);
+    await wait(700);
 
     const elapsedMs = performance.now() - sequenceStart;
     if (elapsedMs < minimumSequenceMs) {

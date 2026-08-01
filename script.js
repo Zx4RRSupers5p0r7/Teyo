@@ -343,7 +343,7 @@ function createThreeStarScene(mount) {
   scene.fog = new THREE.FogExp2(0x8b909f, 0.016);
 
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
-  camera.position.set(0, 0, 5);
+  camera.position.set(0, 0, 5); camera.lookAt(0, 0, 0);
 
   /* Original celestial twilight star */
   const finalizeTexture = (texture) => {
@@ -521,7 +521,7 @@ function createThreeStarScene(mount) {
     blending: THREE.AdditiveBlending,
     depthWrite: false
   }));
-  starSprite.scale.set(1.22, 1.22, 1);
+  starSprite.scale.set(2.1, 2.1, 1);
 
   const coreSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: coreTexture,
@@ -881,14 +881,14 @@ async function runCinematicOnboarding(task) {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        spinAngle = 3.4 * 0.93 + (7.8 - 3.4) * 1.02 + zi * 0.88;
+        spinAngle = 3.4 * 0.93 + (7.8 - 3.4) * 1.02 + zi * 0.55;
       }
       starMesh.rotation.set(0, 0, spinAngle);
       if (starFx) {
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
         const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         starFx.starSprite.material.opacity = 0.9 + flicker * 0.08;
-        const starScale = 1.18 + pulse * 0.035;
+        const starScale = 2.05 + pulse * 0.08;
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
       }
@@ -912,10 +912,10 @@ async function runCinematicOnboarding(task) {
     if (pState) pState.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
     playCinematicTone(360, 0.6, 0.0003);
-    setCinematicOverlayMode('flash-white'); await wait(110);
-    setCinematicOverlayMode('flash-flicker-1'); await wait(65);
-    setCinematicOverlayMode('flash-white'); await wait(90);
-    setCinematicOverlayMode('flash-flicker-2'); await wait(55);
+    setCinematicOverlayMode('flash-white'); await wait(55);
+    setCinematicOverlayMode('flash-flicker-1'); await wait(30);
+    setCinematicOverlayMode('flash-white'); await wait(40);
+    setCinematicOverlayMode('flash-flicker-2'); await wait(25);
     setCinematicOverlayMode('flash-black');
 
     /* â”€â”€ PHASE 2: Deep space â€” particles stream upward â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */

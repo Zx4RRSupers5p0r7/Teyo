@@ -432,8 +432,8 @@ function createParticleCanvas(mount) {
   /* Star-stage background particles */
   const dust = Array.from({ length: 1350 }, () => ({
     x: Math.random() * W, y: Math.random() * H,
-    size: Math.random() * 1.6 + 0.2, alpha: Math.random() * 0.42 + 0.08,
-    dx: (Math.random() - 0.5) * 0.14, dy: (Math.random() - 0.5) * 0.085,
+    size: Math.random() * 1.8 + 0.28, alpha: Math.random() * 0.5 + 0.2,
+    dx: (Math.random() - 0.5) * 0.12, dy: (Math.random() - 0.5) * 0.072,
     phase: Math.random() * Math.PI * 2,
   }));
 
@@ -441,10 +441,10 @@ function createParticleCanvas(mount) {
     x: Math.random(),
     y: Math.random(),
     r: 0.22 + Math.random() * 0.26,
-    alpha: 0.08 + Math.random() * 0.16,
+    alpha: 0.1 + Math.random() * 0.2,
     speed: 0.045 + Math.random() * 0.06,
     phase: Math.random() * Math.PI * 2,
-    tone: 152 + Math.floor(Math.random() * 92)
+    tone: 138 + Math.floor(Math.random() * 100)
   }));
 
   return { canvas, ctx, dpr, particles, dust, clouds, resize };
@@ -456,11 +456,11 @@ function drawStarAtmosphere(pState, elapsed) {
   const W = window.innerWidth, H = window.innerHeight;
 
   const base = ctx.createLinearGradient(0, 0, W, H);
-  base.addColorStop(0, '#212635');
-  base.addColorStop(0.25, '#343a4b');
-  base.addColorStop(0.52, '#4c5366');
-  base.addColorStop(0.74, '#2f3545');
-  base.addColorStop(1, '#1d2230');
+  base.addColorStop(0, '#0d0f13');
+  base.addColorStop(0.25, '#2a2f38');
+  base.addColorStop(0.52, '#4d5464');
+  base.addColorStop(0.74, '#323945');
+  base.addColorStop(1, '#0a0c10');
   ctx.fillStyle = base;
   ctx.fillRect(0, 0, W, H);
 
@@ -470,12 +470,12 @@ function drawStarAtmosphere(pState, elapsed) {
     const radius = c.r * Math.min(W, H);
 
     const g = ctx.createRadialGradient(cx, cy, radius * 0.06, cx, cy, radius);
-    const whiteAlpha = c.alpha * (0.7 + Math.sin(elapsed * 0.7 + c.phase) * 0.2);
+    const whiteAlpha = c.alpha * (0.88 + Math.sin(elapsed * 0.7 + c.phase) * 0.24);
     const midTone = c.tone;
 
     g.addColorStop(0, `rgba(255,255,255,${whiteAlpha})`);
-    g.addColorStop(0.34, `rgba(${midTone},${midTone + 3},${midTone + 12},${c.alpha * 0.88})`);
-    g.addColorStop(0.7, `rgba(${Math.max(90, midTone - 48)},${Math.max(92, midTone - 46)},${Math.max(102, midTone - 38)},${c.alpha * 0.46})`);
+    g.addColorStop(0.34, `rgba(${midTone + 6},${midTone + 10},${midTone + 20},${c.alpha * 0.96})`);
+    g.addColorStop(0.7, `rgba(${Math.max(84, midTone - 44)},${Math.max(86, midTone - 42)},${Math.max(96, midTone - 34)},${c.alpha * 0.58})`);
     g.addColorStop(1, 'rgba(0,0,0,0)');
 
     ctx.fillStyle = g;
@@ -485,10 +485,10 @@ function drawStarAtmosphere(pState, elapsed) {
   });
 
   const veil = ctx.createLinearGradient(0, H * 0.08, 0, H * 0.96);
-  veil.addColorStop(0, 'rgba(255,255,255,0.05)');
-  veil.addColorStop(0.35, 'rgba(255,255,255,0.015)');
-  veil.addColorStop(0.7, 'rgba(10,10,15,0.16)');
-  veil.addColorStop(1, 'rgba(0,0,0,0.33)');
+  veil.addColorStop(0, 'rgba(255,255,255,0.08)');
+  veil.addColorStop(0.35, 'rgba(255,255,255,0.026)');
+  veil.addColorStop(0.7, 'rgba(8,8,12,0.2)');
+  veil.addColorStop(1, 'rgba(0,0,0,0.42)');
   ctx.fillStyle = veil;
   ctx.fillRect(0, 0, W, H);
 
@@ -513,9 +513,9 @@ function drawStarDust(pState, elapsed) {
     if (p.x < -8) p.x = W + 8; if (p.x > W + 8) p.x = -8;
     if (p.y < -8) p.y = H + 8; if (p.y > H + 8) p.y = -8;
 
-    const tw = p.alpha * (0.68 + Math.sin(elapsed * 1.05 + p.phase) * 0.25);
-    ctx.shadowBlur = 14;
-    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.76, tw + 0.09)})`;
+    const tw = p.alpha * (0.82 + Math.sin(elapsed * 1.05 + p.phase) * 0.28);
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.92, tw + 0.18)})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(255,255,255,${tw})`;

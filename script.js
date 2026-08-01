@@ -345,64 +345,23 @@ function createThreeStarScene(mount) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
 
-  /* Celestial twilight spark star (4-point) */
-  const createSparkTexture = (size = 1024) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext('2d');
-    const c = size / 2;
-
-    const bgHalo = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.5);
-    bgHalo.addColorStop(0, 'rgba(255,255,255,0.98)');
-    bgHalo.addColorStop(0.2, 'rgba(255,255,255,0.58)');
-    bgHalo.addColorStop(0.58, 'rgba(235,242,255,0.2)');
-    bgHalo.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = bgHalo;
-    ctx.fillRect(0, 0, size, size);
-
-    const drawSpike = (angle, length, thickness, alpha) => {
-      ctx.save();
-      ctx.translate(c, c);
-      ctx.rotate(angle);
-      const g = ctx.createLinearGradient(-length / 2, 0, length / 2, 0);
-      g.addColorStop(0, 'rgba(255,255,255,0)');
-      g.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
-      g.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(-length / 2, -thickness / 2, length, thickness);
-      ctx.restore();
-    };
-
-    drawSpike(0, size * 0.95, size * 0.07, 0.9);
-    drawSpike(Math.PI / 2, size * 1.08, size * 0.095, 1);
-
-    const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.12);
-    core.addColorStop(0, 'rgba(255,255,255,1)');
-    core.addColorStop(0.35, 'rgba(255,255,255,0.98)');
-    core.addColorStop(0.75, 'rgba(255,255,255,0.34)');
-    core.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = core;
-    ctx.fillRect(0, 0, size, size);
-
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    return texture;
-  };
-
-  const sparkTexture = createSparkTexture(1024);
+  /* Screenshot-matched spark star */
+  const sparkTexture = new THREE.TextureLoader().load('cinematic-star-spark.png');
+  sparkTexture.colorSpace = THREE.SRGBColorSpace;
+  sparkTexture.minFilter = THREE.LinearFilter;
+  sparkTexture.magFilter = THREE.LinearFilter;
 
   const auraSprite = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: sparkTexture,
       color: 0xffffff,
       transparent: true,
-      opacity: 0.46,
+      opacity: 0.34,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
-  auraSprite.scale.set(3.55, 3.55, 1);
+  auraSprite.scale.set(3.8, 3.8, 1);
   auraSprite.position.z = -0.02;
 
   const starSprite = new THREE.Sprite(
@@ -415,39 +374,25 @@ function createThreeStarScene(mount) {
       depthWrite: false
     })
   );
-  starSprite.scale.set(2.34, 2.34, 1);
+  starSprite.scale.set(2.7, 2.7, 1);
 
   const coreSprite = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: sparkTexture,
       color: 0xffffff,
       transparent: true,
-      opacity: 0.95,
+      opacity: 0.58,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
-  coreSprite.scale.set(1.02, 1.02, 1);
+  coreSprite.scale.set(1.5, 1.5, 1);
   coreSprite.position.z = 0.01;
-
-  const spinMarker = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: sparkTexture,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.2,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
-  );
-  spinMarker.scale.set(0.22, 0.22, 1);
-  spinMarker.position.set(0.58, -0.12, 0.012);
 
   const starMesh = new THREE.Group();
   starMesh.add(auraSprite);
   starMesh.add(starSprite);
   starMesh.add(coreSprite);
-  starMesh.add(spinMarker);
   scene.add(starMesh);
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -456,7 +401,7 @@ function createThreeStarScene(mount) {
   };
   window.addEventListener('resize', onResize);
 
-  return { renderer, scene, camera, starMesh, onResize, disposed: false, starFx: { auraSprite, starSprite, coreSprite, spinMarker } };
+  return { renderer, scene, camera, starMesh, onResize, disposed: false, starFx: { auraSprite, starSprite, coreSprite } };
 }
 
 function disposeThreeStarScene(ts) {
@@ -745,32 +690,29 @@ async function runCinematicOnboarding(task) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
-        starMesh.rotation.set(0, 0, el * 0.34);
+        starMesh.rotation.set(0, 0, el * 0.72);
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
         starMesh.position.z = 0;
-        starMesh.rotation.set(0, 0, 3.4 * 0.34 + sp * 0.38);
+        starMesh.rotation.set(0, 0, 3.4 * 0.72 + sp * 0.82);
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        starMesh.rotation.set(0, 0, 3.4 * 0.34 + (7.8 - 3.4) * 0.38 + zi * 0.28);
+        starMesh.rotation.set(0, 0, 3.4 * 0.72 + (7.8 - 3.4) * 0.82 + zi * 0.58);
       }
       if (starFx) {
         const pulse = 0.5 + Math.sin(el * 2.0) * 0.5;
-        starFx.auraSprite.material.opacity = 0.3 + pulse * 0.32;
-        starFx.starSprite.material.opacity = 0.86 + pulse * 0.14;
-        starFx.coreSprite.material.opacity = 0.78 + pulse * 0.22;
-        const auraScale = 3.35 + pulse * 0.42;
-        const starScale = 2.28 + pulse * 0.2;
-        const coreScale = 0.94 + pulse * 0.12;
+        starFx.auraSprite.material.opacity = 0.22 + pulse * 0.18;
+        starFx.starSprite.material.opacity = 0.92 + pulse * 0.08;
+        starFx.coreSprite.material.opacity = 0.46 + pulse * 0.12;
+        const auraScale = 3.65 + pulse * 0.28;
+        const starScale = 2.6 + pulse * 0.14;
+        const coreScale = 1.42 + pulse * 0.08;
         starFx.auraSprite.scale.set(auraScale, auraScale, 1);
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.coreSprite.scale.set(coreScale, coreScale, 1);
-        if (starFx.spinMarker) {
-          starFx.spinMarker.material.opacity = 0.1 + pulse * 0.28;
-        }
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

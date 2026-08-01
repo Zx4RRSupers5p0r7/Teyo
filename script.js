@@ -486,6 +486,28 @@ function createThreeStarScene(mount) {
     ctx.fillStyle = core;
     ctx.fillRect(0, 0, size, size);
 
+    ctx.save();
+    ctx.translate(c * 0.82, c * 0.72);
+    ctx.rotate(-Math.PI / 6.8);
+    ctx.globalCompositeOperation = 'screen';
+    const accent = ctx.createLinearGradient(0, 0, size * 0.22, 0);
+    accent.addColorStop(0, 'rgba(255,255,255,0)');
+    accent.addColorStop(0.3, 'rgba(255,255,255,0.85)');
+    accent.addColorStop(0.65, 'rgba(255,255,255,0.65)');
+    accent.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = size * 0.012;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(size * 0.22, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(size * 0.22, 0, size * 0.008, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.fill();
+    ctx.restore();
+
     return finalizeTexture(new THREE.CanvasTexture(canvas));
   };
 
@@ -874,22 +896,24 @@ async function runCinematicOnboarding(task) {
     const el = (ts - starLoopStart) / 1000;
     if (threeState && !threeState.disposed) {
       const { renderer, scene, camera, starMesh, starFx } = threeState;
+      let spinAngle = 0;
       if (el < 3.4) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
-        starMesh.rotation.set(0, 0, el * 0.78);
+        spinAngle = el * 0.93;
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
         starMesh.position.z = 0;
-        starMesh.rotation.set(0, 0, 3.4 * 0.78 + sp * 0.84);
+        spinAngle = 3.4 * 0.93 + sp * 1.02;
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        starMesh.rotation.set(0, 0, 3.4 * 0.78 + (7.8 - 3.4) * 0.84 + zi * 0.72);
+        spinAngle = 3.4 * 0.93 + (7.8 - 3.4) * 1.02 + zi * 0.88;
       }
+      starMesh.rotation.set(0, 0, spinAngle);
       if (starFx) {
         const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
@@ -905,6 +929,8 @@ async function runCinematicOnboarding(task) {
         starFx.ringSprite.scale.set(ringScale, ringScale, 1);
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.coreSprite.scale.set(coreScale, coreScale, 1);
+        starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
+        starFx.coreSprite.material.rotation = -spinAngle * 0.28 + 0.04;
         starFx.ringSprite.material.rotation = -el * 0.18;
         starFx.shimmerGroup.rotation.z = el * 0.14;
         starFx.shimmerSprites.forEach((sprite, index) => {

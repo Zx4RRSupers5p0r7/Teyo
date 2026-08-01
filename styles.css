@@ -999,16 +999,13 @@ article { padding: 24px; }
   overflow: visible;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: clamp(6.8rem, 14vw, 10.5rem);
   height: clamp(6.8rem, 14vw, 10.5rem);
-  font-size: clamp(2.05rem, 4.6vmin, 3.55rem);
+  font-size: clamp(5.2rem, 11vmin, 8.4rem);
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: #fff;
   text-transform: uppercase;
   line-height: 1;
-  text-align: center;
   text-shadow:
     0 0 40px rgba(255,255,255,0.9),
     0 0 90px rgba(255,255,255,0.4);
@@ -1210,7 +1207,7 @@ article { padding: 24px; }
 @media (max-width: 600px) {
   .cinematic-flash-word  { font-size: clamp(3.5rem, 24vw, 7rem); }
   .cinematic-logo-mark   { width: clamp(4.8rem, 18vw, 6.5rem); height: clamp(4.8rem, 18vw, 6.5rem); font-size: clamp(1.8rem, 6.8vw, 2.7rem); }
-  .cinematic-logo-name   { width: clamp(4.8rem, 18vw, 6.5rem); height: clamp(4.8rem, 18vw, 6.5rem); font-size: clamp(1.55rem, 6.6vw, 2.6rem); }
+  .cinematic-logo-name   { height: clamp(4.8rem, 18vw, 6.5rem); font-size: clamp(3.6rem, 12vw, 5.8rem); }
   .cinematic-thank-you,
   .cinematic-future-line,
   .cinematic-install-line { white-space: normal; text-align: center; width: 90vw; }

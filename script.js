@@ -437,35 +437,36 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    /* Only the faint grey secondary spike rays — no bright white ones */
+    /* 8 spikes — 4 long, 4 short, alternating. Thick at base, tapers to a point. */
 
-    const drawCrystalRay = (angle, length, width, alpha, hueShift = 0) => {
+    const drawSpike = (angle, length, baseWidth, alpha) => {
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate(angle);
-      const tail = size * 0.04;
-      const g = ctx.createLinearGradient(-tail, 0, length, 0);
-      g.addColorStop(0, 'rgba(180,180,180,0)');
-      g.addColorStop(0.08, `rgba(${200 - hueShift},${200 - hueShift},${200 - hueShift},${alpha * 0.24})`);
-      g.addColorStop(0.35, `rgba(190,190,190,${alpha})`);
-      g.addColorStop(0.72, `rgba(160,160,160,${alpha * 0.34})`);
-      g.addColorStop(1, 'rgba(160,160,160,0)');
+      const g = ctx.createLinearGradient(0, 0, length, 0);
+      g.addColorStop(0,    `rgba(190,190,190,${alpha})`);
+      g.addColorStop(0.18, `rgba(185,185,185,${alpha * 0.85})`);
+      g.addColorStop(0.55, `rgba(170,170,170,${alpha * 0.45})`);
+      g.addColorStop(1,    'rgba(160,160,160,0)');
       ctx.fillStyle = g;
+      /* Diamond/blade shape: wide at base, tapers to sharp point */
       ctx.beginPath();
-      ctx.moveTo(-tail, 0);
-      ctx.quadraticCurveTo(length * 0.08, -width * 0.18, length * 0.42, -width * 0.42);
-      ctx.quadraticCurveTo(length * 0.82, -width * 0.1, length, 0);
-      ctx.quadraticCurveTo(length * 0.82, width * 0.1, length * 0.42, width * 0.42);
-      ctx.quadraticCurveTo(length * 0.08, width * 0.18, -tail, 0);
+      ctx.moveTo(0,  baseWidth);   /* base top */
+      ctx.lineTo(length, 0);       /* tip */
+      ctx.lineTo(0, -baseWidth);   /* base bottom */
+      ctx.lineTo(-baseWidth * 0.3, 0); /* back notch */
       ctx.closePath();
       ctx.fill();
       ctx.restore();
     };
 
-    /* Only secondary (grey) spikes — no main white spikes */
-    const secondaryRayLengths = [0.24, 0.2, 0.23, 0.19, 0.25, 0.21, 0.22, 0.18];
     for (let i = 0; i < 8; i++) {
-      drawCrystalRay(((Math.PI * 2 * i) / 8) + Math.PI / 8, size * secondaryRayLengths[i], size * 0.022, 0.55, 10);
+      const angle = (Math.PI * 2 * i) / 8;
+      const isLong = i % 2 === 0;
+      const length    = size * (isLong ? 0.46 : 0.24);
+      const baseWidth = size * (isLong ? 0.072 : 0.048);
+      const alpha     = isLong ? 0.62 : 0.48;
+      drawSpike(angle, length, baseWidth, alpha);
     }
 
     return finalizeTexture(new THREE.CanvasTexture(canvas));

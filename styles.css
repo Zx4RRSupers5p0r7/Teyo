@@ -867,346 +867,273 @@ article { padding: 24px; }
   z-index: 2;
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   CINEMATIC SUPERPOWER — Full-screen premium movie intro
+═══════════════════════════════════════════════════════════════ */
 .cinematic-onboarding-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at 18% 20%, rgba(120,170,255,0.24), transparent 42%),
-    radial-gradient(circle at 82% 72%, rgba(255,255,255,0.16), transparent 46%),
-    rgba(0,0,0,0.9);
-  backdrop-filter: blur(8px);
-  animation: cinematicBackdropPulse 2.8s ease-in-out infinite alternate;
-}
-
-.cinematic-onboarding-overlay::before,
-.cinematic-onboarding-overlay::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 12vh;
-  background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(0,0,0,0.7));
-  pointer-events: none;
-  z-index: 1;
-}
-
-.cinematic-onboarding-overlay::before {
-  top: 0;
-}
-
-.cinematic-onboarding-overlay::after {
-  bottom: 0;
-  transform: rotate(180deg);
+  z-index: 99999;
+  background: #fff;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .cinematic-onboarding-overlay[hidden] {
   display: none !important;
 }
 
-.cinematic-onboarding-content {
-  width: 100vw;
-  height: 100vh;
-  border: none;
-  border-radius: 0;
-  background: radial-gradient(circle at 50% 42%, rgba(255,255,255,0.08), transparent 52%);
-  box-shadow: none;
-  padding: clamp(28px, 4vw, 56px);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.cinematic-onboarding-content::after {
-  content: '';
+/* The Three.js + canvas mount fills the entire overlay */
+.cinematic-three-mount {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at center, transparent 26%, rgba(0,0,0,0.62) 100%);
+  z-index: 1;
+}
+
+/* Edge vignette to add cinematic letterbox feel */
+.cinematic-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.68) 100%);
   pointer-events: none;
-  z-index: 0;
+  z-index: 3;
 }
 
-.cinematic-horizon {
+/* Flash layer — toggled by JS */
+.cinematic-flash-layer {
   position: absolute;
-  inset: auto -25% -20% -25%;
-  height: 62%;
-  background:
-    repeating-linear-gradient(
-      to right,
-      rgba(255,255,255,0.15) 0 1px,
-      transparent 1px 26px
-    ),
-    linear-gradient(
-      to top,
-      rgba(255,255,255,0.16) 0%,
-      rgba(255,255,255,0.04) 30%,
-      transparent 75%
-    );
-  transform: perspective(260px) rotateX(74deg);
-  opacity: 0.26;
-  filter: blur(0.3px);
-  animation: cinematicHorizonMove 2.4s linear infinite;
-  z-index: -1;
-}
-
-.cinematic-light-tracks {
-  position: absolute;
-  inset: -14% -14%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.cinematic-light-tracks span {
-  position: absolute;
-  width: 280%;
-  height: 4px;
-  left: -90%;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent 10%, rgba(255,255,255,0.96) 50%, transparent 90%);
-  filter: blur(0.8px);
+  inset: 0;
+  background: #fff;
   opacity: 0;
-  animation: cinematicLightTrack 1.35s cubic-bezier(.18,.62,.29,1) infinite;
+  pointer-events: none;
+  z-index: 12;
 }
+#cinematicOnboardingOverlay.cinematic-mode-flash-white  .cinematic-flash-layer { opacity: 1; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-flicker-1 .cinematic-flash-layer { opacity: 0.38; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-flicker-2 .cinematic-flash-layer { opacity: 0.65; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-black .cinematic-flash-layer { opacity: 0; }
+#cinematicOnboardingOverlay.cinematic-mode-final-flash .cinematic-flash-layer { opacity: 1; }
 
-.cinematic-light-tracks span:nth-child(1) { top: 18%; --track-angle: -16deg; animation-delay: 0s; }
-.cinematic-light-tracks span:nth-child(2) { top: 32%; --track-angle: -8deg; animation-delay: .22s; }
-.cinematic-light-tracks span:nth-child(3) { top: 50%; --track-angle: 0deg; animation-delay: .44s; }
-.cinematic-light-tracks span:nth-child(4) { top: 66%; --track-angle: 8deg; animation-delay: .66s; }
-.cinematic-light-tracks span:nth-child(5) { top: 82%; --track-angle: 16deg; animation-delay: .88s; }
+/* Stage backgrounds */
+#cinematicOnboardingOverlay.cinematic-mode-star-stage  { background: #fff; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-white { background: #fff; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-flicker-1 { background: #888; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-flicker-2 { background: #bbb; }
+#cinematicOnboardingOverlay.cinematic-mode-flash-black,
+#cinematicOnboardingOverlay.cinematic-mode-space-rise,
+#cinematicOnboardingOverlay.cinematic-mode-logo-stage  { background: #000; }
+#cinematicOnboardingOverlay.cinematic-mode-final-flash { background: #fff; }
 
-.cinematic-onboarding-content::before {
-  content: '';
+/* Content shell that holds all text layers */
+.cinematic-onboarding-content {
   position: absolute;
-  inset: -40% -10%;
-  background: linear-gradient(95deg, transparent 0%, rgba(255,255,255,0.22) 45%, transparent 80%);
-  transform: translateX(-60%);
-  animation: superpowerSweep 1.8s linear infinite;
+  inset: 0;
   pointer-events: none;
 }
 
-.cinematic-orb {
-  position: absolute;
-  width: 44vmin;
-  height: 44vmin;
-  border-radius: 50%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
-  opacity: 0.26;
-  filter: blur(18px);
-  animation: cinematicOrbFloat 3.2s ease-in-out infinite alternate;
-}
+/* ── Hidden legacy elements in new design ─────────────────────── */
+#cinematicOnboardingOverlay .cinematic-horizon,
+#cinematicOnboardingOverlay .cinematic-light-tracks,
+#cinematicOnboardingOverlay .cinematic-orb,
+#cinematicOnboardingOverlay .cinematic-ring,
+#cinematicOnboardingOverlay .cinematic-particles,
+#cinematicOnboardingOverlay .cinematic-kicker,
+#cinematicOnboardingOverlay #cinematicOnboardingTitle,
+#cinematicOnboardingOverlay #cinematicOnboardingSubtext,
+#cinematicOnboardingOverlay .cinematic-progress-track { display: none; }
 
-.cinematic-ring {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 22vmin;
-  height: 22vmin;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.5);
-  opacity: 0.5;
-}
-
-.cinematic-ring-a {
-  animation: cinematicRingSpin 2.6s linear infinite;
-}
-
-.cinematic-ring-b {
-  width: 34vmin;
-  height: 34vmin;
-  border-color: var(--accent);
-  opacity: 0.25;
-  animation: cinematicRingSpinReverse 3.2s linear infinite;
-}
-
-.cinematic-particles {
-  position: absolute;
-  inset: -8% -5%;
-  pointer-events: none;
-  mix-blend-mode: screen;
-}
-
-.cinematic-particles span {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  opacity: 0.52;
-  animation: cinematicParticleRise 1.1s ease-in-out infinite;
-}
-
-.cinematic-particles span:nth-child(1) { left: 12%; bottom: 12%; animation-delay: 0s; }
-.cinematic-particles span:nth-child(2) { left: 24%; bottom: 22%; animation-delay: .25s; }
-.cinematic-particles span:nth-child(3) { left: 38%; bottom: 10%; animation-delay: .5s; }
-.cinematic-particles span:nth-child(4) { left: 62%; bottom: 16%; animation-delay: .75s; }
-.cinematic-particles span:nth-child(5) { left: 74%; bottom: 26%; animation-delay: 1s; }
-.cinematic-particles span:nth-child(6) { left: 86%; bottom: 14%; animation-delay: 1.25s; }
-
-.cinematic-kicker {
-  position: absolute;
-  left: 50%;
-  top: 16vh;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: 0.9rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.78);
-  z-index: 3;
-}
-
-.cinematic-future-line {
-  position: absolute;
-  left: 50%;
-  top: 22vh;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: clamp(0.72rem, 1.1vw, 0.9rem);
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.74);
-  text-shadow: 0 0 14px rgba(255,255,255,0.25);
-  animation: cinematicFuturePulse 1.6s ease-in-out infinite;
-  z-index: 3;
-}
-
-.cinematic-thank-you {
-  position: absolute;
-  left: 50%;
-  top: 28vh;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: clamp(0.82rem, 1.2vw, 1.02rem);
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.88);
-  opacity: 0.42;
-  animation: cinematicThankYouPulse 1.5s ease-in-out infinite;
-  z-index: 3;
-}
-
-.cinematic-onboarding-overlay.is-future-build .cinematic-horizon {
-  opacity: 0.34;
-}
-
-.cinematic-onboarding-overlay.is-future-build .cinematic-light-tracks span {
-  animation-duration: 1.35s;
-}
-
-.cinematic-onboarding-content h3 {
-  position: absolute;
-  left: 50%;
-  bottom: 18vh;
-  transform: translateX(-50%);
-  margin: 0;
-  width: min(920px, 92vw);
-  font-size: clamp(1.7rem, 4.2vw, 3rem);
-  letter-spacing: 0.02em;
-  color: #ffffff;
-  text-shadow: 0 0 24px rgba(255,255,255,0.3);
-  z-index: 3;
-}
-
-.cinematic-onboarding-content p {
-  margin: 0;
-  color: var(--muted);
-}
-
-#cinematicOnboardingSubtext {
-  position: absolute;
-  left: 50%;
-  bottom: 13vh;
-  transform: translateX(-50%);
-  width: min(860px, 90vw);
-  font-size: clamp(0.94rem, 1.4vw, 1.2rem);
-  line-height: 1.45;
-  color: rgba(255,255,255,0.78);
-  z-index: 3;
-}
-
-.cinematic-progress-track {
-  position: absolute;
-  left: 50%;
-  bottom: 8vh;
-  transform: translateX(-50%);
-  width: min(980px, 86vw);
-  margin: 0;
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.2);
-  overflow: hidden;
-  z-index: 3;
-}
-
-.cinematic-progress-fill {
-  display: block;
-  height: 100%;
-  width: 0%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--accent), #ffffff);
-  transition: width 0.45s ease;
-  box-shadow: 0 0 18px var(--accent);
-}
-
+/* ── Logo reveal ────────────────────────────────────────────────── */
 .cinematic-logo-reveal {
   position: absolute;
   left: 50%;
   top: 50%;
-  margin: 0;
+  transform: translate(-50%, -50%);
   display: inline-flex;
   align-items: center;
-  gap: clamp(12px, 2vw, 22px);
+  gap: clamp(14px, 2.5vw, 28px);
   opacity: 0;
-  transform: translate(-50%, -50%) scale(0.85);
   pointer-events: none;
-  z-index: 4;
+  z-index: 6;
+}
+.cinematic-logo-reveal[aria-hidden='false'] {
+  animation: cLogoReveal 1.3s cubic-bezier(0.14, 0.98, 0.28, 1) forwards;
+}
+@keyframes cLogoReveal {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(0.65); filter:blur(14px) brightness(4); }
+  30%  { opacity:1; filter:blur(4px) brightness(2.2); }
+  65%  { transform:translate(-50%,-50%) scale(1.07); filter:blur(0) brightness(1.15); }
+  100% { opacity:1; transform:translate(-50%,-50%) scale(1); filter:blur(0) brightness(1); }
 }
 
 .cinematic-logo-mark {
-  width: clamp(54px, 8.5vmin, 96px);
-  height: clamp(54px, 8.5vmin, 96px);
+  width:  clamp(56px, 9.5vmin, 108px);
+  height: clamp(56px, 9.5vmin, 108px);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.86);
-  color: #ffffff;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  box-shadow: 0 0 24px rgba(255,255,255,0.35);
+  border-radius: 16px;
+  border: 2px solid rgba(255,255,255,0.92);
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(1.3rem, 3.8vmin, 2.8rem);
+  background: rgba(255,255,255,0.06);
+  box-shadow:
+    0 0 36px rgba(255,255,255,0.55),
+    0 0 80px rgba(255,255,255,0.22),
+    inset 0 0 18px rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
 }
 
 .cinematic-logo-name {
-  color: #ffffff;
-  font-size: clamp(1.25rem, 4.2vw, 3rem);
-  letter-spacing: 0.26em;
-  font-weight: 800;
+  color: #fff;
+  font-size: clamp(2.2rem, 7.5vw, 6rem);
+  letter-spacing: 0.36em;
+  font-weight: 900;
   text-transform: uppercase;
-  text-shadow: 0 0 26px rgba(255,255,255,0.42);
+  text-shadow:
+    0 0 28px rgba(255,255,255,0.95),
+    0 0 60px rgba(255,255,255,0.55),
+    0 0 110px rgba(255,255,255,0.2);
 }
 
-.cinematic-onboarding-overlay.is-logo-reveal .cinematic-logo-reveal {
-  animation: cinematicLogoRevealIn 0.65s cubic-bezier(.2, .78, .26, 1) forwards;
+/* ── Thank you line ─────────────────────────────────────────────── */
+.cinematic-thank-you {
+  position: absolute;
+  left: 50%;
+  top: 64%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-size: clamp(0.82rem, 1.45vw, 1.05rem);
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.82);
+  text-shadow: 0 0 18px rgba(255,255,255,0.38);
+  z-index: 6;
+  opacity: 0;
+}
+.cinematic-thank-you[aria-hidden='false'] {
+  animation: cFadeUp 1s ease-out 0.05s forwards;
 }
 
-.cinematic-onboarding-overlay.is-climax .cinematic-light-tracks span {
-  animation-duration: 0.82s;
-  opacity: 0.9;
+/* ── Future line ────────────────────────────────────────────────── */
+.cinematic-future-line {
+  position: absolute;
+  left: 50%;
+  top: 70.5%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-size: clamp(0.68rem, 1.05vw, 0.88rem);
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  text-shadow: 0 0 12px rgba(255,255,255,0.18);
+  z-index: 6;
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 
-.cinematic-onboarding-overlay.is-climax .cinematic-orb {
-  opacity: 0.42;
+/* ── Install line ───────────────────────────────────────────────── */
+.cinematic-install-line {
+  position: absolute;
+  left: 50%;
+  top: 76%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-size: clamp(0.64rem, 1vw, 0.82rem);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  z-index: 6;
+  opacity: 0;
+}
+.cinematic-install-line[aria-hidden='false'] {
+  animation: cFadeUp 0.8s ease-out forwards;
 }
 
-.cinematic-onboarding-overlay.is-climax .cinematic-horizon {
-  opacity: 0.4;
+@keyframes cFadeUp {
+  0%   { opacity:0; transform:translateX(-50%) translateY(12px); }
+  100% { opacity:1; transform:translateX(-50%) translateY(0); }
 }
+
+/* ── Fire sweep ─────────────────────────────────────────────────── */
+.cinematic-fire-sweep {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+}
+.cinematic-fire-sweep[aria-hidden='false'] { opacity: 1; }
+/* Fire sweep is drawn on a canvas by JS — no CSS animation needed */
+
+/* ── Flash word (ONE / CLICK) ──────────────────────────────────── */
+.cinematic-flash-word {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0.7);
+  font-size: clamp(5.5rem, 20vw, 15rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-transform: uppercase;
+  pointer-events: none;
+  z-index: 9;
+  opacity: 0;
+  will-change: transform, opacity;
+  text-shadow:
+    0 0 50px rgba(255,255,255,1),
+    0 0 100px rgba(255,255,255,0.7),
+    0 0 180px rgba(255,255,255,0.3),
+    0 0 280px rgba(255,255,255,0.15);
+}
+
+.cinematic-flash-word[aria-hidden='false'] {
+  animation: cWordIn 0.22s ease-out forwards;
+}
+
+.cinematic-flash-word.is-zooming {
+  animation: cWordIn 0.22s ease-out forwards, cWordZoom 3.2s ease-in-out forwards;
+}
+
+@keyframes cWordIn {
+  0%   { opacity:0; transform:translate(-50%,-50%) scale(0.55); filter:brightness(5); }
+  35%  { opacity:1; filter:brightness(2.2); }
+  100% { opacity:1; transform:translate(-50%,-50%) scale(0.92); filter:brightness(1); }
+}
+
+@keyframes cWordZoom {
+  0%   { transform:translate(-50%,-50%) scale(0.92); }
+  100% { transform:translate(-50%,-50%) scale(1.65); }
+}
+
+/* ── keyframes for legacy elements (keep so nothing crashes) ────── */
+@keyframes superpowerSweep { 0%,100%{} }
+@keyframes cinematicLightTrack { 0%,100%{} }
+@keyframes cinematicThankYouPulse { 0%,100%{} }
+@keyframes cinematicLogoRevealIn { 0%,100%{} }
+@keyframes cinematicHorizonMove { 0%,100%{} }
+@keyframes cinematicFuturePulse { 0%,100%{} }
+@keyframes cinematicBackdropPulse { 0%,100%{} }
+@keyframes cinematicOrbFloat { 0%,100%{} }
+@keyframes cinematicRingSpin { 0%,100%{} }
+@keyframes cinematicRingSpinReverse { 0%,100%{} }
+@keyframes cinematicParticleRise { 0%,100%{} }
+
+@media (max-width: 600px) {
+  .cinematic-flash-word  { font-size: clamp(3.5rem, 24vw, 7rem); }
+  .cinematic-logo-name   { font-size: clamp(1.5rem, 9vw, 3rem); }
+  .cinematic-thank-you,
+  .cinematic-future-line,
+  .cinematic-install-line { white-space: normal; text-align: center; width: 90vw; }
+}
+/* Pet character — no box, just the drawn creature at bottom-left */
+
+
+/* ─── these keyframes are still referenced by partners-page bg ─── */
 
 @keyframes superpowerSweep {
   0% { transform: translateX(-70%); opacity: 0.2; }
@@ -1835,308 +1762,3 @@ article { padding: 24px; }
 }
 
 
-/* ===== Cinematic onboarding intro ===== */
-#cinematicOnboardingOverlay.cinematic-onboarding-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: radial-gradient(circle at center, #ffffff 0%, #f4f4f4 44%, #e9e9e9 100%);
-  backdrop-filter: blur(3px);
-  overflow: hidden;
-}
-
-#cinematicOnboardingOverlay.cinematic-onboarding-overlay[hidden] {
-  display: none;
-}
-
-#cinematicOnboardingOverlay .cinematic-onboarding-content {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.08), rgba(0,0,0,0.08) 68%);
-}
-
-#cinematicOnboardingOverlay .cinematic-three-mount {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-}
-
-#cinematicOnboardingOverlay .cinematic-three-mount canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-  filter: saturate(1.06) contrast(1.06);
-}
-
-#cinematicOnboardingOverlay .cinematic-vignette {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background: radial-gradient(circle at center, transparent 24%, rgba(0,0,0,0.2) 100%);
-}
-
-#cinematicOnboardingOverlay .cinematic-flash-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.98), rgba(255,255,255,0.55));
-}
-
-#cinematicOnboardingOverlay.cinematic-mode-final-flash .cinematic-flash-layer {
-  animation: cinematicFlashBlast 0.72s cubic-bezier(0.1, 0.76, 0.18, 1) forwards;
-}
-
-#cinematicOnboardingOverlay .cinematic-kicker,
-#cinematicOnboardingOverlay .cinematic-future-line,
-#cinematicOnboardingOverlay #cinematicOnboardingTitle,
-#cinematicOnboardingOverlay #cinematicOnboardingSubtext,
-#cinematicOnboardingOverlay .cinematic-install-line,
-#cinematicOnboardingOverlay .cinematic-thank-you,
-#cinematicOnboardingOverlay .cinematic-logo-reveal,
-#cinematicOnboardingOverlay .cinematic-progress-track,
-#cinematicOnboardingOverlay .cinematic-flash-word,
-#cinematicOnboardingOverlay .cinematic-fire-sweep {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
-  margin: 0;
-  text-align: center;
-}
-
-#cinematicOnboardingOverlay .cinematic-kicker {
-  top: 12vh;
-  color: rgba(17, 17, 17, 0.72);
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-size: clamp(0.78rem, 1vw, 1rem);
-}
-
-#cinematicOnboardingOverlay .cinematic-future-line {
-  top: 18.5vh;
-  color: rgba(17, 17, 17, 0.66);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: clamp(0.74rem, 1.02vw, 0.96rem);
-  font-weight: 600;
-}
-
-#cinematicOnboardingOverlay #cinematicOnboardingTitle {
-  bottom: 19vh;
-  width: min(980px, 92vw);
-  color: #111111;
-  font-size: clamp(1.65rem, 4.2vw, 3.2rem);
-  font-weight: 700;
-  text-shadow: none;
-}
-
-#cinematicOnboardingOverlay #cinematicOnboardingSubtext {
-  bottom: 13.5vh;
-  width: min(860px, 90vw);
-  color: rgba(17, 17, 17, 0.72);
-  font-size: clamp(0.92rem, 1.32vw, 1.16rem);
-  line-height: 1.5;
-}
-
-#cinematicOnboardingOverlay .cinematic-install-line {
-  top: 31vh;
-  width: min(920px, 92vw);
-  color: rgba(255,255,255,0.92);
-  text-transform: uppercase;
-  letter-spacing: 0.16em;
-  font-size: clamp(0.72rem, 1.04vw, 1rem);
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-#cinematicOnboardingOverlay .cinematic-install-line[aria-hidden='false'] {
-  opacity: 1;
-  animation: cinematicInstallLineGlow 1.4s ease-in-out infinite;
-}
-
-#cinematicOnboardingOverlay .cinematic-flash-word {
-  top: 39vh;
-  color: #ffffff;
-  text-transform: uppercase;
-  letter-spacing: 0.24em;
-  font-weight: 900;
-  font-size: clamp(2.8rem, 12vw, 8.4rem);
-  text-shadow: 0 0 52px rgba(255,255,255,0.82);
-  opacity: 0;
-}
-
-#cinematicOnboardingOverlay .cinematic-flash-word[aria-hidden='false'] {
-  opacity: 1;
-  animation: cinematicWordReveal 1.15s cubic-bezier(0.08, 0.72, 0.22, 1) forwards;
-}
-
-#cinematicOnboardingOverlay .cinematic-logo-reveal {
-  top: 49vh;
-  display: inline-flex;
-  align-items: center;
-  gap: clamp(12px, 1.8vw, 24px);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.86);
-}
-
-#cinematicOnboardingOverlay .cinematic-logo-mark {
-  width: clamp(64px, 8.2vmin, 108px);
-  height: clamp(64px, 8.2vmin, 108px);
-  border: 1px solid rgba(255,255,255,0.92);
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font-weight: 900;
-  font-size: clamp(1.35rem, 3.3vw, 2.3rem);
-  box-shadow: 0 0 38px rgba(255,255,255,0.34);
-}
-
-#cinematicOnboardingOverlay .cinematic-logo-name {
-  color: #ffffff;
-  font-size: clamp(1.4rem, 4.2vw, 3.2rem);
-  letter-spacing: 0.3em;
-  font-weight: 900;
-  text-shadow: 0 0 24px rgba(255,255,255,0.48);
-}
-
-#cinematicOnboardingOverlay .cinematic-logo-reveal[aria-hidden='false'] {
-  opacity: 1;
-  animation: cinematicLogoReveal 1.4s cubic-bezier(0.12, 0.78, 0.2, 1) forwards;
-}
-
-#cinematicOnboardingOverlay .cinematic-thank-you {
-  top: 63.5vh;
-  color: rgba(255,255,255,0.95);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  font-size: clamp(0.9rem, 1.44vw, 1.18rem);
-  opacity: 0;
-}
-
-#cinematicOnboardingOverlay .cinematic-thank-you[aria-hidden='false'] {
-  opacity: 1;
-  animation: cinematicThankYouPulse 1.35s ease-in-out infinite;
-}
-
-#cinematicOnboardingOverlay .cinematic-progress-track {
-  bottom: 7.2vh;
-  width: min(920px, 86vw);
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.18);
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
-}
-
-#cinematicOnboardingOverlay .cinematic-progress-track .cinematic-progress-fill {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: linear-gradient(90deg, #ffffff, #f0f0f0);
-  border-radius: inherit;
-  transition: width 0.35s ease;
-}
-
-#cinematicOnboardingOverlay .cinematic-fire-sweep {
-  left: -34%;
-  top: 43%;
-  width: 170%;
-  height: 24vh;
-  background:
-    radial-gradient(circle at 40% 50%, rgba(255,255,255,0.92), rgba(255,255,255,0.14) 48%, transparent 74%),
-    linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.76) 44%, rgba(255,255,255,1) 54%, rgba(255,255,255,0.7) 64%, transparent 100%);
-  opacity: 0;
-  filter: blur(1.8px) brightness(1.08);
-  pointer-events: none;
-  z-index: 35;
-}
-
-#cinematicOnboardingOverlay .cinematic-fire-sweep[aria-hidden='false'] {
-  animation: cinematicWhiteSweep 2.4s cubic-bezier(0.12, 0.58, 0.28, 1) 1;
-}
-
-#cinematicOnboardingOverlay.cinematic-mode-star-stage {
-  background: radial-gradient(circle at center, #ffffff 0%, #f2f2f2 46%, #e8e8e8 100%);
-}
-
-#cinematicOnboardingOverlay.cinematic-mode-star-stage .cinematic-kicker,
-#cinematicOnboardingOverlay.cinematic-mode-star-stage .cinematic-future-line,
-#cinematicOnboardingOverlay.cinematic-mode-star-stage #cinematicOnboardingTitle,
-#cinematicOnboardingOverlay.cinematic-mode-star-stage #cinematicOnboardingSubtext {
-  color: #101010;
-  text-shadow: none;
-}
-
-#cinematicOnboardingOverlay.cinematic-mode-space-rise,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage,
-#cinematicOnboardingOverlay.cinematic-mode-final-flash {
-  background: radial-gradient(circle at center, rgba(7, 7, 10, 0.98) 0%, rgba(2, 2, 3, 1) 72%);
-}
-
-#cinematicOnboardingOverlay.cinematic-mode-space-rise .cinematic-kicker,
-#cinematicOnboardingOverlay.cinematic-mode-space-rise .cinematic-future-line,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage .cinematic-kicker,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage .cinematic-future-line,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage #cinematicOnboardingTitle,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage #cinematicOnboardingSubtext,
-#cinematicOnboardingOverlay.cinematic-mode-space-rise #cinematicOnboardingTitle,
-#cinematicOnboardingOverlay.cinematic-mode-space-rise #cinematicOnboardingSubtext,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage .cinematic-install-line,
-#cinematicOnboardingOverlay.cinematic-mode-logo-stage .cinematic-thank-you {
-  color: #f7f7f7;
-  text-shadow: 0 0 22px rgba(255,255,255,0.24);
-}
-
-@keyframes cinematicInstallLineGlow {
-  0%, 100% { opacity: 0.56; text-shadow: 0 0 8px rgba(255,255,255,0.2); }
-  50% { opacity: 1; text-shadow: 0 0 24px rgba(255,255,255,0.52); }
-}
-
-@keyframes cinematicWordReveal {
-  0% { transform: translateX(-50%) scale(0.72); opacity: 0; filter: blur(2px); }
-  28% { opacity: 1; filter: blur(0); }
-  100% { transform: translateX(-50%) scale(1.08); opacity: 0.98; filter: blur(0); }
-}
-
-@keyframes cinematicLogoReveal {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.86); filter: blur(3px); }
-  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); filter: blur(0); }
-  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
-}
-
-@keyframes cinematicThankYouPulse {
-  0%, 100% { opacity: 0.42; }
-  50% { opacity: 0.98; }
-}
-
-@keyframes cinematicWhiteSweep {
-  0% { transform: translateX(-38%) scaleX(0.82); opacity: 0; }
-  14% { opacity: 0.95; }
-  60% { opacity: 0.84; }
-  100% { transform: translateX(16%) scaleX(1.08); opacity: 0; }
-}
-
-@keyframes cinematicFlashBlast {
-  0% { opacity: 0; }
-  8% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@media (max-width: 740px) {
-  #cinematicOnboardingOverlay .cinematic-kicker { top: 11vh; }
-  #cinematicOnboardingOverlay .cinematic-future-line { top: 17.8vh; width: 94vw; }
-  #cinematicOnboardingOverlay .cinematic-install-line { top: 28.5vh; width: 94vw; }
-  #cinematicOnboardingOverlay .cinematic-flash-word { top: 36.5vh; }
-  #cinematicOnboardingOverlay .cinematic-logo-reveal { top: 49vh; }
-  #cinematicOnboardingOverlay .cinematic-thank-you { top: 63vh; width: 94vw; }
-  #cinematicOnboardingOverlay #cinematicOnboardingTitle { bottom: 20.5vh; }
-  #cinematicOnboardingOverlay #cinematicOnboardingSubtext { bottom: 14.2vh; width: 94vw; }
-  #cinematicOnboardingOverlay .cinematic-progress-track { bottom: 8vh; width: 90vw; }
-}

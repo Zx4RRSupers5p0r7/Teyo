@@ -293,436 +293,456 @@ function initPlacementCheckoutState() {
 }
 
 function clearCinematicOverlayModes() {
-  if (!cinematicOnboardingOverlay) {
-    return;
-  }
-
+  if (!cinematicOnboardingOverlay) return;
   Array.from(cinematicOnboardingOverlay.classList)
-    .filter((className) => className.indexOf('cinematic-mode-') === 0)
-    .forEach((className) => cinematicOnboardingOverlay.classList.remove(className));
+    .filter((c) => c.startsWith('cinematic-mode-'))
+    .forEach((c) => cinematicOnboardingOverlay.classList.remove(c));
 }
 
 function setCinematicOverlayMode(mode) {
-  if (!cinematicOnboardingOverlay) {
-    return;
-  }
+  if (!cinematicOnboardingOverlay) return;
   clearCinematicOverlayModes();
   cinematicOnboardingOverlay.classList.add(`cinematic-mode-${mode}`);
 }
 
 function setCinematicVisibility(element, visible) {
-  if (!element) {
-    return;
-  }
+  if (!element) return;
   element.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
-function easeOutCubic(value) {
-  const safe = Math.max(0, Math.min(1, value));
-  return 1 - Math.pow(1 - safe, 3);
+/* ── Easing helpers ─────────────────────────────────────────────── */
+function easeOutCubic(t) {
+  const s = Math.max(0, Math.min(1, t));
+  return 1 - Math.pow(1 - s, 3);
+}
+function easeInOutCubic(t) {
+  const s = Math.max(0, Math.min(1, t));
+  return s < 0.5 ? 4 * s * s * s : 1 - Math.pow(-2 * s + 2, 3) / 2;
+}
+function easeInCubic(t) {
+  const s = Math.max(0, Math.min(1, t));
+  return s * s * s;
 }
 
-function createCinematicRendererState() {
-  if (!cinematicThreeMount) {
-    return null;
-  }
+/* ── Three.js 3D star ────────────────────────────────────────────── */
+function createThreeStarScene(mount) {
+  if (!mount || typeof THREE === 'undefined') return null;
+  mount.innerHTML = '';
 
-  cinematicThreeMount.innerHTML = '';
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0xffffff, 1);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.5;
+  mount.appendChild(renderer.domElement);
+  renderer.domElement.style.cssText = 'position:absolute;inset:0;z-index:1;';
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+  scene.fog = new THREE.FogExp2(0xffffff, 0.025);
+
+  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
+  camera.position.set(0, 0, 5);
+
+  /* 5-point star extruded geometry */
+  const starShape = new THREE.Shape();
+  const R = 1.0, r = 0.42, N = 5;
+  for (let i = 0; i < N * 2; i++) {
+    const radius = i % 2 === 0 ? R : r;
+    const angle = (Math.PI / N) * i - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) starShape.moveTo(x, y); else starShape.lineTo(x, y);
+  }
+  starShape.closePath();
+
+  const geo = new THREE.ExtrudeGeometry(starShape, {
+    depth: 0.28, bevelEnabled: true,
+    bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 8
+  });
+  geo.center();
+
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.55,
+    roughness: 0.0, metalness: 1.0, clearcoat: 1.0, clearcoatRoughness: 0.0
+  });
+
+  const starMesh = new THREE.Mesh(geo, mat);
+  scene.add(starMesh);
+
+  /* Soft glow sphere behind the star */
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 });
+  const glowSphere = new THREE.Mesh(new THREE.SphereGeometry(2.2, 24, 24), glowMat);
+  glowSphere.position.z = -0.4;
+  scene.add(glowSphere);
+
+  /* Lights */
+  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+  const key = new THREE.DirectionalLight(0xffffff, 4.0); key.position.set(3, 4, 7); scene.add(key);
+  const rim1 = new THREE.DirectionalLight(0xffffff, 2.0); rim1.position.set(-5, -2, -4); scene.add(rim1);
+  const rim2 = new THREE.DirectionalLight(0xeeeeee, 1.4); rim2.position.set(2, -3, 1); scene.add(rim2);
+  const fill = new THREE.PointLight(0xffffff, 2.5, 30); fill.position.set(0, 0, 4); scene.add(fill);
+
+  const onResize = () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+  window.addEventListener('resize', onResize);
+
+  return { renderer, scene, camera, starMesh, glowMat, onResize, disposed: false };
+}
+
+function disposeThreeStarScene(ts) {
+  if (!ts || ts.disposed) return;
+  ts.disposed = true;
+  if (ts.onResize) window.removeEventListener('resize', ts.onResize);
+  try { ts.renderer.dispose(); } catch (e) { /* ignore */ }
+  try { if (ts.renderer.domElement.parentNode) ts.renderer.domElement.parentNode.removeChild(ts.renderer.domElement); } catch (e) { /* ignore */ }
+}
+
+/* ── Canvas particle engine ──────────────────────────────────────── */
+function createParticleCanvas(mount) {
+  if (!mount) return null;
   const canvas = document.createElement('canvas');
-  canvas.className = 'cinematic-canvas';
-  cinematicThreeMount.appendChild(canvas);
-
-  const context = canvas.getContext('2d');
-  if (!context) {
-    return null;
-  }
-
+  canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;';
+  mount.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const resizeCanvas = () => {
-    canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
-    canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+  const W = window.innerWidth, H = window.innerHeight;
+  const resize = () => {
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
     canvas.style.height = `${window.innerHeight}px`;
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
-  resizeCanvas();
+  resize();
 
-  const particles = Array.from({ length: 1200 }, () => ({
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
-    size: Math.random() * 2.6 + 0.35,
-    alpha: Math.random() * 0.45 + 0.12,
-    drift: Math.random() * 0.4 + 0.2,
-    speed: Math.random() * 0.95 + 0.35,
-    wobble: Math.random() * 2 * Math.PI,
-    phase: Math.random() * Math.PI * 2
+  /* Space-rise particles */
+  const COUNT = 2200;
+  const particles = Array.from({ length: COUNT }, () => ({
+    x: Math.random() * W, y: H + Math.random() * H,
+    z: Math.random(), speed: Math.random() * 2.6 + 0.5,
+    alpha: Math.random() * 0.75 + 0.12, size: Math.random() * 1.3 + 0.2,
+    wobble: (Math.random() - 0.5) * 0.5,
   }));
 
-  return {
-    canvas,
-    context,
-    particles,
-    width: window.innerWidth,
-    height: window.innerHeight,
-    dpr,
-    phase: 'star',
-    phaseStartedAt: performance.now(),
-    startedAt: performance.now(),
-    rafId: null,
-    stopped: false,
-    resizeHandler: () => {
-      resizeCanvas();
-    }
-  };
+  /* Subtle star-background dust */
+  const dust = Array.from({ length: 500 }, () => ({
+    x: Math.random() * W, y: Math.random() * H,
+    size: Math.random() * 1.1 + 0.2, alpha: Math.random() * 0.14 + 0.02,
+    dx: (Math.random() - 0.5) * 0.13, dy: (Math.random() - 0.5) * 0.07,
+    phase: Math.random() * Math.PI * 2,
+  }));
+
+  return { canvas, ctx, dpr, particles, dust, resize };
 }
 
-function setRendererPhase(state, phase) {
-  if (!state) {
-    return;
-  }
-  state.phase = phase;
-  state.phaseStartedAt = performance.now();
-}
-
-function drawStar(context, x, y, scale, rotation, glow) {
-  context.save();
-  context.translate(x, y);
-  context.rotate(rotation);
-  context.scale(scale, scale);
-  context.beginPath();
-  const outerRadius = 72;
-  const innerRadius = 28;
-  for (let index = 0; index < 10; index += 1) {
-    const radius = index % 2 === 0 ? outerRadius : innerRadius;
-    const angle = (Math.PI / 5) * index - Math.PI / 2;
-    const px = Math.cos(angle) * radius;
-    const py = Math.sin(angle) * radius;
-    if (index === 0) {
-      context.moveTo(px, py);
-    } else {
-      context.lineTo(px, py);
-    }
-  }
-  context.closePath();
-
-  const gradient = context.createRadialGradient(0, 0, 8, 0, 0, 120);
-  gradient.addColorStop(0, `rgba(255,255,255,${0.95 + glow * 0.05})`);
-  gradient.addColorStop(0.3, `rgba(255,255,255,${0.82 + glow * 0.03})`);
-  gradient.addColorStop(1, 'rgba(255,255,255,0)');
-
-  context.fillStyle = gradient;
-  context.fill();
-
-  context.beginPath();
-  for (let index = 0; index < 10; index += 1) {
-    const radius = index % 2 === 0 ? outerRadius : innerRadius;
-    const angle = (Math.PI / 5) * index - Math.PI / 2;
-    const px = Math.cos(angle) * radius;
-    const py = Math.sin(angle) * radius;
-    if (index === 0) {
-      context.moveTo(px, py);
-    } else {
-      context.lineTo(px, py);
-    }
-  }
-  context.closePath();
-  context.strokeStyle = 'rgba(255,255,255,0.96)';
-  context.lineWidth = 4;
-  context.stroke();
-  context.restore();
-}
-
-function drawParticleField(context, width, height, particles, phase, phaseElapsed, phaseTotal, intensity = 1) {
-  context.save();
-  const drift = phase === 'star' ? 0.7 : 1.25;
-
-  particles.forEach((particle, index) => {
-    const t = phaseElapsed + (index * 0.013);
-    const x = particle.x + Math.sin(t * 0.45 + particle.phase) * 10 * intensity;
-    let y = particle.y;
-
-    if (phase === 'space' || phase === 'logo' || phase === 'final') {
-      y -= (particle.speed + particle.drift * 0.5) * (phaseElapsed * 55 + index * 0.2) * intensity;
-      const wrap = y + 140;
-      if (wrap < -140) {
-        y = height + 140;
-        particle.y = y;
-      }
-    } else {
-      y += Math.cos(t * 0.6 + particle.phase) * 0.6;
-      x += Math.sin(t * 0.35 + particle.phase) * 0.4;
-      if (y > height + 30) {
-        y = -30;
-      }
-    }
-
-    particle.x = x;
-    particle.y = y;
-
-    const alpha = phase === 'star' ? particle.alpha * (0.5 + Math.sin(t * 0.5 + particle.phase) * 0.2) : particle.alpha * (0.7 + Math.sin(t * 0.4 + particle.phase) * 0.1);
-    context.beginPath();
-    context.arc(x, y, particle.size, 0, Math.PI * 2);
-    context.fillStyle = `rgba(255,255,255,${alpha * intensity})`;
-    context.fill();
+function drawStarDust(pState, elapsed) {
+  if (!pState) return;
+  const { ctx, dust } = pState;
+  const W = window.innerWidth, H = window.innerHeight;
+  ctx.clearRect(0, 0, W, H);
+  dust.forEach((p) => {
+    p.x += p.dx + Math.sin(elapsed * 0.38 + p.phase) * 0.05;
+    p.y += p.dy + Math.cos(elapsed * 0.29 + p.phase) * 0.04;
+    if (p.x < -5) p.x = W + 5; if (p.x > W + 5) p.x = -5;
+    if (p.y < -5) p.y = H + 5; if (p.y > H + 5) p.y = -5;
+    const tw = p.alpha * (0.45 + Math.sin(elapsed * 1.4 + p.phase) * 0.45);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(40,40,60,${tw})`;
+    ctx.fill();
   });
-  context.restore();
 }
 
-function renderCinematicFrame(state, timestamp) {
-  if (!state || state.stopped) {
-    return;
-  }
+function drawSpaceParticles(pState, elapsed, intensity) {
+  if (!pState) return;
+  const { ctx, particles } = pState;
+  const W = window.innerWidth, H = window.innerHeight;
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, W, H);
 
-  const width = window.innerWidth;
-  const height = window.innerHeight;
-  const phaseElapsed = (timestamp - state.phaseStartedAt) / 1000;
-  const overallElapsed = (timestamp - state.startedAt) / 1000;
+  /* Faint radial center glow */
+  const halo = ctx.createRadialGradient(W / 2, H * 0.44, 10, W / 2, H * 0.44, W * 0.52);
+  halo.addColorStop(0, 'rgba(255,255,255,0.07)');
+  halo.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = halo; ctx.fillRect(0, 0, W, H);
 
-  if (state.canvas.width !== Math.floor(width * state.dpr) || state.canvas.height !== Math.floor(height * state.dpr)) {
-    const resize = state.resizeHandler;
-    if (resize) {
-      resize();
+  const ramp = Math.min(1, elapsed / 0.7);
+
+  particles.forEach((p) => {
+    const depth = 0.4 + p.z * 2.4;
+    const sizeD = 0.28 + p.z * 1.5;
+    p.y -= p.speed * depth * ramp;
+    p.x += p.wobble * ramp;
+    if (p.y < -20) { p.y = H + 20; p.x = Math.random() * W; p.z = Math.random(); }
+    const alpha = p.alpha * (0.35 + p.z * 0.65) * intensity * ramp;
+    const sz = p.size * sizeD;
+    if (p.z > 0.6) {
+      const streakLen = p.speed * depth * 5.5;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y + streakLen);
+      ctx.lineTo(p.x, p.y);
+      const g = ctx.createLinearGradient(p.x, p.y + streakLen, p.x, p.y);
+      g.addColorStop(0, `rgba(255,255,255,0)`);
+      g.addColorStop(1, `rgba(255,255,255,${alpha})`);
+      ctx.strokeStyle = g; ctx.lineWidth = sz * 1.5; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${alpha})`; ctx.fill();
     }
-  }
-
-  const ctx = state.context;
-  ctx.clearRect(0, 0, width, height);
-
-  if (state.phase === 'star') {
-    const bg = ctx.createRadialGradient(width * 0.5, height * 0.4, 40, width * 0.5, height * 0.4, width * 0.8);
-    bg.addColorStop(0, '#ffffff');
-    bg.addColorStop(0.4, '#f4f4f4');
-    bg.addColorStop(1, '#e8e8e8');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
-
-    const starProgress = Math.min(1, phaseElapsed / 5.2);
-    const starScale = 0.16 + easeOutCubic(starProgress) * 1.04;
-    const starRotation = overallElapsed * 0.35;
-    const starGlow = 0.2 + (1 - Math.abs(0.5 - starProgress)) * 0.5;
-    drawStar(ctx, width * 0.5, height * 0.5, starScale, starRotation, starGlow);
-
-    if (phaseElapsed > 4.6) {
-      const zoomProgress = Math.min(1, (phaseElapsed - 4.6) / 2.3);
-      const zoomScale = 1.04 + easeOutCubic(zoomProgress) * 0.56;
-      drawStar(ctx, width * 0.5, height * 0.5, zoomScale, starRotation + 0.15, 0.7 + zoomProgress * 0.2);
-    }
-
-    drawParticleField(ctx, width, height, state.particles, 'star', phaseElapsed, 5.6, 0.9);
-  } else if (state.phase === 'space') {
-    ctx.fillStyle = '#020203';
-    ctx.fillRect(0, 0, width, height);
-
-    const halo = ctx.createRadialGradient(width * 0.5, height * 0.4, 20, width * 0.5, height * 0.4, width * 0.6);
-    halo.addColorStop(0, 'rgba(255,255,255,0.1)');
-    halo.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(0, 0, width, height);
-
-    drawParticleField(ctx, width, height, state.particles, 'space', phaseElapsed, 5.5, 1.05);
-  } else if (state.phase === 'logo') {
-    ctx.fillStyle = '#010102';
-    ctx.fillRect(0, 0, width, height);
-    drawParticleField(ctx, width, height, state.particles, 'logo', phaseElapsed, 4.4, 1.1);
-
-    const sweepProgress = Math.min(1, phaseElapsed / 1.4);
-    const sweepX = -width * 0.15 + width * 1.3 * easeOutCubic(sweepProgress);
-    const sweepGradient = ctx.createLinearGradient(sweepX - width * 0.5, 0, sweepX + width * 0.5, 0);
-    sweepGradient.addColorStop(0, 'rgba(255,255,255,0)');
-    sweepGradient.addColorStop(0.45, 'rgba(255,255,255,0.95)');
-    sweepGradient.addColorStop(0.58, 'rgba(255,255,255,1)');
-    sweepGradient.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = sweepGradient;
-    ctx.fillRect(0, height * 0.4, width, height * 0.16);
-  } else if (state.phase === 'flash') {
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-    drawParticleField(ctx, width, height, state.particles, 'final', phaseElapsed, 3.4, 1.2);
-  }
-
-  state.rafId = window.requestAnimationFrame((nextTimestamp) => renderCinematicFrame(state, nextTimestamp));
+  });
 }
 
-function stopCinematicRenderer(state) {
-  if (!state) {
-    return;
+/* ── White fire sweep (drawn to a temp canvas) ───────────────────── */
+function drawFireSweep(ctx, W, H, progress) {
+  /* progress 0→1 sweeps left→right */
+  const cx = W * (-0.2 + 1.4 * progress);
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+
+  /* Turbulent fire tendrils */
+  for (let i = 0; i < 14; i++) {
+    const yOff = Math.sin(i * 2.3 + progress * 9) * H * 0.09;
+    const yC = H * 0.5 + yOff;
+    const ht = H * (0.012 + Math.abs(Math.sin(i * 1.5 + progress * 5.5)) * 0.038);
+    const al = 0.45 + Math.sin(i * 1.9 + progress * 4.5) * 0.4;
+    ctx.fillStyle = `rgba(255,255,255,${al * 0.55})`;
+    ctx.fillRect(cx - W * 0.28 + i * W * 0.022, yC - ht, W * 0.56, ht * 2);
   }
 
-  state.stopped = true;
-  if (state.rafId) {
-    window.cancelAnimationFrame(state.rafId);
-  }
-  if (state.resizeHandler) {
-    window.removeEventListener('resize', state.resizeHandler);
-  }
+  /* Core beam */
+  const g = ctx.createLinearGradient(cx - W * 0.38, 0, cx + W * 0.38, 0);
+  g.addColorStop(0, 'rgba(255,255,255,0)');
+  g.addColorStop(0.28, 'rgba(255,255,255,0.88)');
+  g.addColorStop(0.5, 'rgba(255,255,255,1)');
+  g.addColorStop(0.56, 'rgba(255,245,200,0.82)');
+  g.addColorStop(0.78, 'rgba(255,255,255,0.25)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, H * 0.41, W, H * 0.18);
 
-  if (cinematicThreeMount) {
-    cinematicThreeMount.innerHTML = '';
-  }
+  /* Bloom halo around center */
+  const bloom = ctx.createRadialGradient(cx, H * 0.5, 8, cx, H * 0.5, H * 0.42);
+  bloom.addColorStop(0, 'rgba(255,255,255,0.28)');
+  bloom.addColorStop(0.4, 'rgba(255,255,255,0.06)');
+  bloom.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = bloom; ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 }
 
+/* ── Audio tones ─────────────────────────────────────────────────── */
 function playCinematicTone(frequency, duration, gainValue = 0.00018) {
-  if (!window.AudioContext && !window.webkitAudioContext) {
-    return;
-  }
-
-  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-  const audioContext = new AudioContextClass();
-  const oscillator = audioContext.createOscillator();
-  const gainNode = audioContext.createGain();
-  oscillator.type = 'sine';
-  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
-  oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.08, audioContext.currentTime + duration);
-  gainNode.gain.setValueAtTime(gainValue, audioContext.currentTime);
-  gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
-  oscillator.connect(gainNode);
-  gainNode.connect(audioContext.destination);
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + duration);
+  if (!window.AudioContext && !window.webkitAudioContext) return;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ac = new AC();
+    const osc = ac.createOscillator(); const gain = ac.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(frequency, ac.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(frequency * 1.1, ac.currentTime + duration);
+    gain.gain.setValueAtTime(gainValue, ac.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.00001, ac.currentTime + duration);
+    osc.connect(gain); gain.connect(ac.destination);
+    osc.start(); osc.stop(ac.currentTime + duration);
+  } catch (e) { /* audio not available */ }
 }
 
-async function flashWord(word, holdMs = 1300, exitMs = 280) {
-  if (!cinematicFlashWord) {
-    return;
-  }
+/* ── Flash word (ONE / CLICK) ────────────────────────────────────── */
+async function flashWord(word, holdMs = 2000, exitMs = 200) {
+  if (!cinematicFlashWord) return;
   cinematicFlashWord.textContent = word;
+  cinematicFlashWord.classList.remove('is-zooming');
+  cinematicFlashWord.style.animation = 'none';
+  void cinematicFlashWord.offsetHeight;
+  cinematicFlashWord.style.animation = '';
   setCinematicVisibility(cinematicFlashWord, true);
-  playCinematicTone(word === 'ONE' ? 720 : 860, 0.24, 0.0002);
+  cinematicFlashWord.classList.add('is-zooming');
+  playCinematicTone(word === 'ONE' ? 720 : 880, 0.32, 0.00022);
   await wait(holdMs);
+  cinematicFlashWord.classList.remove('is-zooming');
   setCinematicVisibility(cinematicFlashWord, false);
   await wait(exitMs);
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN CINEMATIC SEQUENCE
+═══════════════════════════════════════════════════════════════════ */
 async function runCinematicOnboarding(task) {
-  if (!cinematicOnboardingOverlay) {
-    return task();
-  }
-
-  const rendererState = createCinematicRendererState();
-  const sequenceStart = performance.now();
-  const minimumSequenceMs = 25000;
+  if (!cinematicOnboardingOverlay) return task();
 
   cinematicOnboardingOverlay.hidden = false;
+  document.body.style.overflow = 'hidden';
   clearCinematicOverlayModes();
   setCinematicOverlayMode('star-stage');
 
-  setCinematicVisibility(cinematicLogoReveal, false);
-  setCinematicVisibility(cinematicThankYou, false);
-  setCinematicVisibility(cinematicInstallLine, false);
-  setCinematicVisibility(cinematicFlashWord, false);
-  setCinematicVisibility(cinematicFireSweep, false);
-  if (cinematicFireSweep) {
-    cinematicFireSweep.classList.remove('is-animating');
-  }
-
-  if (cinematicFutureLine) {
-    cinematicFutureLine.textContent = 'The future of retail begins now.';
-  }
-
-  setCinematicOnboardingStep({
-    title: 'Teyo Superpower activated',
-    subtext: 'The star is locking into position for a cinematic launch.',
-    progress: 8
+  /* Hide all overlay text elements */
+  [cinematicLogoReveal, cinematicThankYou, cinematicInstallLine,
+   cinematicFlashWord, cinematicFireSweep].forEach((el) => {
+    if (el) { el.setAttribute('aria-hidden', 'true'); el.classList.remove('is-animating', 'is-zooming'); }
   });
+  if (cinematicFutureLine) { cinematicFutureLine.style.opacity = '0'; cinematicFutureLine.textContent = ''; }
 
-  if (rendererState) {
-    setRendererPhase(rendererState, 'star');
-    renderCinematicFrame(rendererState, performance.now());
-  }
+  const mount = cinematicThreeMount;
+  if (mount) mount.innerHTML = '';
+
+  /* Boot Three.js star renderer */
+  const threeState = createThreeStarScene(mount);
+  /* Boot particle canvas (sits on top of Three canvas) */
+  const pState = createParticleCanvas(mount);
+
+  let rafId = null;
+  let stopped = false;
+  const SEQ_START = performance.now();
+  const MIN_MS = 28000;
+
+  /* ── PHASE 1: 3D Star on pure white ──────────────────────────────
+     Stage A (0–3.4s):  Star ZOOMS OUT — starts huge (z=4, very close)
+                        and pulls back to settled centre (z=0).
+     Stage B (3.4–7.8s): Star spins elegantly in place.
+     Stage C (7.8–9.6s): Star slowly zooms INTO camera (z → 4.8).  */
+  const starLoopStart = performance.now();
+  const starLoop = (ts) => {
+    if (stopped) return;
+    const el = (ts - starLoopStart) / 1000;
+    if (threeState && !threeState.disposed) {
+      const { renderer, scene, camera, starMesh, glowMat } = threeState;
+      if (el < 3.4) {
+        /* Zoom OUT */
+        const t = easeOutCubic(el / 3.4);
+        starMesh.position.z = 4 * (1 - t);
+        starMesh.rotation.x = el * 0.48; starMesh.rotation.y = el * 0.82; starMesh.rotation.z = el * 0.24;
+        glowMat.opacity = t * 0.42;
+      } else if (el < 7.8) {
+        /* Spin in place */
+        const sp = el - 3.4;
+        starMesh.position.z = 0;
+        starMesh.rotation.x = 3.4 * 0.48 + sp * 0.52;
+        starMesh.rotation.y = 3.4 * 0.82 + sp * 1.08;
+        starMesh.rotation.z = 3.4 * 0.24 + sp * 0.28;
+        glowMat.opacity = 0.42 + Math.sin(sp * 1.9) * 0.14;
+      } else {
+        /* Zoom INTO camera */
+        const zi = el - 7.8;
+        starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
+        starMesh.rotation.x += 0.017; starMesh.rotation.y += 0.024; starMesh.rotation.z += 0.009;
+        glowMat.opacity = 0.56 + Math.min(1, zi / 1.9) * 0.44;
+      }
+      drawStarDust(pState, el);
+      renderer.render(scene, camera);
+    }
+    rafId = requestAnimationFrame(starLoop);
+  };
+  rafId = requestAnimationFrame(starLoop);
 
   let taskResult;
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    await wait(5000);
-    setCinematicOnboardingStep({
-      title: 'Approaching the launch core',
-      subtext: 'The intro is pushing forward, slow and deliberate.',
-      progress: 24
-    });
+    /* ── Wait for full star sequence ─────────────────────────────── */
+    await wait(9800);
 
-    await wait(2500);
-    setCinematicOverlayMode('space-rise');
-    if (rendererState) {
-      setRendererPhase(rendererState, 'space');
+    /* ── BIG FLASH TRANSITION ──────────────────────────────────── */
+    stopped = true; cancelAnimationFrame(rafId);
+    disposeThreeStarScene(threeState);
+    if (pState) pState.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+    playCinematicTone(360, 0.6, 0.0003);
+    setCinematicOverlayMode('flash-white'); await wait(110);
+    setCinematicOverlayMode('flash-flicker-1'); await wait(65);
+    setCinematicOverlayMode('flash-white'); await wait(90);
+    setCinematicOverlayMode('flash-flicker-2'); await wait(55);
+    setCinematicOverlayMode('flash-black');
+
+    /* ── PHASE 2: Deep space — particles stream upward ─────────── */
+    const spaceLoopStart = performance.now();
+    stopped = false;
+    if (pState) {
+      const W = window.innerWidth, H = window.innerHeight;
+      pState.particles.forEach((p) => { p.y = H + Math.random() * H; p.x = Math.random() * W; p.z = Math.random(); });
     }
-    playCinematicTone(480, 0.42, 0.00024);
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'Your whole store is about to be installed with';
-    }
-    setCinematicVisibility(cinematicInstallLine, true);
+    const spaceLoop = (ts) => {
+      if (stopped) return;
+      drawSpaceParticles(pState, (ts - spaceLoopStart) / 1000, 1.0);
+      rafId = requestAnimationFrame(spaceLoop);
+    };
+    rafId = requestAnimationFrame(spaceLoop);
+    await wait(3600);
 
-    setCinematicOnboardingStep({
-      title: 'The black-space reveal',
-      subtext: 'Particles stream upward as the storefront wakes up.',
-      progress: 46
-    });
-
-    await wait(4800);
-
+    /* ── PHASE 3: Teyo logo blooms in ──────────────────────────── */
     setCinematicOverlayMode('logo-stage');
-    if (rendererState) {
-      setRendererPhase(rendererState, 'logo');
-    }
-    playCinematicTone(620, 0.5, 0.00028);
+    playCinematicTone(660, 0.58, 0.00026);
     setCinematicVisibility(cinematicLogoReveal, true);
+    await wait(2600);
+
+    /* ── PHASE 4: White fire sweep across screen ──────────────── */
+    const FIRE_DUR = 1900;
+    const fireCanvas = document.createElement('canvas');
+    fireCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;';
+    mount.appendChild(fireCanvas);
+    const fdpr = Math.min(window.devicePixelRatio || 1, 2);
+    fireCanvas.width = Math.floor(window.innerWidth * fdpr);
+    fireCanvas.height = Math.floor(window.innerHeight * fdpr);
+    fireCanvas.style.width = `${window.innerWidth}px`;
+    fireCanvas.style.height = `${window.innerHeight}px`;
+    const fctx = fireCanvas.getContext('2d');
+    fctx.setTransform(fdpr, 0, 0, fdpr, 0, 0);
+    const fireLoopStart = performance.now();
+    const fireLoop = (ts) => {
+      const p = Math.min(1, (ts - fireLoopStart) / FIRE_DUR);
+      fctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      if (p < 1) { drawFireSweep(fctx, window.innerWidth, window.innerHeight, p); requestAnimationFrame(fireLoop); }
+      else { if (fireCanvas.parentNode) fireCanvas.parentNode.removeChild(fireCanvas); }
+    };
+    requestAnimationFrame(fireLoop);
+    playCinematicTone(520, 1.0, 0.00024);
+    await wait(FIRE_DUR);
+
+    /* ── PHASE 5: Thank you + taglines ────────────────────────── */
     setCinematicVisibility(cinematicThankYou, true);
-    setCinematicVisibility(cinematicFireSweep, true);
-    if (cinematicFireSweep) {
-      cinematicFireSweep.classList.add('is-animating');
+    await wait(700);
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'The future of retail begins now.';
+      cinematicFutureLine.style.transition = 'opacity 0.85s ease';
+      cinematicFutureLine.style.opacity = '1';
     }
+    await wait(1300);
+    setCinematicVisibility(cinematicInstallLine, true);
+    await wait(1700);
 
-    setCinematicOnboardingStep({
-      title: 'Teyo marketplace signature online',
-      subtext: 'Your products are being revealed in a premium launch sequence.',
-      progress: 70
-    });
+    /* ── PHASE 6: ONE — flash & slow zoom ─────────────────────── */
+    stopped = true; cancelAnimationFrame(rafId);
+    if (pState) drawSpaceParticles(pState, 9999, 1.0); /* freeze bg */
+    await flashWord('ONE', 2200, 160);
 
-    await wait(4300);
-
-    await flashWord('ONE', 1400, 300);
-    await flashWord('CLICK', 1500, 320);
+    /* ── PHASE 7: CLICK — flash & slow zoom ───────────────────── */
+    await flashWord('CLICK', 2300, 220);
 
     taskResult = await taskPromise;
 
-    setCinematicOnboardingStep({
-      title: 'Your store is now live',
-      subtext: 'Customers can now shop your products on Teyo.',
-      progress: 100
-    });
+    /* ── Pad to minimum duration ───────────────────────────────── */
+    const used = performance.now() - SEQ_START;
+    if (used < MIN_MS) await wait(MIN_MS - used);
 
-    await wait(1300);
-
+    /* ── Final white flash out ─────────────────────────────────── */
+    playCinematicTone(960, 0.45, 0.0003);
     setCinematicOverlayMode('final-flash');
-    if (rendererState) {
-      setRendererPhase(rendererState, 'flash');
-    }
-    playCinematicTone(860, 0.34, 0.0003);
-    setCinematicVisibility(cinematicFireSweep, false);
-    if (cinematicFireSweep) {
-      cinematicFireSweep.classList.remove('is-animating');
-    }
-
-    await wait(900);
-
-    const elapsedMs = performance.now() - sequenceStart;
-    if (elapsedMs < minimumSequenceMs) {
-      await wait(minimumSequenceMs - elapsedMs);
-    }
-
+    await wait(750);
     return taskResult;
-  } catch (error) {
-    setCinematicOnboardingStep({
-      title: 'Superpower paused',
-      subtext: 'Setup hit an issue. Please review your details and try again.',
-      progress: 100
-    });
-    await wait(620);
-    throw error;
+
+  } catch (err) {
+    await wait(420); throw err;
   } finally {
-    stopCinematicRenderer(rendererState);
+    stopped = true;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (threeState && !threeState.disposed) disposeThreeStarScene(threeState);
+    if (mount) mount.innerHTML = '';
     clearCinematicOverlayModes();
     cinematicOnboardingOverlay.hidden = true;
+    document.body.style.overflow = '';
   }
 }
 

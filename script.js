@@ -363,9 +363,9 @@ function createThreeStarScene(mount) {
 
     const halo = ctx.createRadialGradient(c, c, size * 0.04, c, c, size * 0.48);
     halo.addColorStop(0, 'rgba(255,255,255,0.95)');
-    halo.addColorStop(0.16, 'rgba(205,220,255,0.56)');
-    halo.addColorStop(0.42, 'rgba(124,152,255,0.18)');
-    halo.addColorStop(1, 'rgba(40,50,90,0)');
+    halo.addColorStop(0.16, 'rgba(230,230,230,0.56)');
+    halo.addColorStop(0.42, 'rgba(200,200,200,0.18)');
+    halo.addColorStop(1, 'rgba(40,40,40,0)');
     ctx.fillStyle = halo;
     ctx.fillRect(0, 0, size, size);
 
@@ -381,8 +381,8 @@ function createThreeStarScene(mount) {
 
     const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.16);
     core.addColorStop(0, 'rgba(255,255,255,1)');
-    core.addColorStop(0.24, 'rgba(244,248,255,0.98)');
-    core.addColorStop(0.6, 'rgba(187,214,255,0.54)');
+    core.addColorStop(0.24, 'rgba(250,250,250,0.98)');
+    core.addColorStop(0.6, 'rgba(220,220,220,0.54)');
     core.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = core;
     ctx.fillRect(0, 0, size, size);
@@ -398,10 +398,10 @@ function createThreeStarScene(mount) {
     const c = size / 2;
 
     ctx.translate(c, c);
-    ctx.strokeStyle = 'rgba(196,214,255,0.32)';
+    ctx.strokeStyle = 'rgba(200,200,200,0.32)';
     ctx.lineWidth = size * 0.018;
     ctx.shadowBlur = size * 0.03;
-    ctx.shadowColor = 'rgba(202,221,255,0.38)';
+    ctx.shadowColor = 'rgba(210,210,210,0.38)';
     ctx.beginPath();
     ctx.arc(0, 0, size * 0.25, -0.25, Math.PI * 1.45);
     ctx.stroke();
@@ -439,8 +439,8 @@ function createThreeStarScene(mount) {
 
     const baseHalo = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.46);
     baseHalo.addColorStop(0, 'rgba(255,255,255,1)');
-    baseHalo.addColorStop(0.12, 'rgba(228,238,255,0.94)');
-    baseHalo.addColorStop(0.32, 'rgba(160,188,255,0.32)');
+    baseHalo.addColorStop(0.12, 'rgba(245,245,245,0.94)');
+    baseHalo.addColorStop(0.32, 'rgba(210,210,210,0.32)');
     baseHalo.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = baseHalo;
     ctx.fillRect(0, 0, size, size);
@@ -452,9 +452,9 @@ function createThreeStarScene(mount) {
       const tail = size * 0.04;
       const g = ctx.createLinearGradient(-tail, 0, length, 0);
       g.addColorStop(0, 'rgba(255,255,255,0)');
-      g.addColorStop(0.08, `rgba(${222 - hueShift},${232 - hueShift},255,${alpha * 0.24})`);
+      g.addColorStop(0.08, `rgba(${240 - hueShift},${240 - hueShift},240,${alpha * 0.24})`);
       g.addColorStop(0.35, `rgba(255,255,255,${alpha})`);
-      g.addColorStop(0.72, `rgba(${214 - hueShift},${228 - hueShift},255,${alpha * 0.34})`);
+      g.addColorStop(0.72, `rgba(230,230,230,${alpha * 0.34})`);
       g.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
@@ -480,8 +480,8 @@ function createThreeStarScene(mount) {
 
     const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.1);
     core.addColorStop(0, 'rgba(255,255,255,1)');
-    core.addColorStop(0.38, 'rgba(248,250,255,0.98)');
-    core.addColorStop(0.72, 'rgba(188,214,255,0.42)');
+    core.addColorStop(0.38, 'rgba(252,252,252,0.98)');
+    core.addColorStop(0.72, 'rgba(230,230,230,0.42)');
     core.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = core;
     ctx.fillRect(0, 0, size, size);
@@ -497,7 +497,7 @@ function createThreeStarScene(mount) {
 
   const auraSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: haloTexture,
-    color: 0xb8c9ff,
+    color: 0xf0f0f0,
     transparent: true,
     opacity: 0.56,
     blending: THREE.AdditiveBlending,
@@ -508,7 +508,7 @@ function createThreeStarScene(mount) {
 
   const ringSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: ringTexture,
-    color: 0xe4ecff,
+    color: 0xe8e8e8,
     transparent: true,
     opacity: 0.34,
     blending: THREE.AdditiveBlending,
@@ -878,17 +878,17 @@ async function runCinematicOnboarding(task) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
-        starMesh.rotation.set(0, 0, el * 0.52);
+        starMesh.rotation.set(0, 0, el * 0.78);
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
         starMesh.position.z = 0;
-        starMesh.rotation.set(0, 0, 3.4 * 0.52 + sp * 0.56);
+        starMesh.rotation.set(0, 0, 3.4 * 0.78 + sp * 0.84);
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        starMesh.rotation.set(0, 0, 3.4 * 0.52 + (7.8 - 3.4) * 0.56 + zi * 0.48);
+        starMesh.rotation.set(0, 0, 3.4 * 0.78 + (7.8 - 3.4) * 0.84 + zi * 0.72);
       }
       if (starFx) {
         const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;

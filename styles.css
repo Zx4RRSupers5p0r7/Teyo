@@ -1091,24 +1091,25 @@ article { padding: 24px; }
 .cinematic-install-line {
   position: absolute;
   left: 50%;
-  top: 76%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   margin: 0;
   white-space: nowrap;
-  font-size: clamp(0.64rem, 1vw, 0.82rem);
-  letter-spacing: 0.22em;
+  font-size: clamp(0.82rem, 1.4vw, 1.1rem);
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255,255,255,0.75);
+  text-shadow: 0 0 18px rgba(255,255,255,0.3);
   z-index: 6;
   opacity: 0;
 }
 .cinematic-install-line[aria-hidden='false'] {
-  animation: cFadeUp 0.8s ease-out forwards;
+  animation: cInstallFadeUp 0.8s ease-out forwards;
 }
 
-@keyframes cFadeUp {
-  0%   { opacity:0; transform:translateX(-50%) translateY(12px); }
-  100% { opacity:1; transform:translateX(-50%) translateY(0); }
+@keyframes cInstallFadeUp {
+  0%   { opacity:0; transform:translate(-50%, calc(-50% + 14px)); }
+  100% { opacity:1; transform:translate(-50%, -50%); }
 }
 
 /* ── Fire sweep ─────────────────────────────────────────────────── */

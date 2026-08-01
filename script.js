@@ -953,23 +953,34 @@ async function runCinematicOnboarding(task) {
     /* PHASE 4: fire sweep removed */
 
     /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 5: Fade logo out then thank-you spark trace Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+    /* PHASE 5a: Fade logo out, show thank-you alone */
     await fadeOutLogoReveal();
     setCinematicVisibility(cinematicThankYou, true);
     if (cinematicThankYou) cinematicThankYou.classList.add('is-spark-trace');
-    await wait(700);
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'The future of retail begins now.';
-      cinematicFutureLine.style.transition = 'opacity 0.85s ease';
-      cinematicFutureLine.style.opacity = '1';
+    await wait(2600);
+    if (cinematicThankYou) {
+      cinematicThankYou.style.transition = 'opacity 0.6s ease';
+      cinematicThankYou.style.opacity = '0';
     }
-    await wait(1300);
-    setCinematicVisibility(cinematicInstallLine, true);
-    await wait(1700);
+    await wait(700);
+    setCinematicVisibility(cinematicThankYou, false);
+    if (cinematicThankYou) { cinematicThankYou.style.opacity = ''; cinematicThankYou.style.transition = ''; }
 
-    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 6: ONE Ã¢â‚¬â€ flash, beat pulse, dramatic zoom Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+    /* PHASE 5b: Install line alone, then hide before ONE */
+    setCinematicVisibility(cinematicInstallLine, true);
+    await wait(2200);
+    if (cinematicInstallLine) {
+      cinematicInstallLine.style.transition = 'opacity 0.5s ease';
+      cinematicInstallLine.style.opacity = '0';
+    }
+    await wait(550);
+    setCinematicVisibility(cinematicInstallLine, false);
+    if (cinematicInstallLine) { cinematicInstallLine.style.opacity = ''; cinematicInstallLine.style.transition = ''; }
+
+    /* PHASE 6: ONE alone, centered */
     await flashWord('ONE', 2200, 160);
 
-    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 7: CLICK Ã¢â‚¬â€ flash, beat pulse, dramatic zoom Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
+    /* PHASE 7: CLICK alone, centered */
     await flashWord('CLICK', 2300, 220);
 
     taskResult = await taskPromise;

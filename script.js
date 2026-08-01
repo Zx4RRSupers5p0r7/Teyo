@@ -60,6 +60,7 @@ const cinematicFlashWord = document.getElementById('cinematicFlashWord');
 const cinematicThankYou = document.getElementById('cinematicThankYou');
 const cinematicLogoReveal = document.getElementById('cinematicLogoReveal');
 const cinematicFlashLayer = document.getElementById('cinematicFlashLayer');
+const cinematicFireSweep = document.getElementById('cinematicFireSweep');
 const cinematicThreeMount = document.getElementById('cinematicThreeMount');
 const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
 const customerThemePanel = document.getElementById('customerThemePanel');
@@ -295,12 +296,10 @@ function clearCinematicOverlayModes() {
   if (!cinematicOnboardingOverlay) {
     return;
   }
-  cinematicOnboardingOverlay.classList.remove(
-    'cinematic-mode-drift',
-    'cinematic-mode-stream',
-    'cinematic-mode-reveal',
-    'cinematic-mode-flash'
-  );
+
+  Array.from(cinematicOnboardingOverlay.classList)
+    .filter((className) => className.indexOf('cinematic-mode-') === 0)
+    .forEach((className) => cinematicOnboardingOverlay.classList.remove(className));
 }
 
 function setCinematicOverlayMode(mode) {
@@ -339,7 +338,7 @@ function createCinematicStarGeometry(THREE) {
   return geometry;
 }
 
-function createCinematicParticleSystem(THREE, count, spread, size, opacity) {
+function createCinematicParticleSystem(THREE, count, spread, size, opacity, color = 0xffffff) {
   const geometry = new THREE.BufferGeometry();
   const positions = new Float32Array(count * 3);
   const velocity = new Float32Array(count);
@@ -348,13 +347,13 @@ function createCinematicParticleSystem(THREE, count, spread, size, opacity) {
     positions[index * 3] = (Math.random() - 0.5) * spread.x;
     positions[index * 3 + 1] = (Math.random() - 0.5) * spread.y;
     positions[index * 3 + 2] = (Math.random() - 0.5) * spread.z;
-    velocity[index] = 0.2 + Math.random() * 0.85;
+    velocity[index] = 0.18 + Math.random() * 0.75;
   }
 
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   const material = new THREE.PointsMaterial({
-    color: 0xffffff,
+    color,
     size,
     transparent: true,
     opacity,
@@ -380,24 +379,23 @@ function createCinematicRendererState() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.25;
+  renderer.toneMappingExposure = 1.3;
   cinematicThreeMount.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x08090b);
-  scene.fog = new THREE.FogExp2(0x08090b, 0.018);
+  scene.background = new THREE.Color(0xf3f3f3);
 
   const camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 300);
   camera.position.set(0, 0, 11.25);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.16);
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
   scene.add(ambientLight);
 
-  const keyLight = new THREE.PointLight(0xffffff, 2.6, 90);
+  const keyLight = new THREE.PointLight(0xffffff, 2.6, 100);
   keyLight.position.set(0, 0.8, 7.4);
   scene.add(keyLight);
 
-  const rimLight = new THREE.PointLight(0xffffff, 1.1, 120);
+  const rimLight = new THREE.PointLight(0xffffff, 1.35, 130);
   rimLight.position.set(0, -2.8, -14);
   scene.add(rimLight);
 
@@ -406,37 +404,37 @@ function createCinematicRendererState() {
     new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xffffff,
-      emissiveIntensity: 1.25,
-      metalness: 0.08,
-      roughness: 0.1,
+      emissiveIntensity: 1.2,
+      metalness: 0.06,
+      roughness: 0.08,
       transparent: true,
       opacity: 0.98,
       side: THREE.DoubleSide
     })
   );
   star.position.z = -14;
-  star.scale.setScalar(0.34);
+  star.scale.setScalar(1.8);
   scene.add(star);
 
-  const driftParticles = createCinematicParticleSystem(THREE, 7200, { x: 140, y: 120, z: 120 }, 0.09, 0.92);
-  scene.add(driftParticles);
-
-  const streamParticles = createCinematicParticleSystem(THREE, 2800, { x: 96, y: 220, z: 96 }, 0.06, 0.82);
-  streamParticles.visible = false;
-  scene.add(streamParticles);
-
-  const starGlow = new THREE.Mesh(
-    new THREE.RingGeometry(2.1, 2.85, 64),
+  const starOutline = new THREE.Mesh(
+    createCinematicStarGeometry(THREE),
     new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0x222222,
       transparent: true,
       opacity: 0.2,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
+      side: THREE.DoubleSide
     })
   );
-  star.add(starGlow);
+  starOutline.scale.setScalar(1.07);
+  starOutline.position.z = -0.05;
+  star.add(starOutline);
+
+  const driftParticles = createCinematicParticleSystem(THREE, 7600, { x: 170, y: 130, z: 130 }, 0.08, 0.28, 0xffffff);
+  scene.add(driftParticles);
+
+  const streamParticles = createCinematicParticleSystem(THREE, 3000, { x: 110, y: 260, z: 100 }, 0.06, 0.86, 0xffffff);
+  streamParticles.visible = false;
+  scene.add(streamParticles);
 
   const state = {
     THREE,
@@ -444,10 +442,11 @@ function createCinematicRendererState() {
     scene,
     camera,
     star,
-    starGlow,
+    starOutline,
     driftParticles,
     streamParticles,
-    mode: 'drift',
+    mode: 'star-stage',
+    modeStartedAt: performance.now(),
     rafId: null,
     startedAt: performance.now(),
     stopped: false,
@@ -464,14 +463,40 @@ function createCinematicRendererState() {
   return state;
 }
 
-function updateParticleField(points, deltaSeconds, direction, wrapLimit) {
+function setRendererMode(state, mode) {
+  if (!state || state.mode === mode) {
+    return;
+  }
+  state.mode = mode;
+  state.modeStartedAt = performance.now();
+
+  if (mode === 'star-stage') {
+    state.scene.background = new state.THREE.Color(0xf3f3f3);
+    state.scene.fog = null;
+    state.driftParticles.material.opacity = 0.24;
+    state.streamParticles.visible = false;
+    state.star.visible = true;
+    state.star.material.opacity = 0.98;
+    state.star.scale.setScalar(1.8);
+    state.star.position.z = -14;
+  }
+
+  if (mode === 'space-rise' || mode === 'logo-stage' || mode === 'final-flash') {
+    state.scene.background = new state.THREE.Color(0x060608);
+    state.scene.fog = new state.THREE.FogExp2(0x060608, 0.02);
+    state.driftParticles.material.opacity = 0.12;
+    state.streamParticles.visible = true;
+  }
+}
+
+function updateParticleField(points, deltaSeconds, direction, wrapLimit, driftStrength = 0.004) {
   const positions = points.geometry.attributes.position.array;
   const velocity = points.userData.velocity;
 
   for (let index = 0; index < velocity.length; index += 1) {
-    positions[index * 3] += Math.sin(index * 0.18 + deltaSeconds) * 0.004;
-    positions[index * 3 + 1] += direction * velocity[index] * deltaSeconds * 6.2;
-    positions[index * 3 + 2] += Math.cos(index * 0.13 + deltaSeconds) * 0.003;
+    positions[index * 3] += Math.sin(index * 0.18 + deltaSeconds) * driftStrength;
+    positions[index * 3 + 1] += direction * velocity[index] * deltaSeconds * 6.5;
+    positions[index * 3 + 2] += Math.cos(index * 0.13 + deltaSeconds) * driftStrength;
 
     if (direction > 0 && positions[index * 3 + 1] > wrapLimit) {
       positions[index * 3 + 1] = -wrapLimit;
@@ -491,49 +516,63 @@ function renderCinematicFrame(state, timestamp) {
   }
 
   const elapsed = (timestamp - state.startedAt) / 1000;
+  const modeElapsed = (timestamp - state.modeStartedAt) / 1000;
   const delta = Math.min(0.04, Math.max(0.001, elapsed - (state.lastElapsed || 0)));
   state.lastElapsed = elapsed;
 
   state.camera.position.x = Math.sin(elapsed * 0.18) * 0.08;
   state.camera.position.y = Math.cos(elapsed * 0.22) * 0.05;
 
-  if (state.mode === 'drift') {
+  if (state.mode === 'star-stage') {
     state.star.visible = true;
-    state.star.material.opacity = 0.98;
     state.streamParticles.visible = false;
-    state.star.rotation.x += delta * 0.52;
-    state.star.rotation.y += delta * 0.46;
-    state.star.rotation.z += delta * 0.34;
-    state.star.scale.setScalar(0.34 + Math.min(0.45, elapsed * 0.13));
-    state.star.position.z += delta * 4.3;
-    state.starGlow.scale.setScalar(1 + elapsed * 0.06);
-    updateParticleField(state.driftParticles, delta, 1, 60);
+
+    if (modeElapsed < 3.2) {
+      const t = modeElapsed / 3.2;
+      state.star.scale.setScalar(1.8 - (0.86 * t));
+      state.star.position.z = -14 + (6.5 * t);
+    } else if (modeElapsed < 8.2) {
+      state.star.scale.setScalar(0.94);
+      state.star.position.z = -7.5;
+      state.star.rotation.x += delta * 0.48;
+      state.star.rotation.y += delta * 0.42;
+      state.star.rotation.z += delta * 0.34;
+    } else {
+      const t = Math.min(1, (modeElapsed - 8.2) / 4.8);
+      state.star.scale.setScalar(0.94 + (0.76 * t));
+      state.star.position.z = -7.5 + (6.9 * t);
+      state.star.rotation.x += delta * 0.62;
+      state.star.rotation.y += delta * 0.56;
+      state.star.rotation.z += delta * 0.45;
+    }
+
+    updateParticleField(state.driftParticles, delta, 1, 65, 0.0024);
   }
 
-  if (state.mode === 'stream') {
-    state.star.material.opacity = Math.max(0, state.star.material.opacity - delta * 0.9);
-    state.star.rotation.x += delta * 0.72;
-    state.star.rotation.y += delta * 0.64;
-    state.star.position.z += delta * 1.0;
+  if (state.mode === 'space-rise') {
+    state.star.material.opacity = Math.max(0, state.star.material.opacity - delta * 1.25);
+    state.star.rotation.x += delta * 0.9;
+    state.star.rotation.y += delta * 0.8;
+    state.star.position.z += delta * 1.5;
     state.streamParticles.visible = true;
-    updateParticleField(state.streamParticles, delta, 1, 105);
-    updateParticleField(state.driftParticles, delta * 0.48, 1, 60);
+    updateParticleField(state.streamParticles, delta, 1, 130, 0.0038);
+    updateParticleField(state.driftParticles, delta * 0.45, 1, 65, 0.002);
   }
 
-  if (state.mode === 'reveal') {
+  if (state.mode === 'logo-stage') {
     state.star.visible = false;
     state.streamParticles.visible = true;
-    state.camera.position.z = 11.25 - Math.min(1.9, elapsed * 0.12);
-    updateParticleField(state.streamParticles, delta * 0.9, 1, 105);
+    state.camera.position.z = 11.25 - Math.min(2.1, modeElapsed * 0.17);
+    updateParticleField(state.streamParticles, delta * 0.95, 1, 130, 0.0038);
   }
 
-  if (state.mode === 'flash') {
-    const shakeAmount = 0.16;
+  if (state.mode === 'final-flash') {
+    const shakeAmount = 0.18;
     state.camera.position.x += (Math.random() - 0.5) * shakeAmount;
     state.camera.position.y += (Math.random() - 0.5) * shakeAmount;
     state.streamParticles.visible = true;
     state.star.visible = false;
-    updateParticleField(state.streamParticles, delta * 1.35, 1, 105);
+    updateParticleField(state.streamParticles, delta * 1.4, 1, 130, 0.0042);
   }
 
   state.renderer.render(state.scene, state.camera);
@@ -572,15 +611,15 @@ function stopCinematicRenderer(state) {
   }
 }
 
-async function flashWord(word) {
+async function flashWord(word, holdMs = 1300, exitMs = 280) {
   if (!cinematicFlashWord) {
     return;
   }
   cinematicFlashWord.textContent = word;
   setCinematicVisibility(cinematicFlashWord, true);
-  await wait(360);
+  await wait(holdMs);
   setCinematicVisibility(cinematicFlashWord, false);
-  await wait(130);
+  await wait(exitMs);
 }
 
 async function runCinematicOnboarding(task) {
@@ -594,24 +633,26 @@ async function runCinematicOnboarding(task) {
 
   cinematicOnboardingOverlay.hidden = false;
   clearCinematicOverlayModes();
-  setCinematicOverlayMode('drift');
+  setCinematicOverlayMode('star-stage');
 
   setCinematicVisibility(cinematicLogoReveal, false);
   setCinematicVisibility(cinematicThankYou, false);
   setCinematicVisibility(cinematicInstallLine, false);
   setCinematicVisibility(cinematicFlashWord, false);
+  setCinematicVisibility(cinematicFireSweep, false);
 
   if (cinematicFutureLine) {
-    cinematicFutureLine.textContent = 'A dark world of light is forming.';
+    cinematicFutureLine.textContent = 'White light ignition sequence started.';
   }
 
   setCinematicOnboardingStep({
-    title: 'Entering the Teyo superpower',
-    subtext: 'A deep-space launch sequence is preparing your store.',
-    progress: 6
+    title: 'Teyo Superpower Initiated',
+    subtext: 'Locking your star into launch position.',
+    progress: 8
   });
 
   if (rendererState) {
+    setRendererMode(rendererState, 'star-stage');
     renderCinematicFrame(rendererState, performance.now());
   }
 
@@ -619,20 +660,16 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    if (rendererState) {
-      rendererState.mode = 'drift';
-    }
-
-    await wait(4200);
+    await wait(11800);
     setCinematicOnboardingStep({
-      title: 'Drifting through the future',
-      subtext: 'Thousands of lights are gathering into one star.',
-      progress: 30
+      title: 'Approaching the launch core',
+      subtext: 'Preparing flash transition into the live marketplace stream.',
+      progress: 38
     });
 
-    setCinematicOverlayMode('stream');
+    setCinematicOverlayMode('space-rise');
     if (rendererState) {
-      rendererState.mode = 'stream';
+      setRendererMode(rendererState, 'space-rise');
     }
 
     if (cinematicFutureLine) {
@@ -640,44 +677,42 @@ async function runCinematicOnboarding(task) {
     }
     setCinematicVisibility(cinematicInstallLine, true);
 
-    await wait(520);
-    await flashWord('ONE');
-    await flashWord('CLICK');
-
-    setCinematicOnboardingStep({
-      title: 'Installing your future marketplace',
-      subtext: 'Streaming products, images, and live store details into Teyo.',
-      progress: 68
-    });
-
-    taskResult = await taskPromise;
-
-    setCinematicOverlayMode('reveal');
+    await wait(3000);
+    setCinematicOverlayMode('logo-stage');
     if (rendererState) {
-      rendererState.mode = 'reveal';
-    }
-
-    setCinematicVisibility(cinematicInstallLine, false);
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'A new era of retail is now live.';
+      setRendererMode(rendererState, 'logo-stage');
     }
 
     setCinematicVisibility(cinematicLogoReveal, true);
     setCinematicVisibility(cinematicThankYou, true);
+    setCinematicVisibility(cinematicFireSweep, true);
 
     setCinematicOnboardingStep({
-      title: 'Thank you for choosing Teyo.',
-      subtext: 'Your marketplace is ready and your products are live.',
+      title: 'Teyo marketplace signature online',
+      subtext: 'Syncing your products so shoppers can discover them instantly.',
+      progress: 72
+    });
+
+    await wait(3300);
+    await flashWord('ONE', 1320, 260);
+    await flashWord('CLICK', 1320, 260);
+
+    taskResult = await taskPromise;
+
+    setCinematicOnboardingStep({
+      title: 'Your store is now live',
+      subtext: 'Customers can now shop your products on Teyo.',
       progress: 100
     });
 
-    await wait(3200);
+    await wait(1300);
 
-    setCinematicOverlayMode('flash');
+    setCinematicOverlayMode('final-flash');
     if (rendererState) {
-      rendererState.mode = 'flash';
+      setRendererMode(rendererState, 'final-flash');
     }
-    await wait(420);
+
+    await wait(520);
 
     const elapsedMs = performance.now() - sequenceStart;
     if (elapsedMs < minimumSequenceMs) {

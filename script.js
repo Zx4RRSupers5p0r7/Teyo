@@ -437,13 +437,7 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    const baseHalo = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.46);
-    baseHalo.addColorStop(0, 'rgba(255,255,255,1)');
-    baseHalo.addColorStop(0.12, 'rgba(245,245,245,0.94)');
-    baseHalo.addColorStop(0.32, 'rgba(210,210,210,0.32)');
-    baseHalo.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = baseHalo;
-    ctx.fillRect(0, 0, size, size);
+    /* No circular fills — only the crystal spike rays */
 
     const drawCrystalRay = (angle, length, width, alpha, hueShift = 0) => {
       ctx.save();
@@ -478,14 +472,15 @@ function createThreeStarScene(mount) {
       drawCrystalRay(((Math.PI * 2 * i) / 8) + Math.PI / 8, size * secondaryRayLengths[i], size * 0.022, 0.46, 24);
     }
 
-    const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.1);
-    core.addColorStop(0, 'rgba(255,255,255,1)');
-    core.addColorStop(0.38, 'rgba(252,252,252,0.98)');
-    core.addColorStop(0.72, 'rgba(230,230,230,0.42)');
-    core.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = core;
+    /* Small bright center point to anchor the rays — no circle, just a tiny tight glow */
+    const pinpoint = ctx.createRadialGradient(c, c, 0, c, c, size * 0.025);
+    pinpoint.addColorStop(0, 'rgba(255,255,255,1)');
+    pinpoint.addColorStop(0.5, 'rgba(255,255,255,0.72)');
+    pinpoint.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = pinpoint;
     ctx.fillRect(0, 0, size, size);
 
+    /* Rotation accent marker */
     ctx.save();
     ctx.translate(c * 0.82, c * 0.72);
     ctx.rotate(-Math.PI / 6.8);
@@ -589,10 +584,7 @@ function createThreeStarScene(mount) {
   }
 
   const starMesh = new THREE.Group();
-  starMesh.add(auraSprite);
-  starMesh.add(ringSprite);
   starMesh.add(starSprite);
-  starMesh.add(coreSprite);
   starMesh.add(shimmerGroup);
   starMesh.position.set(0, 0, 0);
   scene.add(starMesh);
@@ -915,23 +907,12 @@ async function runCinematicOnboarding(task) {
       }
       starMesh.rotation.set(0, 0, spinAngle);
       if (starFx) {
-        const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
-        starFx.auraSprite.material.opacity = 0.34 + pulse * 0.26;
-        starFx.ringSprite.material.opacity = 0.18 + pulse * 0.12;
+        const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         starFx.starSprite.material.opacity = 0.9 + flicker * 0.08;
-        starFx.coreSprite.material.opacity = 0.56 + pulse * 0.2;
-        const auraScale = 3.95 + pulse * 0.34;
-        const ringScale = 2.84 + pulse * 0.18;
         const starScale = 2.56 + pulse * 0.12;
-        const coreScale = 1.52 + pulse * 0.1;
-        starFx.auraSprite.scale.set(auraScale, auraScale, 1);
-        starFx.ringSprite.scale.set(ringScale, ringScale, 1);
         starFx.starSprite.scale.set(starScale, starScale, 1);
-        starFx.coreSprite.scale.set(coreScale, coreScale, 1);
         starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
-        starFx.coreSprite.material.rotation = -spinAngle * 0.28 + 0.04;
-        starFx.ringSprite.material.rotation = -el * 0.18;
         starFx.shimmerGroup.rotation.z = el * 0.14;
         starFx.shimmerSprites.forEach((sprite, index) => {
           const meta = starFx.shimmerMeta[index];

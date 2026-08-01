@@ -345,46 +345,95 @@ function createThreeStarScene(mount) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
 
-  /* Screenshot-matched spark star */
-  const sparkTexture = new THREE.TextureLoader().load('cinematic-star-spark.png');
-  sparkTexture.colorSpace = THREE.SRGBColorSpace;
-  sparkTexture.minFilter = THREE.LinearFilter;
-  sparkTexture.magFilter = THREE.LinearFilter;
+  /* Screenshot-matched spark star (with guaranteed fallback) */
+  const createFallbackSparkTexture = (size = 512) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const c = size / 2;
+
+    const halo = ctx.createRadialGradient(c, c, size * 0.01, c, c, size * 0.48);
+    halo.addColorStop(0, 'rgba(255,255,255,1)');
+    halo.addColorStop(0.2, 'rgba(255,255,255,0.62)');
+    halo.addColorStop(0.58, 'rgba(230,238,255,0.2)');
+    halo.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, size, size);
+
+    const spike = (angle, length, thickness, alpha) => {
+      ctx.save();
+      ctx.translate(c, c);
+      ctx.rotate(angle);
+      const g = ctx.createLinearGradient(-length / 2, 0, length / 2, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, `rgba(255,255,255,${alpha})`);
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(-length / 2, -thickness / 2, length, thickness);
+      ctx.restore();
+    };
+
+    spike(0, size * 0.95, size * 0.07, 0.92);
+    spike(Math.PI / 2, size * 1.08, size * 0.095, 1);
+
+    const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.12);
+    core.addColorStop(0, 'rgba(255,255,255,1)');
+    core.addColorStop(0.4, 'rgba(255,255,255,0.98)');
+    core.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = core;
+    ctx.fillRect(0, 0, size, size);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  };
+
+  const fallbackSparkTexture = createFallbackSparkTexture(512);
+  fallbackSparkTexture.minFilter = THREE.LinearFilter;
+  fallbackSparkTexture.magFilter = THREE.LinearFilter;
+  fallbackSparkTexture.colorSpace = THREE.SRGBColorSpace;
+
+  const auraMaterial = new THREE.SpriteMaterial({
+    map: fallbackSparkTexture,
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.34,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
 
   const auraSprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: sparkTexture,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.34,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
+    auraMaterial
   );
   auraSprite.scale.set(3.8, 3.8, 1);
   auraSprite.position.z = -0.02;
 
+  const starMaterial = new THREE.SpriteMaterial({
+    map: fallbackSparkTexture,
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
   const starSprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: sparkTexture,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.95,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
+    starMaterial
   );
   starSprite.scale.set(2.7, 2.7, 1);
 
+  const coreMaterial = new THREE.SpriteMaterial({
+    map: fallbackSparkTexture,
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.58,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
   const coreSprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: sparkTexture,
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.58,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    })
+    coreMaterial
   );
   coreSprite.scale.set(1.5, 1.5, 1);
   coreSprite.position.z = 0.01;
@@ -393,7 +442,28 @@ function createThreeStarScene(mount) {
   starMesh.add(auraSprite);
   starMesh.add(starSprite);
   starMesh.add(coreSprite);
+  starMesh.position.set(0, 0, 0);
   scene.add(starMesh);
+
+  const textureLoader = new THREE.TextureLoader();
+  textureLoader.load(
+    'cinematic-star-spark.png',
+    (loadedTexture) => {
+      loadedTexture.colorSpace = THREE.SRGBColorSpace;
+      loadedTexture.minFilter = THREE.LinearFilter;
+      loadedTexture.magFilter = THREE.LinearFilter;
+      auraMaterial.map = loadedTexture;
+      starMaterial.map = loadedTexture;
+      coreMaterial.map = loadedTexture;
+      auraMaterial.needsUpdate = true;
+      starMaterial.needsUpdate = true;
+      coreMaterial.needsUpdate = true;
+    },
+    undefined,
+    () => {
+      /* keep fallback texture */
+    }
+  );
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

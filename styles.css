@@ -959,15 +959,11 @@ article { padding: 24px; }
   z-index: 6;
 }
 .cinematic-logo-reveal[aria-hidden='false'] {
-  animation: cLogoReveal 3.8s cubic-bezier(0.08, 0.0, 0.12, 1.0) forwards;
+  animation: cLogoReveal 3.6s cubic-bezier(0.16, 0, 0.1, 1) forwards;
 }
 @keyframes cLogoReveal {
-  0%   { opacity:0; transform:translate(-50%,-52%) scale(0.94); filter:blur(0px) brightness(0); }
-  18%  { opacity:0.12; transform:translate(-50%,-51.5%) scale(0.96); filter:blur(0px) brightness(0.15); }
-  42%  { opacity:0.68; transform:translate(-50%,-50.8%) scale(0.985); filter:blur(0px) brightness(0.7); }
-  72%  { opacity:0.92; transform:translate(-50%,-50.2%) scale(1.0); filter:brightness(1.12); }
-  88%  { opacity:1; transform:translate(-50%,-50%) scale(1.0); filter:brightness(1.22); }
-  100% { opacity:1; transform:translate(-50%,-50%) scale(1); filter:brightness(1); }
+  0%   { opacity:0; transform:translate(-50%,-54%) scale(0.95); filter:brightness(0); }
+  100% { opacity:1; transform:translate(-50%,-50%) scale(1);    filter:brightness(1); }
 }
 
 .cinematic-logo-mark {

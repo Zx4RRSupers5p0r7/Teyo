@@ -345,9 +345,11 @@ function createThreeStarScene(mount) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
 
-  /* 5-point star geometry: premium framed star */
+  /* Flat 2D star */
   const starShape = new THREE.Shape();
-  const R = 1.0, r = 0.42, N = 5;
+  const R = 1.0;
+  const r = 0.42;
+  const N = 5;
   for (let i = 0; i < N * 2; i++) {
     const radius = i % 2 === 0 ? R : r;
     const angle = (Math.PI / N) * i - Math.PI / 2;
@@ -357,87 +359,17 @@ function createThreeStarScene(mount) {
   }
   starShape.closePath();
 
-  const innerHole = new THREE.Path();
-  const holeOuter = 0.66;
-  const holeInner = 0.28;
-  for (let i = 0; i < N * 2; i++) {
-    const radius = i % 2 === 0 ? holeOuter : holeInner;
-    const angle = (Math.PI / N) * i - Math.PI / 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) innerHole.moveTo(x, y); else innerHole.lineTo(x, y);
-  }
-  innerHole.closePath();
-  starShape.holes.push(innerHole);
+  const starGeo = new THREE.ShapeGeometry(starShape);
+  starGeo.center();
 
-  const frameGeo = new THREE.ExtrudeGeometry(starShape, {
-    depth: 0.24,
-    bevelEnabled: true,
-    bevelThickness: 0.07,
-    bevelSize: 0.05,
-    bevelSegments: 8
-  });
-  frameGeo.center();
-
-  const fillShape = new THREE.Shape();
-  const fillR = 0.6;
-  const fillr = 0.24;
-  for (let i = 0; i < N * 2; i++) {
-    const radius = i % 2 === 0 ? fillR : fillr;
-    const angle = (Math.PI / N) * i - Math.PI / 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) fillShape.moveTo(x, y); else fillShape.lineTo(x, y);
-  }
-  fillShape.closePath();
-
-  const fillGeo = new THREE.ExtrudeGeometry(fillShape, {
-    depth: 0.12,
-    bevelEnabled: true,
-    bevelThickness: 0.028,
-    bevelSize: 0.026,
-    bevelSegments: 6
-  });
-  fillGeo.center();
-
-  const frameMat = new THREE.MeshPhysicalMaterial({
-    color: 0xf4f6fb,
-    emissive: 0xffffff,
-    emissiveIntensity: 0.18,
-    roughness: 0.06,
-    metalness: 1.0,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.06,
-    reflectivity: 1
-  });
-
-  const fillMat = new THREE.MeshPhysicalMaterial({
+  const starMat = new THREE.MeshBasicMaterial({
     color: 0xffffff,
-    emissive: 0xffffff,
-    emissiveIntensity: 0.44,
-    roughness: 0.0,
-    metalness: 0.62,
-    clearcoat: 1.0,
-    clearcoatRoughness: 0.02,
     transparent: true,
-    opacity: 0.96
+    opacity: 0.98
   });
 
-  const frameMesh = new THREE.Mesh(frameGeo, frameMat);
-  const fillMesh = new THREE.Mesh(fillGeo, fillMat);
-  fillMesh.position.z = 0.03;
-
-  const starMesh = new THREE.Group();
-  starMesh.add(frameMesh);
-  starMesh.add(fillMesh);
+  const starMesh = new THREE.Mesh(starGeo, starMat);
   scene.add(starMesh);
-
-  /* Lights */
-  scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-  const key = new THREE.DirectionalLight(0xffffff, 4.0); key.position.set(3, 4, 7); scene.add(key);
-  const rim1 = new THREE.DirectionalLight(0xffffff, 2.0); rim1.position.set(-5, -2, -4); scene.add(rim1);
-  const rim2 = new THREE.DirectionalLight(0xeeeeee, 1.4); rim2.position.set(2, -3, 1); scene.add(rim2);
-  const fill = new THREE.PointLight(0xffffff, 2.5, 30); fill.position.set(0, 0, 4); scene.add(fill);
 
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -735,19 +667,17 @@ async function runCinematicOnboarding(task) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
-        starMesh.rotation.x = el * 0.48; starMesh.rotation.y = el * 0.82; starMesh.rotation.z = el * 0.24;
+        starMesh.rotation.set(0, 0, el * 0.18);
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
         starMesh.position.z = 0;
-        starMesh.rotation.x = 3.4 * 0.48 + sp * 0.52;
-        starMesh.rotation.y = 3.4 * 0.82 + sp * 1.08;
-        starMesh.rotation.z = 3.4 * 0.24 + sp * 0.28;
+        starMesh.rotation.set(0, 0, 3.4 * 0.18 + sp * 0.2);
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        starMesh.rotation.x += 0.017; starMesh.rotation.y += 0.024; starMesh.rotation.z += 0.009;
+        starMesh.rotation.set(0, 0, 3.4 * 0.18 + (7.8 - 3.4) * 0.2 + zi * 0.16);
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

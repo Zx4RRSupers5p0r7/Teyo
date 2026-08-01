@@ -345,7 +345,7 @@ function createThreeStarScene(mount) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
 
-  /* 5-point star extruded geometry */
+  /* 5-point star geometry: premium framed star */
   const starShape = new THREE.Shape();
   const R = 1.0, r = 0.42, N = 5;
   for (let i = 0; i < N * 2; i++) {
@@ -357,18 +357,79 @@ function createThreeStarScene(mount) {
   }
   starShape.closePath();
 
-  const geo = new THREE.ExtrudeGeometry(starShape, {
-    depth: 0.28, bevelEnabled: true,
-    bevelThickness: 0.08, bevelSize: 0.06, bevelSegments: 8
-  });
-  geo.center();
+  const innerHole = new THREE.Path();
+  const holeOuter = 0.66;
+  const holeInner = 0.28;
+  for (let i = 0; i < N * 2; i++) {
+    const radius = i % 2 === 0 ? holeOuter : holeInner;
+    const angle = (Math.PI / N) * i - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) innerHole.moveTo(x, y); else innerHole.lineTo(x, y);
+  }
+  innerHole.closePath();
+  starShape.holes.push(innerHole);
 
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.55,
-    roughness: 0.0, metalness: 1.0, clearcoat: 1.0, clearcoatRoughness: 0.0
+  const frameGeo = new THREE.ExtrudeGeometry(starShape, {
+    depth: 0.24,
+    bevelEnabled: true,
+    bevelThickness: 0.07,
+    bevelSize: 0.05,
+    bevelSegments: 8
+  });
+  frameGeo.center();
+
+  const fillShape = new THREE.Shape();
+  const fillR = 0.6;
+  const fillr = 0.24;
+  for (let i = 0; i < N * 2; i++) {
+    const radius = i % 2 === 0 ? fillR : fillr;
+    const angle = (Math.PI / N) * i - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (i === 0) fillShape.moveTo(x, y); else fillShape.lineTo(x, y);
+  }
+  fillShape.closePath();
+
+  const fillGeo = new THREE.ExtrudeGeometry(fillShape, {
+    depth: 0.12,
+    bevelEnabled: true,
+    bevelThickness: 0.028,
+    bevelSize: 0.026,
+    bevelSegments: 6
+  });
+  fillGeo.center();
+
+  const frameMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf4f6fb,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.18,
+    roughness: 0.06,
+    metalness: 1.0,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.06,
+    reflectivity: 1
   });
 
-  const starMesh = new THREE.Mesh(geo, mat);
+  const fillMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.44,
+    roughness: 0.0,
+    metalness: 0.62,
+    clearcoat: 1.0,
+    clearcoatRoughness: 0.02,
+    transparent: true,
+    opacity: 0.96
+  });
+
+  const frameMesh = new THREE.Mesh(frameGeo, frameMat);
+  const fillMesh = new THREE.Mesh(fillGeo, fillMat);
+  fillMesh.position.z = 0.03;
+
+  const starMesh = new THREE.Group();
+  starMesh.add(frameMesh);
+  starMesh.add(fillMesh);
   scene.add(starMesh);
 
   /* Lights */

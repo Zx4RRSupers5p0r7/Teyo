@@ -1833,3 +1833,271 @@ article { padding: 24px; }
   .access-tabs { flex-direction: column; }
   .tab-panel { flex-direction: column; align-items: flex-start; }
 }
+
+
+/* ===== Cinematic onboarding v2 (Three.js) ===== */
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay {
+  background: #0b0b0d;
+  backdrop-filter: blur(4px);
+}
+
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay::before,
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 11vh;
+  background: linear-gradient(180deg, rgba(0,0,0,0.98), rgba(0,0,0,0.5));
+  z-index: 15;
+  pointer-events: none;
+}
+
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay::before { top: 0; }
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay::after { bottom: 0; transform: rotate(180deg); }
+
+#cinematicOnboardingOverlay .cinematic-onboarding-content {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  border: none;
+  border-radius: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 40%, rgba(255,255,255,0.06), rgba(5,5,5,0.96) 60%);
+}
+
+#cinematicOnboardingOverlay .cinematic-three-mount {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: translateZ(0);
+}
+
+#cinematicOnboardingOverlay .cinematic-three-mount canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  filter: saturate(1.08) contrast(1.08);
+}
+
+#cinematicOnboardingOverlay .cinematic-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(circle at center, transparent 24%, rgba(0,0,0,0.72) 100%);
+}
+
+#cinematicOnboardingOverlay .cinematic-flash-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.98), rgba(255,255,255,0.72));
+}
+
+#cinematicOnboardingOverlay.cinematic-mode-flash .cinematic-flash-layer {
+  animation: cinematicFlashBlast 0.52s cubic-bezier(0.12, 0.74, 0.17, 1) forwards;
+}
+
+#cinematicOnboardingOverlay .cinematic-kicker,
+#cinematicOnboardingOverlay .cinematic-future-line,
+#cinematicOnboardingOverlay #cinematicOnboardingTitle,
+#cinematicOnboardingOverlay #cinematicOnboardingSubtext,
+#cinematicOnboardingOverlay .cinematic-install-line,
+#cinematicOnboardingOverlay .cinematic-thank-you,
+#cinematicOnboardingOverlay .cinematic-logo-reveal,
+#cinematicOnboardingOverlay .cinematic-progress-track,
+#cinematicOnboardingOverlay .cinematic-flash-word {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  margin: 0;
+  text-align: center;
+}
+
+#cinematicOnboardingOverlay .cinematic-kicker {
+  top: 15vh;
+  color: rgba(255,255,255,0.82);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-size: clamp(0.75rem, 1.2vw, 1rem);
+}
+
+#cinematicOnboardingOverlay .cinematic-future-line {
+  top: 21vh;
+  color: rgba(255,255,255,0.78);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-size: clamp(0.7rem, 1.05vw, 0.94rem);
+}
+
+#cinematicOnboardingOverlay #cinematicOnboardingTitle {
+  bottom: 18vh;
+  width: min(980px, 92vw);
+  color: #ffffff;
+  font-size: clamp(1.5rem, 4.4vw, 3.2rem);
+  text-shadow: 0 0 24px rgba(255,255,255,0.3);
+}
+
+#cinematicOnboardingOverlay #cinematicOnboardingSubtext {
+  bottom: 12.8vh;
+  width: min(840px, 90vw);
+  color: rgba(255,255,255,0.8);
+  font-size: clamp(0.88rem, 1.35vw, 1.16rem);
+  line-height: 1.45;
+}
+
+#cinematicOnboardingOverlay .cinematic-install-line {
+  top: 29vh;
+  width: min(860px, 92vw);
+  color: rgba(255,255,255,0.84);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  font-size: clamp(0.72rem, 1.15vw, 1rem);
+  opacity: 0;
+}
+
+#cinematicOnboardingOverlay .cinematic-install-line[aria-hidden='false'] {
+  opacity: 1;
+  animation: cinematicInstallLineGlow 1.2s ease-in-out infinite;
+}
+
+#cinematicOnboardingOverlay .cinematic-flash-word {
+  top: 37vh;
+  color: #ffffff;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 10vw, 7rem);
+  text-shadow: 0 0 44px rgba(255,255,255,0.72);
+  opacity: 0;
+}
+
+#cinematicOnboardingOverlay .cinematic-flash-word[aria-hidden='false'] {
+  opacity: 1;
+  animation: cinematicOneClickPop 0.36s cubic-bezier(0.08, 0.8, 0.26, 1);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-reveal {
+  top: 46vh;
+  display: inline-flex;
+  align-items: center;
+  gap: clamp(10px, 1.8vw, 22px);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.82);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-mark {
+  width: clamp(52px, 8vmin, 98px);
+  height: clamp(52px, 8vmin, 98px);
+  border: 1px solid rgba(255,255,255,0.9);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 900;
+  font-size: clamp(1.25rem, 3.2vw, 2.2rem);
+  text-shadow: 0 0 16px rgba(255,255,255,0.45);
+  box-shadow: 0 0 34px rgba(255,255,255,0.38);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-name {
+  color: #fff;
+  font-size: clamp(1.3rem, 4.1vw, 3.2rem);
+  letter-spacing: 0.24em;
+  font-weight: 900;
+  text-shadow: 0 0 22px rgba(255,255,255,0.42);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-reveal[aria-hidden='false'] {
+  opacity: 1;
+  animation: cinematicLogoLuxReveal 1s cubic-bezier(0.11, 0.78, 0.19, 1) forwards;
+}
+
+#cinematicOnboardingOverlay .cinematic-thank-you {
+  top: 61vh;
+  color: rgba(255,255,255,0.9);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: clamp(0.84rem, 1.4vw, 1.14rem);
+  opacity: 0;
+}
+
+#cinematicOnboardingOverlay .cinematic-thank-you[aria-hidden='false'] {
+  opacity: 1;
+  animation: cinematicThankYouFade 1.4s ease-in-out infinite;
+}
+
+#cinematicOnboardingOverlay .cinematic-progress-track {
+  bottom: 7vh;
+  width: min(920px, 86vw);
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.22);
+  overflow: hidden;
+}
+
+#cinematicOnboardingOverlay.cinematic-mode-stream .cinematic-three-mount canvas {
+  filter: saturate(1.15) contrast(1.12);
+}
+
+#cinematicOnboardingOverlay.cinematic-mode-reveal .cinematic-vignette {
+  background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.82) 100%);
+}
+
+#cinematicOnboardingOverlay.cinematic-mode-flash .cinematic-onboarding-content {
+  animation: cinematicSubtleShake 0.52s linear;
+}
+
+@keyframes cinematicInstallLineGlow {
+  0%, 100% { opacity: 0.55; text-shadow: 0 0 8px rgba(255,255,255,0.22); }
+  50% { opacity: 1; text-shadow: 0 0 22px rgba(255,255,255,0.52); }
+}
+
+@keyframes cinematicOneClickPop {
+  0% { transform: translateX(-50%) scale(0.62); filter: blur(2px); }
+  45% { transform: translateX(-50%) scale(1.07); filter: blur(0); }
+  100% { transform: translateX(-50%) scale(1); filter: blur(0); }
+}
+
+@keyframes cinematicLogoLuxReveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.82); filter: blur(3px); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); filter: blur(0); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+}
+
+@keyframes cinematicThankYouFade {
+  0%, 100% { opacity: 0.44; }
+  50% { opacity: 0.98; }
+}
+
+@keyframes cinematicFlashBlast {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes cinematicSubtleShake {
+  0% { transform: translate3d(0, 0, 0); }
+  20% { transform: translate3d(-3px, 2px, 0); }
+  40% { transform: translate3d(4px, -1px, 0); }
+  60% { transform: translate3d(-2px, -3px, 0); }
+  80% { transform: translate3d(3px, 2px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+@media (max-width: 740px) {
+  #cinematicOnboardingOverlay .cinematic-kicker { top: 12vh; }
+  #cinematicOnboardingOverlay .cinematic-future-line { top: 18vh; width: 94vw; }
+  #cinematicOnboardingOverlay .cinematic-install-line { top: 28vh; width: 94vw; }
+  #cinematicOnboardingOverlay .cinematic-flash-word { top: 36vh; }
+  #cinematicOnboardingOverlay .cinematic-logo-reveal { top: 48vh; }
+  #cinematicOnboardingOverlay .cinematic-thank-you { top: 62vh; width: 94vw; }
+  #cinematicOnboardingOverlay #cinematicOnboardingTitle { bottom: 20vh; }
+  #cinematicOnboardingOverlay #cinematicOnboardingSubtext { bottom: 14vh; width: 94vw; }
+  #cinematicOnboardingOverlay .cinematic-progress-track { bottom: 8.5vh; width: 90vw; }
+}

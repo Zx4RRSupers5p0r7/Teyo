@@ -81,7 +81,7 @@
               <input id="partnerStoreLocationInput" name="storeLocation" type="text" placeholder="Physical store address (required if yes)" hidden />
               <textarea name="details" rows="4" placeholder="Optional notes for your store setup"></textarea>
               <p class="superpower-title">Teyo's Superpower</p>
-              <button class="btn btn-primary btn-cinematic-cta" type="submit">Run Teyo's Superpower</button>
+              <button class="btn btn-primary btn-cinematic-cta" type="submit">List My Products</button>
               <button id="superpowerDemoBtn" class="btn btn-secondary" type="button" data-owner-only hidden>Preview Superpower Demo (Owner only)</button>
               <p class="form-help">We auto-import products and keep updates running in the background.</p>
               <p id="formMessage" class="form-message" aria-live="polite"></p>
@@ -137,30 +137,31 @@
     </div>
     <div id="cinematicOnboardingOverlay" class="cinematic-onboarding-overlay" hidden>
       <div class="cinematic-onboarding-content">
-        <div class="cinematic-horizon" aria-hidden="true"></div>
-        <div class="cinematic-light-tracks" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span>
-        </div>
-        <div class="cinematic-orb" aria-hidden="true"></div>
-        <div class="cinematic-ring cinematic-ring-a" aria-hidden="true"></div>
-        <div class="cinematic-ring cinematic-ring-b" aria-hidden="true"></div>
-        <div class="cinematic-particles" aria-hidden="true">
-          <span></span><span></span><span></span><span></span><span></span><span></span>
-        </div>
+        <div id="cinematicThreeMount" class="cinematic-three-mount" aria-hidden="true"></div>
+        <div class="cinematic-vignette" aria-hidden="true"></div>
+        <div class="cinematic-flash-layer" id="cinematicFlashLayer" aria-hidden="true"></div>
+
         <p class="cinematic-kicker">Teyo Superpower</p>
         <p id="cinematicFutureLine" class="cinematic-future-line">The future of retail begins now.</p>
-        <p id="cinematicThankYou" class="cinematic-thank-you">Thank you for choosing</p>
         <h3 id="cinematicOnboardingTitle">Igniting your storefront engine</h3>
         <p id="cinematicOnboardingSubtext">Preparing AI catalog import and live sync.</p>
+
+        <p id="cinematicInstallLine" class="cinematic-install-line" aria-hidden="true">Your whole store is about to be installed with</p>
+        <p id="cinematicFlashWord" class="cinematic-flash-word" aria-hidden="true"></p>
+
         <div class="cinematic-logo-reveal" id="cinematicLogoReveal" aria-hidden="true">
           <span class="cinematic-logo-mark">T</span>
           <span class="cinematic-logo-name">TEYO</span>
         </div>
+
+        <p id="cinematicThankYou" class="cinematic-thank-you" aria-hidden="true">Thank you for choosing Teyo.</p>
+
         <div class="cinematic-progress-track">
           <span id="cinematicOnboardingProgress" class="cinematic-progress-fill"></span>
         </div>
       </div>
     </div>
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

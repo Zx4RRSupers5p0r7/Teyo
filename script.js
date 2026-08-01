@@ -55,8 +55,12 @@ const cinematicOnboardingTitle = document.getElementById('cinematicOnboardingTit
 const cinematicOnboardingSubtext = document.getElementById('cinematicOnboardingSubtext');
 const cinematicOnboardingProgress = document.getElementById('cinematicOnboardingProgress');
 const cinematicFutureLine = document.getElementById('cinematicFutureLine');
+const cinematicInstallLine = document.getElementById('cinematicInstallLine');
+const cinematicFlashWord = document.getElementById('cinematicFlashWord');
 const cinematicThankYou = document.getElementById('cinematicThankYou');
 const cinematicLogoReveal = document.getElementById('cinematicLogoReveal');
+const cinematicFlashLayer = document.getElementById('cinematicFlashLayer');
+const cinematicThreeMount = document.getElementById('cinematicThreeMount');
 const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
@@ -287,72 +291,366 @@ function initPlacementCheckoutState() {
   }
 }
 
+function clearCinematicOverlayModes() {
+  if (!cinematicOnboardingOverlay) {
+    return;
+  }
+  cinematicOnboardingOverlay.classList.remove(
+    'cinematic-mode-drift',
+    'cinematic-mode-stream',
+    'cinematic-mode-reveal',
+    'cinematic-mode-flash'
+  );
+}
+
+function setCinematicOverlayMode(mode) {
+  if (!cinematicOnboardingOverlay) {
+    return;
+  }
+  clearCinematicOverlayModes();
+  cinematicOnboardingOverlay.classList.add(`cinematic-mode-${mode}`);
+}
+
+function setCinematicVisibility(element, visible) {
+  if (!element) {
+    return;
+  }
+  element.setAttribute('aria-hidden', visible ? 'false' : 'true');
+}
+
+function createCinematicStarGeometry(THREE) {
+  const shape = new THREE.Shape();
+  const outerRadius = 1.8;
+  const innerRadius = 0.78;
+  for (let index = 0; index < 10; index += 1) {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / 5) * index - Math.PI / 2;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (index === 0) {
+      shape.moveTo(x, y);
+    } else {
+      shape.lineTo(x, y);
+    }
+  }
+  shape.closePath();
+  const geometry = new THREE.ShapeGeometry(shape);
+  geometry.center();
+  return geometry;
+}
+
+function createCinematicParticleSystem(THREE, count, spread, size, opacity) {
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const velocity = new Float32Array(count);
+
+  for (let index = 0; index < count; index += 1) {
+    positions[index * 3] = (Math.random() - 0.5) * spread.x;
+    positions[index * 3 + 1] = (Math.random() - 0.5) * spread.y;
+    positions[index * 3 + 2] = (Math.random() - 0.5) * spread.z;
+    velocity[index] = 0.2 + Math.random() * 0.85;
+  }
+
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const material = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size,
+    transparent: true,
+    opacity,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+
+  const points = new THREE.Points(geometry, material);
+  points.userData.velocity = velocity;
+  return points;
+}
+
+function createCinematicRendererState() {
+  if (!cinematicThreeMount || !window.THREE) {
+    return null;
+  }
+
+  const THREE = window.THREE;
+  cinematicThreeMount.innerHTML = '';
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  cinematicThreeMount.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(54, window.innerWidth / window.innerHeight, 0.1, 300);
+  camera.position.set(0, 0, 10.8);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.62);
+  scene.add(ambientLight);
+
+  const keyLight = new THREE.PointLight(0xffffff, 3.2, 120);
+  keyLight.position.set(0, 2.4, 7.2);
+  scene.add(keyLight);
+
+  const backLight = new THREE.PointLight(0xffffff, 1.35, 140);
+  backLight.position.set(-2.8, -1.3, -12);
+  scene.add(backLight);
+
+  const star = new THREE.Mesh(
+    createCinematicStarGeometry(THREE),
+    new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.72,
+      metalness: 0.12,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.96,
+      side: THREE.DoubleSide
+    })
+  );
+  star.position.z = -11;
+  scene.add(star);
+
+  const driftParticles = createCinematicParticleSystem(THREE, 4400, { x: 110, y: 90, z: 90 }, 0.12, 0.84);
+  scene.add(driftParticles);
+
+  const streamParticles = createCinematicParticleSystem(THREE, 1800, { x: 70, y: 180, z: 80 }, 0.08, 0.72);
+  streamParticles.visible = false;
+  scene.add(streamParticles);
+
+  const state = {
+    THREE,
+    renderer,
+    scene,
+    camera,
+    star,
+    driftParticles,
+    streamParticles,
+    mode: 'drift',
+    rafId: null,
+    startedAt: performance.now(),
+    stopped: false,
+    resizeHandler: null
+  };
+
+  state.resizeHandler = () => {
+    state.camera.aspect = window.innerWidth / Math.max(window.innerHeight, 1);
+    state.camera.updateProjectionMatrix();
+    state.renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
+  window.addEventListener('resize', state.resizeHandler);
+  return state;
+}
+
+function updateParticleField(points, deltaSeconds, direction, wrapLimit) {
+  const positions = points.geometry.attributes.position.array;
+  const velocity = points.userData.velocity;
+
+  for (let index = 0; index < velocity.length; index += 1) {
+    positions[index * 3 + 1] += direction * velocity[index] * deltaSeconds * 5.4;
+
+    if (direction > 0 && positions[index * 3 + 1] > wrapLimit) {
+      positions[index * 3 + 1] = -wrapLimit;
+    }
+
+    if (direction < 0 && positions[index * 3 + 1] < -wrapLimit) {
+      positions[index * 3 + 1] = wrapLimit;
+    }
+  }
+
+  points.geometry.attributes.position.needsUpdate = true;
+}
+
+function renderCinematicFrame(state, timestamp) {
+  if (!state || state.stopped) {
+    return;
+  }
+
+  const elapsed = (timestamp - state.startedAt) / 1000;
+  const delta = Math.min(0.04, Math.max(0.001, elapsed - (state.lastElapsed || 0)));
+  state.lastElapsed = elapsed;
+
+  state.camera.position.x = Math.sin(elapsed * 0.42) * 0.18;
+  state.camera.position.y = Math.cos(elapsed * 0.33) * 0.12;
+
+  if (state.mode === 'drift') {
+    state.star.visible = true;
+    state.streamParticles.visible = false;
+    state.star.rotation.x += delta * 0.48;
+    state.star.rotation.y += delta * 0.56;
+    state.star.rotation.z += delta * 0.44;
+    state.star.position.z += delta * 3.4;
+    updateParticleField(state.driftParticles, delta, 1, 45);
+  }
+
+  if (state.mode === 'stream') {
+    state.star.material.opacity = Math.max(0, state.star.material.opacity - delta * 0.8);
+    state.star.rotation.x += delta * 0.66;
+    state.star.rotation.y += delta * 0.72;
+    state.streamParticles.visible = true;
+    updateParticleField(state.streamParticles, delta, 1, 95);
+    updateParticleField(state.driftParticles, delta * 0.55, 1, 45);
+  }
+
+  if (state.mode === 'reveal') {
+    state.star.visible = false;
+    state.streamParticles.visible = true;
+    state.camera.position.z = 10.8 - Math.min(1.25, elapsed * 0.07);
+    updateParticleField(state.streamParticles, delta * 0.88, 1, 95);
+  }
+
+  if (state.mode === 'flash') {
+    const shakeAmount = 0.08;
+    state.camera.position.x += (Math.random() - 0.5) * shakeAmount;
+    state.camera.position.y += (Math.random() - 0.5) * shakeAmount;
+    state.streamParticles.visible = true;
+    updateParticleField(state.streamParticles, delta * 1.3, 1, 95);
+  }
+
+  state.renderer.render(state.scene, state.camera);
+  state.rafId = window.requestAnimationFrame((nextTimestamp) => renderCinematicFrame(state, nextTimestamp));
+}
+
+function stopCinematicRenderer(state) {
+  if (!state) {
+    return;
+  }
+
+  state.stopped = true;
+  if (state.rafId) {
+    window.cancelAnimationFrame(state.rafId);
+  }
+  if (state.resizeHandler) {
+    window.removeEventListener('resize', state.resizeHandler);
+  }
+
+  state.renderer.dispose();
+  state.scene.traverse((node) => {
+    if (node.geometry) {
+      node.geometry.dispose();
+    }
+    if (node.material) {
+      if (Array.isArray(node.material)) {
+        node.material.forEach((material) => material.dispose());
+      } else {
+        node.material.dispose();
+      }
+    }
+  });
+
+  if (cinematicThreeMount) {
+    cinematicThreeMount.innerHTML = '';
+  }
+}
+
+async function flashWord(word) {
+  if (!cinematicFlashWord) {
+    return;
+  }
+  cinematicFlashWord.textContent = word;
+  setCinematicVisibility(cinematicFlashWord, true);
+  await wait(360);
+  setCinematicVisibility(cinematicFlashWord, false);
+  await wait(130);
+}
+
 async function runCinematicOnboarding(task) {
   if (!cinematicOnboardingOverlay) {
     return task();
   }
 
+  const rendererState = createCinematicRendererState();
+
   cinematicOnboardingOverlay.hidden = false;
-  cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
-  cinematicOnboardingOverlay.classList.remove('is-future-build');
-  cinematicOnboardingOverlay.classList.remove('is-climax');
-  if (cinematicThankYou) {
-    cinematicThankYou.textContent = 'Thank you for choosing';
-  }
+  clearCinematicOverlayModes();
+  setCinematicOverlayMode('drift');
+
+  setCinematicVisibility(cinematicLogoReveal, false);
+  setCinematicVisibility(cinematicThankYou, false);
+  setCinematicVisibility(cinematicInstallLine, false);
+  setCinematicVisibility(cinematicFlashWord, false);
+
   if (cinematicFutureLine) {
     cinematicFutureLine.textContent = 'The future of retail begins now.';
   }
-  if (cinematicLogoReveal) {
-    cinematicLogoReveal.setAttribute('aria-hidden', 'true');
-  }
+
   setCinematicOnboardingStep({
     title: 'Igniting your storefront engine',
-    subtext: 'Verifying your company details and preparing secure import.',
-    progress: 14
+    subtext: 'Loading your AI-powered launch corridor.',
+    progress: 8
   });
 
-  const taskPromise = task();
+  if (rendererState) {
+    renderCinematicFrame(rendererState, performance.now());
+  }
 
+  let taskResult;
   try {
-    await wait(220);
-    cinematicOnboardingOverlay.classList.add('is-future-build');
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'Live intelligence is mapping your entire catalog.';
+    const taskPromise = Promise.resolve().then(task);
+
+    if (rendererState) {
+      rendererState.mode = 'drift';
     }
+
+    await wait(2400);
     setCinematicOnboardingStep({
-      title: 'Mapping your product universe',
-      subtext: 'Finding product pages, variants, pricing, and stock details.',
-      progress: 42
-    });
-    await wait(260);
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'Your storefront is becoming a future-ready discovery engine.';
-    }
-    setCinematicOnboardingStep({
-      title: 'Building your Teyo storefront',
-      subtext: 'Publishing your listings and syncing updates for shoppers.',
-      progress: 78
+      title: 'Calibrating your product universe',
+      subtext: 'Gliding through every product, variant, price, and image.',
+      progress: 36
     });
 
-    const result = await taskPromise;
+    setCinematicOverlayMode('stream');
+    if (rendererState) {
+      rendererState.mode = 'stream';
+    }
+
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'Your whole store is about to be installed with';
+    }
+    setCinematicVisibility(cinematicInstallLine, true);
+
+    await wait(380);
+    await flashWord('ONE');
+    await flashWord('CLICK');
+
     setCinematicOnboardingStep({
-      title: 'Thank you for choosing Teyo',
-      subtext: 'Your store is now live with automatic updates.',
+      title: 'Deploying your live marketplace presence',
+      subtext: 'Streaming your storefront into Teyo in real time.',
+      progress: 72
+    });
+
+    taskResult = await taskPromise;
+
+    setCinematicOverlayMode('reveal');
+    if (rendererState) {
+      rendererState.mode = 'reveal';
+    }
+
+    setCinematicVisibility(cinematicInstallLine, false);
+    if (cinematicFutureLine) {
+      cinematicFutureLine.textContent = 'The future of retail is now live.';
+    }
+
+    setCinematicVisibility(cinematicLogoReveal, true);
+    setCinematicVisibility(cinematicThankYou, true);
+
+    setCinematicOnboardingStep({
+      title: 'Teyo Superpower Activated',
+      subtext: 'Thank you for choosing Teyo.',
       progress: 100
     });
-    cinematicOnboardingOverlay.classList.add('is-climax');
-    cinematicOnboardingOverlay.classList.add('is-logo-reveal');
-    if (cinematicThankYou) {
-      cinematicThankYou.textContent = 'Thank you for choosing';
+
+    await wait(1600);
+
+    setCinematicOverlayMode('flash');
+    if (rendererState) {
+      rendererState.mode = 'flash';
     }
-    if (cinematicFutureLine) {
-      cinematicFutureLine.textContent = 'Welcome to the future of shopping.';
-    }
-    if (cinematicLogoReveal) {
-      cinematicLogoReveal.setAttribute('aria-hidden', 'false');
-    }
-    await wait(1400);
-    return result;
+    await wait(520);
+
+    return taskResult;
   } catch (error) {
     setCinematicOnboardingStep({
       title: 'Superpower paused',
@@ -362,12 +660,8 @@ async function runCinematicOnboarding(task) {
     await wait(620);
     throw error;
   } finally {
-    cinematicOnboardingOverlay.classList.remove('is-logo-reveal');
-    cinematicOnboardingOverlay.classList.remove('is-future-build');
-    cinematicOnboardingOverlay.classList.remove('is-climax');
-    if (cinematicLogoReveal) {
-      cinematicLogoReveal.setAttribute('aria-hidden', 'true');
-    }
+    stopCinematicRenderer(rendererState);
+    clearCinematicOverlayModes();
     cinematicOnboardingOverlay.hidden = true;
   }
 }

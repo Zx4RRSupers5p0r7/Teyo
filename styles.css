@@ -917,14 +917,15 @@ article { padding: 24px; }
 /* Stage backgrounds */
 #cinematicOnboardingOverlay.cinematic-mode-star-stage  {
   background:
-    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.82) 20%, rgba(226,226,233,0.62) 38%, transparent 54%),
-    radial-gradient(circle at 82% 18%, rgba(248,248,250,0.96) 0%, rgba(227,227,233,0.7) 24%, rgba(203,203,211,0.46) 42%, transparent 60%),
-    radial-gradient(circle at 24% 76%, rgba(236,236,241,0.9) 0%, rgba(216,216,223,0.58) 26%, rgba(255,255,255,0.18) 50%, transparent 68%),
-    radial-gradient(circle at 74% 72%, rgba(250,250,252,0.92) 0%, rgba(224,224,230,0.62) 22%, rgba(193,193,202,0.36) 40%, transparent 62%),
-    linear-gradient(135deg, #f9f9fb 0%, #ececf1 26%, #d7d7df 46%, #f8f8fa 66%, #e2e2e9 84%, #fcfcfd 100%);
-  background-size: 130% 130%, 145% 145%, 135% 135%, 150% 150%, 100% 100%;
-  background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
-  animation: cStarMarbleDrift 12s ease-in-out infinite alternate;
+    radial-gradient(circle at 16% 18%, rgba(255,255,255,0.72) 0%, rgba(228,229,236,0.42) 20%, rgba(142,146,160,0.2) 40%, transparent 62%),
+    radial-gradient(circle at 82% 16%, rgba(241,243,249,0.64) 0%, rgba(201,205,218,0.36) 24%, rgba(126,131,145,0.18) 44%, transparent 66%),
+    radial-gradient(circle at 22% 78%, rgba(220,223,232,0.5) 0%, rgba(158,163,176,0.26) 26%, rgba(85,90,104,0.12) 48%, transparent 72%),
+    radial-gradient(circle at 78% 74%, rgba(236,238,245,0.56) 0%, rgba(177,182,196,0.28) 24%, rgba(96,101,116,0.14) 44%, transparent 68%),
+    radial-gradient(ellipse at 50% 54%, rgba(207,212,226,0.34) 0%, rgba(122,128,145,0.14) 44%, rgba(0,0,0,0) 72%),
+    linear-gradient(140deg, #2b2f3b 0%, #383d4b 22%, #4a4f5f 41%, #353a49 62%, #252936 84%, #1f2330 100%);
+  background-size: 140% 140%, 148% 148%, 142% 142%, 150% 150%, 132% 132%, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%, 50% 50%;
+  animation: cStarMarbleDrift 18s cubic-bezier(0.42, 0.02, 0.28, 1) infinite alternate;
 }
 #cinematicOnboardingOverlay.cinematic-mode-flash-white { background: #fff; }
 #cinematicOnboardingOverlay.cinematic-mode-flash-flicker-1 { background: #888; }
@@ -1122,16 +1123,20 @@ article { padding: 24px; }
 
 @keyframes cStarMarbleDrift {
   0% {
-    background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
-    filter: saturate(0.98) brightness(1);
+    background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%, 50% 50%;
+    filter: saturate(0.94) brightness(0.98);
   }
-  50% {
-    background-position: 8% 6%, 92% 8%, 6% 92%, 94% 90%, 50% 50%;
-    filter: saturate(1.02) brightness(1.01);
+  35% {
+    background-position: 6% 4%, 95% 8%, 5% 96%, 94% 92%, 52% 48%, 50% 50%;
+    filter: saturate(1) brightness(1.02);
+  }
+  70% {
+    background-position: 12% 9%, 90% 13%, 10% 91%, 88% 87%, 48% 53%, 50% 50%;
+    filter: saturate(1.03) brightness(1.04);
   }
   100% {
-    background-position: 14% 10%, 88% 14%, 10% 88%, 90% 84%, 50% 50%;
-    filter: saturate(1) brightness(1.02);
+    background-position: 16% 14%, 85% 18%, 14% 86%, 82% 82%, 46% 56%, 50% 50%;
+    filter: saturate(0.98) brightness(1.01);
   }
 }
 

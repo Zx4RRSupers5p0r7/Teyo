@@ -516,7 +516,7 @@ function createThreeStarScene(mount) {
     blending: THREE.AdditiveBlending,
     depthWrite: false
   }));
-  starSprite.scale.set(2.7, 2.7, 1);
+  starSprite.scale.set(1.6, 1.6, 1);
 
   const coreSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: coreTexture,
@@ -883,7 +883,7 @@ async function runCinematicOnboarding(task) {
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
         const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         starFx.starSprite.material.opacity = 0.9 + flicker * 0.08;
-        const starScale = 2.56 + pulse * 0.12;
+        const starScale = 1.55 + pulse * 0.07;
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
       }

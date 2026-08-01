@@ -437,7 +437,7 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    /* Only the faint crystal spike rays — nothing else */
+    /* Only the faint grey secondary spike rays — no bright white ones */
 
     const drawCrystalRay = (angle, length, width, alpha, hueShift = 0) => {
       ctx.save();
@@ -445,11 +445,11 @@ function createThreeStarScene(mount) {
       ctx.rotate(angle);
       const tail = size * 0.04;
       const g = ctx.createLinearGradient(-tail, 0, length, 0);
-      g.addColorStop(0, 'rgba(255,255,255,0)');
-      g.addColorStop(0.08, `rgba(${240 - hueShift},${240 - hueShift},240,${alpha * 0.24})`);
-      g.addColorStop(0.35, `rgba(255,255,255,${alpha})`);
-      g.addColorStop(0.72, `rgba(230,230,230,${alpha * 0.34})`);
-      g.addColorStop(1, 'rgba(255,255,255,0)');
+      g.addColorStop(0, 'rgba(180,180,180,0)');
+      g.addColorStop(0.08, `rgba(${200 - hueShift},${200 - hueShift},${200 - hueShift},${alpha * 0.24})`);
+      g.addColorStop(0.35, `rgba(190,190,190,${alpha})`);
+      g.addColorStop(0.72, `rgba(160,160,160,${alpha * 0.34})`);
+      g.addColorStop(1, 'rgba(160,160,160,0)');
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(-tail, 0);
@@ -462,14 +462,10 @@ function createThreeStarScene(mount) {
       ctx.restore();
     };
 
-    const mainRayLengths = [0.45, 0.39, 0.47, 0.41, 0.44, 0.4, 0.46, 0.42];
-    for (let i = 0; i < 8; i++) {
-      drawCrystalRay((Math.PI * 2 * i) / 8, size * mainRayLengths[i], size * 0.05, 0.92, 10);
-    }
-
+    /* Only secondary (grey) spikes — no main white spikes */
     const secondaryRayLengths = [0.24, 0.2, 0.23, 0.19, 0.25, 0.21, 0.22, 0.18];
     for (let i = 0; i < 8; i++) {
-      drawCrystalRay(((Math.PI * 2 * i) / 8) + Math.PI / 8, size * secondaryRayLengths[i], size * 0.022, 0.46, 24);
+      drawCrystalRay(((Math.PI * 2 * i) / 8) + Math.PI / 8, size * secondaryRayLengths[i], size * 0.022, 0.55, 10);
     }
 
     return finalizeTexture(new THREE.CanvasTexture(canvas));
@@ -554,7 +550,6 @@ function createThreeStarScene(mount) {
 
   const starMesh = new THREE.Group();
   starMesh.add(starSprite);
-  starMesh.add(shimmerGroup);
   starMesh.position.set(0, 0, 0);
   scene.add(starMesh);
   const onResize = () => {
@@ -882,17 +877,6 @@ async function runCinematicOnboarding(task) {
         const starScale = 2.56 + pulse * 0.12;
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
-        starFx.shimmerGroup.rotation.z = el * 0.14;
-        starFx.shimmerSprites.forEach((sprite, index) => {
-          const meta = starFx.shimmerMeta[index];
-          const theta = meta.baseAngle + el * meta.speed;
-          const radius = meta.radius + Math.sin(el * 1.3 + meta.phase) * 0.06;
-          sprite.position.set(Math.cos(theta) * radius, Math.sin(theta) * radius, sprite.position.z);
-          const twinkle = 0.5 + Math.sin(el * 3.6 + meta.phase) * 0.5;
-          const scale = meta.scale * (0.8 + twinkle * 0.85);
-          sprite.material.opacity = 0.08 + twinkle * 0.3;
-          sprite.scale.set(scale, scale, 1);
-        });
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

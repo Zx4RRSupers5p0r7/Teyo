@@ -369,11 +369,37 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const gradient = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
     gradient.addColorStop(0, 'rgba(255,255,255,1)');
-    gradient.addColorStop(0.22, 'rgba(255,255,255,0.72)');
-    gradient.addColorStop(0.55, 'rgba(255,255,255,0.18)');
-    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    gradient.addColorStop(0.18, 'rgba(226,236,255,0.9)');
+    gradient.addColorStop(0.45, 'rgba(168,184,255,0.35)');
+    gradient.addColorStop(1, 'rgba(116,124,180,0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 128, 128);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  };
+
+  const createCoreTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext('2d');
+
+    const g = ctx.createRadialGradient(256, 256, 30, 256, 256, 256);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(0.3, '#f2f6ff');
+    g.addColorStop(0.62, '#d8e2ff');
+    g.addColorStop(1, '#9ea7c7');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 512, 512);
+
+    const sheen = ctx.createLinearGradient(80, 100, 420, 390);
+    sheen.addColorStop(0, 'rgba(255,255,255,0.5)');
+    sheen.addColorStop(0.5, 'rgba(211,225,255,0.06)');
+    sheen.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sheen;
+    ctx.fillRect(0, 0, 512, 512);
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     return texture;
@@ -387,32 +413,33 @@ function createThreeStarScene(mount) {
 
   const shadowMesh = new THREE.Mesh(
     new THREE.ShapeGeometry(shadowStar.shape),
-    new THREE.MeshBasicMaterial({ color: 0x8f98aa, transparent: true, opacity: 0.18 })
+    new THREE.MeshBasicMaterial({ color: 0x66708f, transparent: true, opacity: 0.22 })
   );
   shadowMesh.position.set(0.045, -0.05, -0.02);
 
   const haloMesh = new THREE.Mesh(
     new THREE.ShapeGeometry(haloStar.shape),
     new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0xb8c4ff,
       transparent: true,
-      opacity: 0.14,
+      opacity: 0.26,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
 
+  const coreTexture = createCoreTexture();
   const mainMesh = new THREE.Mesh(
     new THREE.ShapeGeometry(outerStar.shape),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.98 })
+    new THREE.MeshBasicMaterial({ color: 0xf8fbff, map: coreTexture, transparent: true, opacity: 0.98 })
   );
 
   const innerMesh = new THREE.Mesh(
     new THREE.ShapeGeometry(innerStar.shape),
     new THREE.MeshBasicMaterial({
-      color: 0xf7fbff,
+      color: 0xdfe8ff,
       transparent: true,
-      opacity: 0.58,
+      opacity: 0.74,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
@@ -422,9 +449,9 @@ function createThreeStarScene(mount) {
   const sheenMesh = new THREE.Mesh(
     new THREE.ShapeGeometry(sheenStar.shape),
     new THREE.MeshBasicMaterial({
-      color: 0xffffff,
+      color: 0xc6d6ff,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.3,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
@@ -435,7 +462,7 @@ function createThreeStarScene(mount) {
   const outlineGeometry = new THREE.BufferGeometry().setFromPoints(outerStar.points);
   const outline = new THREE.LineLoop(
     outlineGeometry,
-    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })
+    new THREE.LineBasicMaterial({ color: 0xe7efff, transparent: true, opacity: 0.95 })
   );
   outline.position.z = 0.02;
 
@@ -446,16 +473,36 @@ function createThreeStarScene(mount) {
     const sprite = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: glowTexture,
-        color: 0xffffff,
+        color: 0xd9e6ff,
         transparent: true,
-        opacity: 0.24,
+        opacity: 0.4,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       })
     );
     sprite.position.set(point.x * 0.98, point.y * 0.98, 0.018);
-    sprite.scale.set(0.22, 0.22, 1);
+    sprite.scale.set(0.28, 0.28, 1);
     tipSprites.push(sprite);
+  }
+
+  const rayGroup = new THREE.Group();
+  for (let i = 0; i < outerStar.points.length; i += 2) {
+    const point = outerStar.points[i];
+    const rayGeometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0.012),
+      new THREE.Vector3(point.x * 1.26, point.y * 1.26, 0.012)
+    ]);
+    const ray = new THREE.Line(
+      rayGeometry,
+      new THREE.LineBasicMaterial({
+        color: 0xcfd9ff,
+        transparent: true,
+        opacity: 0.16,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    rayGroup.add(ray);
   }
 
   const starMesh = new THREE.Group();
@@ -466,6 +513,7 @@ function createThreeStarScene(mount) {
   starMesh.add(sheenMesh);
   starMesh.add(outline);
   tipSprites.forEach((sprite) => starMesh.add(sprite));
+  starMesh.add(rayGroup);
   scene.add(starMesh);
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -474,7 +522,7 @@ function createThreeStarScene(mount) {
   };
   window.addEventListener('resize', onResize);
 
-  return { renderer, scene, camera, starMesh, onResize, disposed: false };
+  return { renderer, scene, camera, starMesh, onResize, disposed: false, starFx: { tipSprites, haloMesh, innerMesh, sheenMesh, rayGroup } };
 }
 
 function disposeThreeStarScene(ts) {
@@ -758,7 +806,7 @@ async function runCinematicOnboarding(task) {
     if (stopped) return;
     const el = (ts - starLoopStart) / 1000;
     if (threeState && !threeState.disposed) {
-      const { renderer, scene, camera, starMesh } = threeState;
+      const { renderer, scene, camera, starMesh, starFx } = threeState;
       if (el < 3.4) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
@@ -774,6 +822,21 @@ async function runCinematicOnboarding(task) {
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
         starMesh.rotation.set(0, 0, 3.4 * 0.18 + (7.8 - 3.4) * 0.2 + zi * 0.16);
+      }
+      if (starFx) {
+        const pulse = 0.5 + Math.sin(el * 2.1) * 0.5;
+        starFx.haloMesh.material.opacity = 0.18 + pulse * 0.22;
+        starFx.innerMesh.material.opacity = 0.58 + pulse * 0.26;
+        starFx.sheenMesh.material.opacity = 0.16 + pulse * 0.14;
+        starFx.tipSprites.forEach((sprite, index) => {
+          const tw = Math.max(0, Math.sin(el * 2.35 + index * 0.85));
+          sprite.material.opacity = 0.24 + tw * 0.42;
+          const scale = 0.24 + tw * 0.13;
+          sprite.scale.set(scale, scale, 1);
+        });
+        starFx.rayGroup.children.forEach((ray, index) => {
+          ray.material.opacity = 0.08 + Math.max(0, Math.sin(el * 1.9 + index * 0.9)) * 0.16;
+        });
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

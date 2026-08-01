@@ -824,6 +824,16 @@ async function flashWord(word, holdMs = 2000, exitMs = 200) {
   await wait(exitMs);
 }
 
+async function fadeOutLogoReveal() {
+  if (!cinematicLogoReveal) return;
+  cinematicLogoReveal.classList.remove('is-fading-out');
+  void cinematicLogoReveal.offsetHeight;
+  cinematicLogoReveal.classList.add('is-fading-out');
+  await wait(860);
+  cinematicLogoReveal.classList.remove('is-fading-out');
+  setCinematicVisibility(cinematicLogoReveal, false);
+}
+
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MAIN CINEMATIC SEQUENCE
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
@@ -840,6 +850,7 @@ async function runCinematicOnboarding(task) {
    cinematicFlashWord, cinematicFireSweep].forEach((el) => {
     if (el) { el.setAttribute('aria-hidden', 'true'); el.classList.remove('is-animating', 'is-zooming'); }
   });
+  if (cinematicThankYou) cinematicThankYou.classList.remove('is-spark-trace');
   if (cinematicFutureLine) { cinematicFutureLine.style.opacity = '0'; cinematicFutureLine.textContent = ''; }
 
   const mount = cinematicThreeMount;
@@ -962,8 +973,10 @@ async function runCinematicOnboarding(task) {
     playCinematicTone(520, 1.0, 0.00024);
     await wait(FIRE_DUR);
 
-    /* â”€â”€ PHASE 5: Thank you + taglines â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* â”€â”€ PHASE 5: Fade logo out then thank-you spark trace â”€â”€â”€â”€â”€â”€â”€ */
+    await fadeOutLogoReveal();
     setCinematicVisibility(cinematicThankYou, true);
+    if (cinematicThankYou) cinematicThankYou.classList.add('is-spark-trace');
     await wait(700);
     if (cinematicFutureLine) {
       cinematicFutureLine.textContent = 'The future of retail begins now.';
@@ -974,12 +987,10 @@ async function runCinematicOnboarding(task) {
     setCinematicVisibility(cinematicInstallLine, true);
     await wait(1700);
 
-    /* â”€â”€ PHASE 6: ONE â€” flash & slow zoom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-    stopped = true; cancelAnimationFrame(rafId);
-    if (pState) drawSpaceParticles(pState, 9999, 1.0); /* freeze bg */
+    /* â”€â”€ PHASE 6: ONE â€” flash, beat pulse, dramatic zoom â”€â”€â”€â”€â”€â”€â”€ */
     await flashWord('ONE', 2200, 160);
 
-    /* â”€â”€ PHASE 7: CLICK â€” flash & slow zoom â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* â”€â”€ PHASE 7: CLICK â€” flash, beat pulse, dramatic zoom â”€â”€â”€â”€â”€â”€ */
     await flashWord('CLICK', 2300, 220);
 
     taskResult = await taskPromise;

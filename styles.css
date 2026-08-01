@@ -916,7 +916,7 @@ article { padding: 24px; }
 
 /* Stage backgrounds */
 #cinematicOnboardingOverlay.cinematic-mode-star-stage  {
-  background: linear-gradient(140deg, #13161d 0%, #3b414e 34%, #596171 62%, #2a303c 82%, #0d1016 100%);
+  background: radial-gradient(circle at 50% 42%, #2a2a2a 0%, #1f1f1f 36%, #171717 64%, #121212 100%);
 }
 
 #cinematicOnboardingOverlay.cinematic-mode-flash-white { background: #fff; }
@@ -1782,4 +1782,3 @@ article { padding: 24px; }
   .access-tabs { flex-direction: column; }
   .tab-panel { flex-direction: column; align-items: flex-start; }
 }
-

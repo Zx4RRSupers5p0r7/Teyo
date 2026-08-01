@@ -1,4 +1,4 @@
-const products = [];
+﻿const products = [];
 
 const searchInput = document.getElementById('searchInput');
 const categorySelect = document.getElementById('categorySelect');
@@ -144,16 +144,16 @@ const customerPresetClasses = [
   'theme-preset-sunset'
 ];
 const plushieSymbols = {
-  bunny: 'ðŸ°',
-  bear: 'ðŸ§¸',
-  cat: 'ðŸ±',
-  frog: 'ðŸ¸',
-  star: 'â­',
-  dog: 'ðŸ¶',
-  hamster: 'ðŸ¹',
-  panda: 'ðŸ¼',
-  fox: 'ðŸ¦Š',
-  duck: 'ðŸ¥'
+  bunny: 'Ã°Å¸ÂÂ°',
+  bear: 'Ã°Å¸Â§Â¸',
+  cat: 'Ã°Å¸ÂÂ±',
+  frog: 'Ã°Å¸ÂÂ¸',
+  star: 'Ã¢Â­Â',
+  dog: 'Ã°Å¸ÂÂ¶',
+  hamster: 'Ã°Å¸ÂÂ¹',
+  panda: 'Ã°Å¸ÂÂ¼',
+  fox: 'Ã°Å¸Â¦Å ',
+  duck: 'Ã°Å¸ÂÂ¥'
 };
 const customerCuteThemes = {
   kawaii: { accent: '#ff9ad5', style: 'kawaii', plushie: 'bear' },
@@ -310,7 +310,7 @@ function setCinematicVisibility(element, visible) {
   element.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
-/* â”€â”€ Easing helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Easing helpers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function easeOutCubic(t) {
   const s = Math.max(0, Math.min(1, t));
   return 1 - Math.pow(1 - s, 3);
@@ -324,7 +324,7 @@ function easeInCubic(t) {
   return s * s * s;
 }
 
-/* â”€â”€ Three.js 3D star â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Three.js 3D star Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function createThreeStarScene(mount) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
@@ -592,7 +592,7 @@ function disposeThreeStarScene(ts) {
   try { if (ts.renderer.domElement.parentNode) ts.renderer.domElement.parentNode.removeChild(ts.renderer.domElement); } catch (e) { /* ignore */ }
 }
 
-/* â”€â”€ Canvas particle engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Canvas particle engine Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function createParticleCanvas(mount) {
   if (!mount) return null;
   const canvas = document.createElement('canvas');
@@ -753,9 +753,9 @@ function drawSpaceParticles(pState, elapsed, intensity) {
   });
 }
 
-/* â”€â”€ White fire sweep (drawn to a temp canvas) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ White fire sweep (drawn to a temp canvas) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function drawFireSweep(ctx, W, H, progress) {
-  /* progress 0â†’1 sweeps leftâ†’right */
+  /* progress 0Ã¢â€ â€™1 sweeps leftÃ¢â€ â€™right */
   const cx = W * (-0.2 + 1.4 * progress);
   ctx.save();
   ctx.globalCompositeOperation = 'screen';
@@ -790,7 +790,7 @@ function drawFireSweep(ctx, W, H, progress) {
   ctx.restore();
 }
 
-/* â”€â”€ Audio tones â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Audio tones Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function playCinematicTone(frequency, duration, gainValue = 0.00018) {
   if (!window.AudioContext && !window.webkitAudioContext) return;
   try {
@@ -807,7 +807,7 @@ function playCinematicTone(frequency, duration, gainValue = 0.00018) {
   } catch (e) { /* audio not available */ }
 }
 
-/* â”€â”€ Flash word (ONE / CLICK) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Flash word (ONE / CLICK) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 async function flashWord(word, holdMs = 2000, exitMs = 200) {
   if (!cinematicFlashWord) return;
   cinematicFlashWord.textContent = word;
@@ -834,9 +834,9 @@ async function fadeOutLogoReveal() {
   setCinematicVisibility(cinematicLogoReveal, false);
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    MAIN CINEMATIC SEQUENCE
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 async function runCinematicOnboarding(task) {
   if (!cinematicOnboardingOverlay) return task();
 
@@ -866,11 +866,11 @@ async function runCinematicOnboarding(task) {
   const SEQ_START = performance.now();
   const MIN_MS = 28000;
 
-  /* â”€â”€ PHASE 1: 3D Star on pure white â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-     Stage A (0â€“3.4s):  Star ZOOMS OUT â€” starts huge (z=4, very close)
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 1: 3D Star on pure white Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+     Stage A (0Ã¢â‚¬â€œ3.4s):  Star ZOOMS OUT Ã¢â‚¬â€ starts huge (z=4, very close)
                         and pulls back to settled centre (z=0).
-     Stage B (3.4â€“7.8s): Star spins elegantly in place.
-     Stage C (7.8â€“9.6s): Star slowly zooms INTO camera (z â†’ 4.8).  */
+     Stage B (3.4Ã¢â‚¬â€œ7.8s): Star spins elegantly in place.
+     Stage C (7.8Ã¢â‚¬â€œ9.6s): Star slowly zooms INTO camera (z Ã¢â€ â€™ 4.8).  */
   const starLoopStart = performance.now();
   const starLoop = (ts) => {
     if (stopped) return;
@@ -914,10 +914,10 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    /* â”€â”€ Wait for full star sequence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ Wait for full star sequence Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     await wait(9800);
 
-    /* â”€â”€ BIG FLASH TRANSITION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ BIG FLASH TRANSITION Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     stopped = true; cancelAnimationFrame(rafId);
     disposeThreeStarScene(threeState);
     if (pState) pState.ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -929,7 +929,7 @@ async function runCinematicOnboarding(task) {
     setCinematicOverlayMode('flash-flicker-2'); await wait(25);
     setCinematicOverlayMode('flash-black');
 
-    /* â”€â”€ PHASE 2: Deep space â€” particles stream upward â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 2: Deep space Ã¢â‚¬â€ particles stream upward Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     const spaceLoopStart = performance.now();
     stopped = false;
     if (pState) {
@@ -944,36 +944,15 @@ async function runCinematicOnboarding(task) {
     rafId = requestAnimationFrame(spaceLoop);
     await wait(3600);
 
-    /* â”€â”€ PHASE 3: Teyo logo blooms in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 3: Teyo logo blooms in Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     setCinematicOverlayMode('logo-stage');
     playCinematicTone(660, 0.58, 0.00026);
     setCinematicVisibility(cinematicLogoReveal, true);
     await wait(2600);
 
-    /* â”€â”€ PHASE 4: White fire sweep across screen â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-    const FIRE_DUR = 1900;
-    const fireCanvas = document.createElement('canvas');
-    fireCanvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;';
-    mount.appendChild(fireCanvas);
-    const fdpr = Math.min(window.devicePixelRatio || 1, 2);
-    fireCanvas.width = Math.floor(window.innerWidth * fdpr);
-    fireCanvas.height = Math.floor(window.innerHeight * fdpr);
-    fireCanvas.style.width = `${window.innerWidth}px`;
-    fireCanvas.style.height = `${window.innerHeight}px`;
-    const fctx = fireCanvas.getContext('2d');
-    fctx.setTransform(fdpr, 0, 0, fdpr, 0, 0);
-    const fireLoopStart = performance.now();
-    const fireLoop = (ts) => {
-      const p = Math.min(1, (ts - fireLoopStart) / FIRE_DUR);
-      fctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      if (p < 1) { drawFireSweep(fctx, window.innerWidth, window.innerHeight, p); requestAnimationFrame(fireLoop); }
-      else { if (fireCanvas.parentNode) fireCanvas.parentNode.removeChild(fireCanvas); }
-    };
-    requestAnimationFrame(fireLoop);
-    playCinematicTone(520, 1.0, 0.00024);
-    await wait(FIRE_DUR);
+    /* PHASE 4: fire sweep removed */
 
-    /* â”€â”€ PHASE 5: Fade logo out then thank-you spark trace â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 5: Fade logo out then thank-you spark trace Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     await fadeOutLogoReveal();
     setCinematicVisibility(cinematicThankYou, true);
     if (cinematicThankYou) cinematicThankYou.classList.add('is-spark-trace');
@@ -987,19 +966,19 @@ async function runCinematicOnboarding(task) {
     setCinematicVisibility(cinematicInstallLine, true);
     await wait(1700);
 
-    /* â”€â”€ PHASE 6: ONE â€” flash, beat pulse, dramatic zoom â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 6: ONE Ã¢â‚¬â€ flash, beat pulse, dramatic zoom Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     await flashWord('ONE', 2200, 160);
 
-    /* â”€â”€ PHASE 7: CLICK â€” flash, beat pulse, dramatic zoom â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 7: CLICK Ã¢â‚¬â€ flash, beat pulse, dramatic zoom Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     await flashWord('CLICK', 2300, 220);
 
     taskResult = await taskPromise;
 
-    /* â”€â”€ Pad to minimum duration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ Pad to minimum duration Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     const used = performance.now() - SEQ_START;
     if (used < MIN_MS) await wait(MIN_MS - used);
 
-    /* â”€â”€ Final white flash out â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+    /* Ã¢â€â‚¬Ã¢â€â‚¬ Final white flash out Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
     playCinematicTone(960, 0.45, 0.0003);
     setCinematicOverlayMode('final-flash');
     await wait(750);
@@ -1625,7 +1604,7 @@ function ensureCuteDecorLayer() {
   return layer;
 }
 
-/* â”€â”€ SVG Pet builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ SVG Pet builder Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 const petPartDefaults = {
   cat:     { ear: 'perky',  tail: 'long',   nose: 'button', leg: 'stubby' },
@@ -1712,7 +1691,7 @@ function buildPetSVG(type, c, c2, opts = {}) {
   const noses = _petNoseSVG(nose, c, c2);
   const legs  = _petLegSVG(leg, c);
 
-  // Large cartoon eyes â€” head centred at cy=40
+  // Large cartoon eyes Ã¢â‚¬â€ head centred at cy=40
   const eyesSt = `<circle class="pet-eye-l" cx="38" cy="38" r="8" fill="${wh}"/><circle class="pet-eye-r" cx="62" cy="38" r="8" fill="${wh}"/>`
                + `<circle cx="39" cy="38" r="5" fill="${dk}"/><circle cx="63" cy="38" r="5" fill="${dk}"/>`
                + `<circle cx="41" cy="36" r="2" fill="${wh}"/><circle cx="65" cy="36" r="2" fill="${wh}"/>`;
@@ -1822,10 +1801,10 @@ function buildPetSVG(type, c, c2, opts = {}) {
   + catWhiskers + dogTongue
   + (type !== 'dog' ? mouth : ''));
 }
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 
-/* â”€â”€ Pet animation system â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Pet animation system Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 const petActionSeq = {
   cat:     [{cls:'pet-action-idle',ms:3200},{cls:'pet-action-a',ms:1800},{cls:'pet-action-idle',ms:2400},{cls:'pet-action-b',ms:2200},{cls:'pet-action-idle',ms:4000},{cls:'pet-action-c',ms:900}],
   dog:     [{cls:'pet-action-idle',ms:2200},{cls:'pet-action-a',ms:1200},{cls:'pet-action-idle',ms:2800},{cls:'pet-action-b',ms:1000}],
@@ -1867,7 +1846,7 @@ function _runNextPetFrame() {
   petChar.className = petChar.className.replace(/\bpet-action-\S+/g, '').trim() + ' ' + frame.cls;
   _petTimer = setTimeout(_runNextPetFrame, frame.ms);
 }
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 
 function updateCuteDecorLayer(theme) {
   const layer = ensureCuteDecorLayer();
@@ -2165,7 +2144,7 @@ function renderResults() {
         ${thumbnailMarkup}
         <div class="result-item-copy">
           <h4>${safeProductName}</h4>
-          <p>${safeCompanyName} â€¢ ${safeDescription}</p>
+          <p>${safeCompanyName} Ã¢â‚¬Â¢ ${safeDescription}</p>
         </div>
       </div>
       <div class="result-meta">
@@ -2200,7 +2179,7 @@ function classifyStockBadge(status, fallbackStatus = '', restockDate = '') {
     : (status || fallbackStatus || 'Check availability');
   const restockLabel = formatDateLabel(restockDate);
   const label = restockLabel && (raw.includes('out') || raw.includes('low'))
-    ? `${baseLabel} â€¢ Restock ${restockLabel}`
+    ? `${baseLabel} Ã¢â‚¬Â¢ Restock ${restockLabel}`
     : baseLabel;
   return { cls, label };
 }
@@ -2604,7 +2583,7 @@ async function renderProduct(product) {
     : '<p class="form-message">No explicit size data provided for this product yet.</p>';
   const sizeStatusLine = sizeFilter === 'ALL'
     ? '<p><strong>Size filter:</strong> All sizes</p>'
-    : `<p><strong>Size filter:</strong> ${escapeHtml(sizeFilter)} â€¢ ${selectedInventory.length} matching store entries.</p>`;
+    : `<p><strong>Size filter:</strong> ${escapeHtml(sizeFilter)} Ã¢â‚¬Â¢ ${selectedInventory.length} matching store entries.</p>`;
   const safeProductName = escapeHtml(product.productName || product.name);
   const safeCompanyName = escapeHtml(product.companyName || product.company);
   const safeCategory = escapeHtml((product.category || 'general').toUpperCase());
@@ -2714,7 +2693,7 @@ function renderStores(storeEntries, stockStatus, sizeFilter = 'ALL') {
   });
 }
 
-// â”€â”€ Leaflet map â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Leaflet map Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 let _leafletMap = null;
 let _userMarker = null;
 let _storeMarkers = [];
@@ -2727,7 +2706,7 @@ function initMap() {
 
   _leafletMap = L.map('mapLeaflet', { zoomControl: true }).setView([43.65, -79.38], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: 'Â© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
+    attribution: 'Ã‚Â© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a>',
     maxZoom: 18
   }).addTo(_leafletMap);
 
@@ -2738,7 +2717,7 @@ function initMap() {
         if (_userMarker) _userMarker.remove();
         _userMarker = L.circleMarker([coords.latitude, coords.longitude], {
           radius: 10, fillColor: '#7c7cff', color: '#fff', weight: 2.5, fillOpacity: 0.9
-        }).addTo(_leafletMap).bindPopup('ðŸ“ You are here').openPopup();
+        }).addTo(_leafletMap).bindPopup('Ã°Å¸â€œÂ You are here').openPopup();
       },
       () => {}
     );
@@ -2780,7 +2759,7 @@ async function updateMapForProduct(storeEntries, stockStatus, sizeFilter = 'ALL'
     return;
   }
 
-  if (mapStatus) mapStatus.title = 'Finding stores on mapâ€¦';
+  if (mapStatus) mapStatus.title = 'Finding stores on mapÃ¢â‚¬Â¦';
 
   const coords = [];
   for (const storeEntry of real.slice(0, 25)) {
@@ -3169,7 +3148,7 @@ function renderRestockSoonDashboard(products) {
     <article class="inventory-restock-card">
       <h4>${escapeHtml(row.productName)}</h4>
       <p><strong>Company:</strong> ${escapeHtml(row.companyName)}</p>
-      <p><strong>Store:</strong> ${escapeHtml(row.storeName)} â€¢ <strong>Size:</strong> ${escapeHtml(row.size)}</p>
+      <p><strong>Store:</strong> ${escapeHtml(row.storeName)} Ã¢â‚¬Â¢ <strong>Size:</strong> ${escapeHtml(row.size)}</p>
       <p><strong>Status:</strong> ${escapeHtml(row.stockStatus || 'Check availability')}</p>
       <p><strong>Restock date:</strong> ${escapeHtml(formatDateLabel(row.restockDate) || row.restockDate)}</p>
     </article>
@@ -3355,7 +3334,7 @@ async function checkStockReminders() {
       triggeredCount += 1;
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('Teyo stock reminder', {
-          body: `${reminder.productName} (${reminder.size}) â€” ${result.reason}`
+          body: `${reminder.productName} (${reminder.size}) Ã¢â‚¬â€ ${result.reason}`
         });
       }
 
@@ -4088,7 +4067,7 @@ if (document.getElementById('mapLeaflet')) {
   }, 60000);
 }
 
-// â”€â”€ Live viewer beacon (runs on every page) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢â€â‚¬Ã¢â€â‚¬ Live viewer beacon (runs on every page) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 function initViewerBeacon() {
   if (document.getElementById('ownerViewerBadge')) return;
 
@@ -4113,7 +4092,7 @@ function initViewerBeacon() {
 
   if (!hasOwnerSession()) return;
 
-  // â€” Badge â€”
+  // Ã¢â‚¬â€ Badge Ã¢â‚¬â€
   const badge = document.createElement('div');
   badge.id = 'ownerViewerBadge';
   badge.title = 'Click to open Teyo dashboard';
@@ -4129,7 +4108,7 @@ function initViewerBeacon() {
   badge.textContent = '\u{1F441} \u2014 live';
   document.body.appendChild(badge);
 
-  // â€” Stats panel â€”
+  // Ã¢â‚¬â€ Stats panel Ã¢â‚¬â€
   const panel = document.createElement('div');
   panel.id = 'ownerStatsPanel';
   panel.style.cssText = [
@@ -4141,7 +4120,7 @@ function initViewerBeacon() {
     'box-shadow:0 4px 24px rgba(124,124,255,0.3)',
     'min-width:250px', 'display:none'
   ].join(';');
-  panel.innerHTML = '<p style="margin:0;opacity:0.5;font-size:0.72rem">Loadingâ€¦</p>';
+  panel.innerHTML = '<p style="margin:0;opacity:0.5;font-size:0.72rem">LoadingÃ¢â‚¬Â¦</p>';
   document.body.appendChild(panel);
 
   let panelOpen = false;
@@ -4149,15 +4128,15 @@ function initViewerBeacon() {
   function renderPanel(d) {
     const raise = d.recommendedPriceCents > d.currentPriceCents;
     panel.innerHTML =
-      `<div style="font-weight:800;font-size:0.9rem;margin-bottom:10px;color:#7c7cff">ðŸ“Š Teyo Dashboard</div>`
-      + `<div>ðŸ‘ Live viewers: <strong>${d.liveViewers}</strong></div>`
-      + `<div>ðŸ“ˆ Total visitors: <strong>${(d.totalVisitors || 0).toLocaleString()}</strong></div>`
+      `<div style="font-weight:800;font-size:0.9rem;margin-bottom:10px;color:#7c7cff">Ã°Å¸â€œÅ  Teyo Dashboard</div>`
+      + `<div>Ã°Å¸â€˜Â Live viewers: <strong>${d.liveViewers}</strong></div>`
+      + `<div>Ã°Å¸â€œË† Total visitors: <strong>${(d.totalVisitors || 0).toLocaleString()}</strong></div>`
       + `<hr style="border:0;border-top:1px solid rgba(124,124,255,0.25);margin:10px 0"/>`
-      + `<div>ðŸ’° Listing price: <strong>$${Math.round(d.currentPriceCents / 100)}</strong></div>`
+      + `<div>Ã°Å¸â€™Â° Listing price: <strong>$${Math.round(d.currentPriceCents / 100)}</strong></div>`
       + `<div style="font-size:0.78rem;color:#aaa;margin-top:2px">${escapeHtml(d.priceAdvice)}</div>`
       + (raise
         ? `<div style="margin-top:10px;padding:8px 10px;background:rgba(50,200,100,0.12);border:1px solid rgba(50,200,100,0.3);border-radius:10px;color:#32c864;font-size:0.78rem">`
-          + `ðŸ’¡ Suggested raise â†’ <strong>${escapeHtml(d.recommendedPrice)}</strong></div>`
+          + `Ã°Å¸â€™Â¡ Suggested raise Ã¢â€ â€™ <strong>${escapeHtml(d.recommendedPrice)}</strong></div>`
         : '');
   }
 

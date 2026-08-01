@@ -437,7 +437,7 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    /* No circular fills — only the crystal spike rays */
+    /* Only the faint crystal spike rays — nothing else */
 
     const drawCrystalRay = (angle, length, width, alpha, hueShift = 0) => {
       ctx.save();
@@ -471,37 +471,6 @@ function createThreeStarScene(mount) {
     for (let i = 0; i < 8; i++) {
       drawCrystalRay(((Math.PI * 2 * i) / 8) + Math.PI / 8, size * secondaryRayLengths[i], size * 0.022, 0.46, 24);
     }
-
-    /* Small bright center point to anchor the rays — no circle, just a tiny tight glow */
-    const pinpoint = ctx.createRadialGradient(c, c, 0, c, c, size * 0.025);
-    pinpoint.addColorStop(0, 'rgba(255,255,255,1)');
-    pinpoint.addColorStop(0.5, 'rgba(255,255,255,0.72)');
-    pinpoint.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = pinpoint;
-    ctx.fillRect(0, 0, size, size);
-
-    /* Rotation accent marker */
-    ctx.save();
-    ctx.translate(c * 0.82, c * 0.72);
-    ctx.rotate(-Math.PI / 6.8);
-    ctx.globalCompositeOperation = 'screen';
-    const accent = ctx.createLinearGradient(0, 0, size * 0.22, 0);
-    accent.addColorStop(0, 'rgba(255,255,255,0)');
-    accent.addColorStop(0.3, 'rgba(255,255,255,0.85)');
-    accent.addColorStop(0.65, 'rgba(255,255,255,0.65)');
-    accent.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = size * 0.012;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(size * 0.22, 0);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(size * 0.22, 0, size * 0.008, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.fill();
-    ctx.restore();
 
     return finalizeTexture(new THREE.CanvasTexture(canvas));
   };

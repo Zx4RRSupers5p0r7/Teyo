@@ -345,32 +345,128 @@ function createThreeStarScene(mount) {
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
 
-  /* Flat 2D star */
-  const starShape = new THREE.Shape();
-  const R = 1.0;
-  const r = 0.42;
-  const N = 5;
-  for (let i = 0; i < N * 2; i++) {
-    const radius = i % 2 === 0 ? R : r;
-    const angle = (Math.PI / N) * i - Math.PI / 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (i === 0) starShape.moveTo(x, y); else starShape.lineTo(x, y);
+  /* Flat cinematic star with layered 2D finish */
+  const makeStarShape = (outerRadius, innerRadius) => {
+    const shape = new THREE.Shape();
+    const points = [];
+    const N = 5;
+    for (let i = 0; i < N * 2; i++) {
+      const radius = i % 2 === 0 ? outerRadius : innerRadius;
+      const angle = (Math.PI / N) * i - Math.PI / 2;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      points.push(new THREE.Vector3(x, y, 0));
+      if (i === 0) shape.moveTo(x, y); else shape.lineTo(x, y);
+    }
+    shape.closePath();
+    return { shape, points };
+  };
+
+  const createGlowTexture = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    const gradient = ctx.createRadialGradient(64, 64, 4, 64, 64, 64);
+    gradient.addColorStop(0, 'rgba(255,255,255,1)');
+    gradient.addColorStop(0.22, 'rgba(255,255,255,0.72)');
+    gradient.addColorStop(0.55, 'rgba(255,255,255,0.18)');
+    gradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 128, 128);
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  };
+
+  const outerStar = makeStarShape(1.0, 0.42);
+  const innerStar = makeStarShape(0.72, 0.305);
+  const sheenStar = makeStarShape(0.9, 0.375);
+  const haloStar = makeStarShape(1.08, 0.455);
+  const shadowStar = makeStarShape(1.04, 0.44);
+
+  const shadowMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(shadowStar.shape),
+    new THREE.MeshBasicMaterial({ color: 0x8f98aa, transparent: true, opacity: 0.18 })
+  );
+  shadowMesh.position.set(0.045, -0.05, -0.02);
+
+  const haloMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(haloStar.shape),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.14,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+
+  const mainMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(outerStar.shape),
+    new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.98 })
+  );
+
+  const innerMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(innerStar.shape),
+    new THREE.MeshBasicMaterial({
+      color: 0xf7fbff,
+      transparent: true,
+      opacity: 0.58,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  innerMesh.position.z = 0.01;
+
+  const sheenMesh = new THREE.Mesh(
+    new THREE.ShapeGeometry(sheenStar.shape),
+    new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.2,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  sheenMesh.position.set(-0.035, 0.045, 0.015);
+  sheenMesh.scale.set(0.82, 0.74, 1);
+
+  const outlineGeometry = new THREE.BufferGeometry().setFromPoints(outerStar.points);
+  const outline = new THREE.LineLoop(
+    outlineGeometry,
+    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })
+  );
+  outline.position.z = 0.02;
+
+  const glowTexture = createGlowTexture();
+  const tipSprites = [];
+  for (let i = 0; i < outerStar.points.length; i += 2) {
+    const point = outerStar.points[i];
+    const sprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: glowTexture,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.24,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      })
+    );
+    sprite.position.set(point.x * 0.98, point.y * 0.98, 0.018);
+    sprite.scale.set(0.22, 0.22, 1);
+    tipSprites.push(sprite);
   }
-  starShape.closePath();
 
-  const starGeo = new THREE.ShapeGeometry(starShape);
-  starGeo.center();
-
-  const starMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.98
-  });
-
-  const starMesh = new THREE.Mesh(starGeo, starMat);
+  const starMesh = new THREE.Group();
+  starMesh.add(shadowMesh);
+  starMesh.add(haloMesh);
+  starMesh.add(mainMesh);
+  starMesh.add(innerMesh);
+  starMesh.add(sheenMesh);
+  starMesh.add(outline);
+  tipSprites.forEach((sprite) => starMesh.add(sprite));
   scene.add(starMesh);
-
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();

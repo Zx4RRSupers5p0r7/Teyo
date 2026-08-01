@@ -531,18 +531,18 @@ function renderCinematicFrame(state, timestamp) {
     state.star.visible = true;
     state.streamParticles.visible = false;
 
-    if (modeElapsed < 4.2) {
-      const t = modeElapsed / 4.2;
+    if (modeElapsed < 3.4) {
+      const t = modeElapsed / 3.4;
       state.star.scale.setScalar(2.2 - (1.22 * t));
       state.star.position.z = -18 + (10.2 * t);
-    } else if (modeElapsed < 9.6) {
+    } else if (modeElapsed < 7.8) {
       state.star.scale.setScalar(0.98);
       state.star.position.z = -7.8;
       state.star.rotation.x += delta * 0.42;
       state.star.rotation.y += delta * 0.38;
       state.star.rotation.z += delta * 0.3;
     } else {
-      const t = Math.min(1, (modeElapsed - 9.6) / 5.8);
+      const t = Math.min(1, (modeElapsed - 7.8) / 6.0);
       state.star.scale.setScalar(0.98 + (0.96 * t));
       state.star.position.z = -7.8 + (8.6 * t);
       state.star.rotation.x += delta * 0.56;
@@ -633,7 +633,7 @@ async function runCinematicOnboarding(task) {
 
   const rendererState = createCinematicRendererState();
   const sequenceStart = performance.now();
-  const minimumSequenceMs = 25000;
+  const minimumSequenceMs = 21600;
 
   cinematicOnboardingOverlay.hidden = false;
   clearCinematicOverlayModes();
@@ -644,13 +644,16 @@ async function runCinematicOnboarding(task) {
   setCinematicVisibility(cinematicInstallLine, false);
   setCinematicVisibility(cinematicFlashWord, false);
   setCinematicVisibility(cinematicFireSweep, false);
+  if (cinematicFireSweep) {
+    cinematicFireSweep.classList.remove('is-animating');
+  }
 
   if (cinematicFutureLine) {
     cinematicFutureLine.textContent = 'Cinematic ignition sequence started.';
   }
 
   setCinematicOnboardingStep({
-    title: 'Teyo Superpower Initiated' ,
+    title: 'Teyo Superpower Initiated',
     subtext: 'Locking your star into position before full launch.',
     progress: 8
   });
@@ -664,13 +667,15 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    await wait(12800);
+    // Beat 1: white star setup -> spin -> slow push in.
+    await wait(6800);
     setCinematicOnboardingStep({
-      title: 'Approaching the launch core' ,
+      title: 'Approaching the launch core',
       subtext: 'Preparing the flash transition into the live marketplace stream.',
-      progress: 38
+      progress: 34
     });
 
+    // Beat 2: hard flash/flicker into black with rising particles.
     setCinematicOverlayMode('space-rise');
     if (rendererState) {
       setRendererMode(rendererState, 'space-rise');
@@ -681,7 +686,10 @@ async function runCinematicOnboarding(task) {
     }
     setCinematicVisibility(cinematicInstallLine, true);
 
-    await wait(3600);
+    // Hold space rise long enough to read and feel cinematic.
+    await wait(4300);
+
+    // Beat 3: logo fade in + white fire sweep.
     setCinematicOverlayMode('logo-stage');
     if (rendererState) {
       setRendererMode(rendererState, 'logo-stage');
@@ -695,14 +703,16 @@ async function runCinematicOnboarding(task) {
     }
 
     setCinematicOnboardingStep({
-      title: 'Teyo marketplace signature online' ,
+      title: 'Teyo marketplace signature online',
       subtext: 'Syncing your products so shoppers can discover them instantly.',
-      progress: 72
+      progress: 70
     });
 
-    await wait(3800);
-    await flashWord('ONE', 1580, 340);
-    await flashWord('CLICK', 1620, 360);
+    await wait(3000);
+
+    // Beat 4: ONE then CLICK, each slow-zoom flash.
+    await flashWord('ONE', 1500, 280);
+    await flashWord('CLICK', 1520, 320);
 
     taskResult = await taskPromise;
 
@@ -712,8 +722,9 @@ async function runCinematicOnboarding(task) {
       progress: 100
     });
 
-    await wait(1900);
+    await wait(1000);
 
+    // Beat 5: final flash and transition out.
     setCinematicOverlayMode('final-flash');
     if (rendererState) {
       setRendererMode(rendererState, 'final-flash');

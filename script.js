@@ -686,6 +686,9 @@ async function runCinematicOnboarding(task) {
     setCinematicVisibility(cinematicLogoReveal, true);
     setCinematicVisibility(cinematicThankYou, true);
     setCinematicVisibility(cinematicFireSweep, true);
+    if (cinematicFireSweep) {
+      cinematicFireSweep.classList.add('is-animating');
+    }
 
     setCinematicOnboardingStep({
       title: 'Teyo marketplace signature online',
@@ -710,6 +713,10 @@ async function runCinematicOnboarding(task) {
     setCinematicOverlayMode('final-flash');
     if (rendererState) {
       setRendererMode(rendererState, 'final-flash');
+    }
+    setCinematicVisibility(cinematicFireSweep, false);
+    if (cinematicFireSweep) {
+      cinematicFireSweep.classList.remove('is-animating');
     }
 
     await wait(520);

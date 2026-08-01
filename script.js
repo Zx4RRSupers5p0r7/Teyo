@@ -317,198 +317,155 @@ function setCinematicVisibility(element, visible) {
   element.setAttribute('aria-hidden', visible ? 'false' : 'true');
 }
 
-function createCinematicStarGeometry(THREE) {
-  const shape = new THREE.Shape();
-  const outerRadius = 1.8;
-  const innerRadius = 0.78;
-  for (let index = 0; index < 10; index += 1) {
-    const radius = index % 2 === 0 ? outerRadius : innerRadius;
-    const angle = (Math.PI / 5) * index - Math.PI / 2;
-    const x = Math.cos(angle) * radius;
-    const y = Math.sin(angle) * radius;
-    if (index === 0) {
-      shape.moveTo(x, y);
-    } else {
-      shape.lineTo(x, y);
-    }
-  }
-  shape.closePath();
-  const geometry = new THREE.ShapeGeometry(shape);
-  geometry.center();
-  return geometry;
-}
-
-function createCinematicParticleSystem(THREE, count, spread, size, opacity, color = 0xffffff) {
-  const geometry = new THREE.BufferGeometry();
-  const positions = new Float32Array(count * 3);
-  const velocity = new Float32Array(count);
-
-  for (let index = 0; index < count; index += 1) {
-    positions[index * 3] = (Math.random() - 0.5) * spread.x;
-    positions[index * 3 + 1] = (Math.random() - 0.5) * spread.y;
-    positions[index * 3 + 2] = (Math.random() - 0.5) * spread.z;
-    velocity[index] = 0.18 + Math.random() * 0.75;
-  }
-
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-  const material = new THREE.PointsMaterial({
-    color,
-    size,
-    transparent: true,
-    opacity,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false
-  });
-
-  const points = new THREE.Points(geometry, material);
-  points.userData.velocity = velocity;
-  return points;
+function easeOutCubic(value) {
+  const safe = Math.max(0, Math.min(1, value));
+  return 1 - Math.pow(1 - safe, 3);
 }
 
 function createCinematicRendererState() {
-  if (!cinematicThreeMount || !window.THREE) {
+  if (!cinematicThreeMount) {
     return null;
   }
 
-  const THREE = window.THREE;
   cinematicThreeMount.innerHTML = '';
+  const canvas = document.createElement('canvas');
+  canvas.className = 'cinematic-canvas';
+  cinematicThreeMount.appendChild(canvas);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.48;
-  cinematicThreeMount.appendChild(renderer.domElement);
+  const context = canvas.getContext('2d');
+  if (!context) {
+    return null;
+  }
 
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf3f3f3);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const resizeCanvas = () => {
+    canvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+    canvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  resizeCanvas();
 
-  const camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 300);
-  camera.position.set(0, 0, 11.25);
+  const particles = Array.from({ length: 1200 }, () => ({
+    x: Math.random() * window.innerWidth,
+    y: Math.random() * window.innerHeight,
+    size: Math.random() * 2.6 + 0.35,
+    alpha: Math.random() * 0.45 + 0.12,
+    drift: Math.random() * 0.4 + 0.2,
+    speed: Math.random() * 0.95 + 0.35,
+    wobble: Math.random() * 2 * Math.PI,
+    phase: Math.random() * Math.PI * 2
+  }));
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
-  scene.add(ambientLight);
-
-  const keyLight = new THREE.PointLight(0xffffff, 2.6, 100);
-  keyLight.position.set(0, 0.8, 7.4);
-  scene.add(keyLight);
-
-  const rimLight = new THREE.PointLight(0xffffff, 1.35, 130);
-  rimLight.position.set(0, -2.8, -14);
-  scene.add(rimLight);
-
-  const star = new THREE.Mesh(
-    createCinematicStarGeometry(THREE),
-    new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0xffffff,
-      emissiveIntensity: 1.2,
-      metalness: 0.06,
-      roughness: 0.08,
-      transparent: true,
-      opacity: 0.98,
-      side: THREE.DoubleSide
-    })
-  );
-  star.position.z = -14;
-  star.scale.setScalar(1.8);
-  scene.add(star);
-
-  const starOutline = new THREE.Mesh(
-    createCinematicStarGeometry(THREE),
-    new THREE.MeshBasicMaterial({
-      color: 0x222222,
-      transparent: true,
-      opacity: 0.2,
-      side: THREE.DoubleSide
-    })
-  );
-  starOutline.scale.setScalar(1.07);
-  starOutline.position.z = -0.05;
-  star.add(starOutline);
-
-  const driftParticles = createCinematicParticleSystem(THREE, 7600, { x: 170, y: 130, z: 130 }, 0.08, 0.28, 0xffffff);
-  scene.add(driftParticles);
-
-  const streamParticles = createCinematicParticleSystem(THREE, 3000, { x: 110, y: 260, z: 100 }, 0.06, 0.86, 0xffffff);
-  streamParticles.visible = false;
-  scene.add(streamParticles);
-
-  const state = {
-    THREE,
-    renderer,
-    scene,
-    camera,
-    star,
-    starOutline,
-    driftParticles,
-    streamParticles,
-    mode: 'star-stage',
-    modeStartedAt: performance.now(),
-    rafId: null,
+  return {
+    canvas,
+    context,
+    particles,
+    width: window.innerWidth,
+    height: window.innerHeight,
+    dpr,
+    phase: 'star',
+    phaseStartedAt: performance.now(),
     startedAt: performance.now(),
+    rafId: null,
     stopped: false,
-    resizeHandler: null,
-    baseFov: 48
+    resizeHandler: () => {
+      resizeCanvas();
+    }
   };
-
-  state.resizeHandler = () => {
-    state.camera.aspect = window.innerWidth / Math.max(window.innerHeight, 1);
-    state.camera.updateProjectionMatrix();
-    state.renderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
-  window.addEventListener('resize', state.resizeHandler);
-  return state;
 }
 
-function setRendererMode(state, mode) {
-  if (!state || state.mode === mode) {
+function setRendererPhase(state, phase) {
+  if (!state) {
     return;
   }
-  state.mode = mode;
-  state.modeStartedAt = performance.now();
-
-  if (mode === 'star-stage') {
-    state.scene.background = new state.THREE.Color(0xf3f3f3);
-    state.scene.fog = null;
-    state.driftParticles.material.opacity = 0.24;
-    state.streamParticles.visible = false;
-    state.star.visible = true;
-    state.star.material.opacity = 0.98;
-    state.star.scale.setScalar(1.8);
-    state.star.position.z = -14;
-  }
-
-  if (mode === 'space-rise' || mode === 'logo-stage' || mode === 'final-flash') {
-    state.scene.background = new state.THREE.Color(0x060608);
-    state.scene.fog = new state.THREE.FogExp2(0x060608, 0.02);
-    state.driftParticles.material.opacity = 0.12;
-    state.streamParticles.visible = true;
-  }
+  state.phase = phase;
+  state.phaseStartedAt = performance.now();
 }
 
-function updateParticleField(points, deltaSeconds, direction, wrapLimit, driftStrength = 0.004) {
-  const positions = points.geometry.attributes.position.array;
-  const velocity = points.userData.velocity;
-
-  for (let index = 0; index < velocity.length; index += 1) {
-    positions[index * 3] += Math.sin(index * 0.18 + deltaSeconds) * driftStrength;
-    positions[index * 3 + 1] += direction * velocity[index] * deltaSeconds * 6.5;
-    positions[index * 3 + 2] += Math.cos(index * 0.13 + deltaSeconds) * driftStrength;
-
-    if (direction > 0 && positions[index * 3 + 1] > wrapLimit) {
-      positions[index * 3 + 1] = -wrapLimit;
-    }
-
-    if (direction < 0 && positions[index * 3 + 1] < -wrapLimit) {
-      positions[index * 3 + 1] = wrapLimit;
+function drawStar(context, x, y, scale, rotation, glow) {
+  context.save();
+  context.translate(x, y);
+  context.rotate(rotation);
+  context.scale(scale, scale);
+  context.beginPath();
+  const outerRadius = 72;
+  const innerRadius = 28;
+  for (let index = 0; index < 10; index += 1) {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / 5) * index - Math.PI / 2;
+    const px = Math.cos(angle) * radius;
+    const py = Math.sin(angle) * radius;
+    if (index === 0) {
+      context.moveTo(px, py);
+    } else {
+      context.lineTo(px, py);
     }
   }
+  context.closePath();
 
-  points.geometry.attributes.position.needsUpdate = true;
+  const gradient = context.createRadialGradient(0, 0, 8, 0, 0, 120);
+  gradient.addColorStop(0, `rgba(255,255,255,${0.95 + glow * 0.05})`);
+  gradient.addColorStop(0.3, `rgba(255,255,255,${0.82 + glow * 0.03})`);
+  gradient.addColorStop(1, 'rgba(255,255,255,0)');
+
+  context.fillStyle = gradient;
+  context.fill();
+
+  context.beginPath();
+  for (let index = 0; index < 10; index += 1) {
+    const radius = index % 2 === 0 ? outerRadius : innerRadius;
+    const angle = (Math.PI / 5) * index - Math.PI / 2;
+    const px = Math.cos(angle) * radius;
+    const py = Math.sin(angle) * radius;
+    if (index === 0) {
+      context.moveTo(px, py);
+    } else {
+      context.lineTo(px, py);
+    }
+  }
+  context.closePath();
+  context.strokeStyle = 'rgba(255,255,255,0.96)';
+  context.lineWidth = 4;
+  context.stroke();
+  context.restore();
+}
+
+function drawParticleField(context, width, height, particles, phase, phaseElapsed, phaseTotal, intensity = 1) {
+  context.save();
+  const drift = phase === 'star' ? 0.7 : 1.25;
+
+  particles.forEach((particle, index) => {
+    const t = phaseElapsed + (index * 0.013);
+    const x = particle.x + Math.sin(t * 0.45 + particle.phase) * 10 * intensity;
+    let y = particle.y;
+
+    if (phase === 'space' || phase === 'logo' || phase === 'final') {
+      y -= (particle.speed + particle.drift * 0.5) * (phaseElapsed * 55 + index * 0.2) * intensity;
+      const wrap = y + 140;
+      if (wrap < -140) {
+        y = height + 140;
+        particle.y = y;
+      }
+    } else {
+      y += Math.cos(t * 0.6 + particle.phase) * 0.6;
+      x += Math.sin(t * 0.35 + particle.phase) * 0.4;
+      if (y > height + 30) {
+        y = -30;
+      }
+    }
+
+    particle.x = x;
+    particle.y = y;
+
+    const alpha = phase === 'star' ? particle.alpha * (0.5 + Math.sin(t * 0.5 + particle.phase) * 0.2) : particle.alpha * (0.7 + Math.sin(t * 0.4 + particle.phase) * 0.1);
+    context.beginPath();
+    context.arc(x, y, particle.size, 0, Math.PI * 2);
+    context.fillStyle = `rgba(255,255,255,${alpha * intensity})`;
+    context.fill();
+  });
+  context.restore();
 }
 
 function renderCinematicFrame(state, timestamp) {
@@ -516,70 +473,73 @@ function renderCinematicFrame(state, timestamp) {
     return;
   }
 
-  const elapsed = (timestamp - state.startedAt) / 1000;
-  const modeElapsed = (timestamp - state.modeStartedAt) / 1000;
-  const delta = Math.min(0.04, Math.max(0.001, elapsed - (state.lastElapsed || 0)));
-  state.lastElapsed = elapsed;
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  const phaseElapsed = (timestamp - state.phaseStartedAt) / 1000;
+  const overallElapsed = (timestamp - state.startedAt) / 1000;
 
-  state.camera.position.x = Math.sin(elapsed * 0.16) * 0.1;
-  state.camera.position.y = Math.cos(elapsed * 0.21) * 0.06;
-  const fovWave = state.mode === 'star-stage' ? 0.5 : 0.24;
-  state.camera.fov = (state.baseFov || 48) + Math.sin(elapsed * 0.24) * fovWave;
-  state.camera.updateProjectionMatrix();
+  if (state.canvas.width !== Math.floor(width * state.dpr) || state.canvas.height !== Math.floor(height * state.dpr)) {
+    const resize = state.resizeHandler;
+    if (resize) {
+      resize();
+    }
+  }
 
-  if (state.mode === 'star-stage') {
-    state.star.visible = true;
-    state.streamParticles.visible = false;
+  const ctx = state.context;
+  ctx.clearRect(0, 0, width, height);
 
-    if (modeElapsed < 3.4) {
-      const t = modeElapsed / 3.4;
-      state.star.scale.setScalar(2.2 - (1.22 * t));
-      state.star.position.z = -18 + (10.2 * t);
-    } else if (modeElapsed < 7.8) {
-      state.star.scale.setScalar(0.98);
-      state.star.position.z = -7.8;
-      state.star.rotation.x += delta * 0.42;
-      state.star.rotation.y += delta * 0.38;
-      state.star.rotation.z += delta * 0.3;
-    } else {
-      const t = Math.min(1, (modeElapsed - 7.8) / 6.0);
-      state.star.scale.setScalar(0.98 + (0.96 * t));
-      state.star.position.z = -7.8 + (8.6 * t);
-      state.star.rotation.x += delta * 0.56;
-      state.star.rotation.y += delta * 0.51;
-      state.star.rotation.z += delta * 0.4;
+  if (state.phase === 'star') {
+    const bg = ctx.createRadialGradient(width * 0.5, height * 0.4, 40, width * 0.5, height * 0.4, width * 0.8);
+    bg.addColorStop(0, '#ffffff');
+    bg.addColorStop(0.4, '#f4f4f4');
+    bg.addColorStop(1, '#e8e8e8');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    const starProgress = Math.min(1, phaseElapsed / 5.2);
+    const starScale = 0.16 + easeOutCubic(starProgress) * 1.04;
+    const starRotation = overallElapsed * 0.35;
+    const starGlow = 0.2 + (1 - Math.abs(0.5 - starProgress)) * 0.5;
+    drawStar(ctx, width * 0.5, height * 0.5, starScale, starRotation, starGlow);
+
+    if (phaseElapsed > 4.6) {
+      const zoomProgress = Math.min(1, (phaseElapsed - 4.6) / 2.3);
+      const zoomScale = 1.04 + easeOutCubic(zoomProgress) * 0.56;
+      drawStar(ctx, width * 0.5, height * 0.5, zoomScale, starRotation + 0.15, 0.7 + zoomProgress * 0.2);
     }
 
-    updateParticleField(state.driftParticles, delta, 1, 65, 0.0024);
+    drawParticleField(ctx, width, height, state.particles, 'star', phaseElapsed, 5.6, 0.9);
+  } else if (state.phase === 'space') {
+    ctx.fillStyle = '#020203';
+    ctx.fillRect(0, 0, width, height);
+
+    const halo = ctx.createRadialGradient(width * 0.5, height * 0.4, 20, width * 0.5, height * 0.4, width * 0.6);
+    halo.addColorStop(0, 'rgba(255,255,255,0.1)');
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, width, height);
+
+    drawParticleField(ctx, width, height, state.particles, 'space', phaseElapsed, 5.5, 1.05);
+  } else if (state.phase === 'logo') {
+    ctx.fillStyle = '#010102';
+    ctx.fillRect(0, 0, width, height);
+    drawParticleField(ctx, width, height, state.particles, 'logo', phaseElapsed, 4.4, 1.1);
+
+    const sweepProgress = Math.min(1, phaseElapsed / 1.4);
+    const sweepX = -width * 0.15 + width * 1.3 * easeOutCubic(sweepProgress);
+    const sweepGradient = ctx.createLinearGradient(sweepX - width * 0.5, 0, sweepX + width * 0.5, 0);
+    sweepGradient.addColorStop(0, 'rgba(255,255,255,0)');
+    sweepGradient.addColorStop(0.45, 'rgba(255,255,255,0.95)');
+    sweepGradient.addColorStop(0.58, 'rgba(255,255,255,1)');
+    sweepGradient.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = sweepGradient;
+    ctx.fillRect(0, height * 0.4, width, height * 0.16);
+  } else if (state.phase === 'flash') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    drawParticleField(ctx, width, height, state.particles, 'final', phaseElapsed, 3.4, 1.2);
   }
 
-  if (state.mode === 'space-rise') {
-    state.star.material.opacity = Math.max(0, state.star.material.opacity - delta * 1.25);
-    state.star.rotation.x += delta * 0.9;
-    state.star.rotation.y += delta * 0.8;
-    state.star.position.z += delta * 1.5;
-    state.streamParticles.visible = true;
-    updateParticleField(state.streamParticles, delta, 1, 130, 0.0038);
-    updateParticleField(state.driftParticles, delta * 0.45, 1, 65, 0.002);
-  }
-
-  if (state.mode === 'logo-stage') {
-    state.star.visible = false;
-    state.streamParticles.visible = true;
-    state.camera.position.z = 11.25 - Math.min(2.1, modeElapsed * 0.17);
-    updateParticleField(state.streamParticles, delta * 0.95, 1, 130, 0.0038);
-  }
-
-  if (state.mode === 'final-flash') {
-    const shakeAmount = 0.18;
-    state.camera.position.x += (Math.random() - 0.5) * shakeAmount;
-    state.camera.position.y += (Math.random() - 0.5) * shakeAmount;
-    state.streamParticles.visible = true;
-    state.star.visible = false;
-    updateParticleField(state.streamParticles, delta * 1.4, 1, 130, 0.0042);
-  }
-
-  state.renderer.render(state.scene, state.camera);
   state.rafId = window.requestAnimationFrame((nextTimestamp) => renderCinematicFrame(state, nextTimestamp));
 }
 
@@ -596,23 +556,29 @@ function stopCinematicRenderer(state) {
     window.removeEventListener('resize', state.resizeHandler);
   }
 
-  state.renderer.dispose();
-  state.scene.traverse((node) => {
-    if (node.geometry) {
-      node.geometry.dispose();
-    }
-    if (node.material) {
-      if (Array.isArray(node.material)) {
-        node.material.forEach((material) => material.dispose());
-      } else {
-        node.material.dispose();
-      }
-    }
-  });
-
   if (cinematicThreeMount) {
     cinematicThreeMount.innerHTML = '';
   }
+}
+
+function playCinematicTone(frequency, duration, gainValue = 0.00018) {
+  if (!window.AudioContext && !window.webkitAudioContext) {
+    return;
+  }
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  const audioContext = new AudioContextClass();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * 1.08, audioContext.currentTime + duration);
+  gainNode.gain.setValueAtTime(gainValue, audioContext.currentTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + duration);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + duration);
 }
 
 async function flashWord(word, holdMs = 1300, exitMs = 280) {
@@ -621,6 +587,7 @@ async function flashWord(word, holdMs = 1300, exitMs = 280) {
   }
   cinematicFlashWord.textContent = word;
   setCinematicVisibility(cinematicFlashWord, true);
+  playCinematicTone(word === 'ONE' ? 720 : 860, 0.24, 0.0002);
   await wait(holdMs);
   setCinematicVisibility(cinematicFlashWord, false);
   await wait(exitMs);
@@ -633,7 +600,7 @@ async function runCinematicOnboarding(task) {
 
   const rendererState = createCinematicRendererState();
   const sequenceStart = performance.now();
-  const minimumSequenceMs = 21600;
+  const minimumSequenceMs = 25000;
 
   cinematicOnboardingOverlay.hidden = false;
   clearCinematicOverlayModes();
@@ -649,17 +616,17 @@ async function runCinematicOnboarding(task) {
   }
 
   if (cinematicFutureLine) {
-    cinematicFutureLine.textContent = 'Cinematic ignition sequence started.';
+    cinematicFutureLine.textContent = 'The future of retail begins now.';
   }
 
   setCinematicOnboardingStep({
-    title: 'Teyo Superpower Initiated',
-    subtext: 'Locking your star into position before full launch.',
+    title: 'Teyo Superpower activated',
+    subtext: 'The star is locking into position for a cinematic launch.',
     progress: 8
   });
 
   if (rendererState) {
-    setRendererMode(rendererState, 'star-stage');
+    setRendererPhase(rendererState, 'star');
     renderCinematicFrame(rendererState, performance.now());
   }
 
@@ -667,34 +634,37 @@ async function runCinematicOnboarding(task) {
   try {
     const taskPromise = Promise.resolve().then(task);
 
-    // Beat 1: white star setup -> spin -> slow push in.
-    await wait(6800);
+    await wait(5000);
     setCinematicOnboardingStep({
       title: 'Approaching the launch core',
-      subtext: 'Preparing the flash transition into the live marketplace stream.',
-      progress: 34
+      subtext: 'The intro is pushing forward, slow and deliberate.',
+      progress: 24
     });
 
-    // Beat 2: hard flash/flicker into black with rising particles.
+    await wait(2500);
     setCinematicOverlayMode('space-rise');
     if (rendererState) {
-      setRendererMode(rendererState, 'space-rise');
+      setRendererPhase(rendererState, 'space');
     }
-
+    playCinematicTone(480, 0.42, 0.00024);
     if (cinematicFutureLine) {
       cinematicFutureLine.textContent = 'Your whole store is about to be installed with';
     }
     setCinematicVisibility(cinematicInstallLine, true);
 
-    // Hold space rise long enough to read and feel cinematic.
-    await wait(4300);
+    setCinematicOnboardingStep({
+      title: 'The black-space reveal',
+      subtext: 'Particles stream upward as the storefront wakes up.',
+      progress: 46
+    });
 
-    // Beat 3: logo fade in + white fire sweep.
+    await wait(4800);
+
     setCinematicOverlayMode('logo-stage');
     if (rendererState) {
-      setRendererMode(rendererState, 'logo-stage');
+      setRendererPhase(rendererState, 'logo');
     }
-
+    playCinematicTone(620, 0.5, 0.00028);
     setCinematicVisibility(cinematicLogoReveal, true);
     setCinematicVisibility(cinematicThankYou, true);
     setCinematicVisibility(cinematicFireSweep, true);
@@ -704,15 +674,14 @@ async function runCinematicOnboarding(task) {
 
     setCinematicOnboardingStep({
       title: 'Teyo marketplace signature online',
-      subtext: 'Syncing your products so shoppers can discover them instantly.',
+      subtext: 'Your products are being revealed in a premium launch sequence.',
       progress: 70
     });
 
-    await wait(3000);
+    await wait(4300);
 
-    // Beat 4: ONE then CLICK, each slow-zoom flash.
-    await flashWord('ONE', 1500, 280);
-    await flashWord('CLICK', 1520, 320);
+    await flashWord('ONE', 1400, 300);
+    await flashWord('CLICK', 1500, 320);
 
     taskResult = await taskPromise;
 
@@ -722,19 +691,19 @@ async function runCinematicOnboarding(task) {
       progress: 100
     });
 
-    await wait(1000);
+    await wait(1300);
 
-    // Beat 5: final flash and transition out.
     setCinematicOverlayMode('final-flash');
     if (rendererState) {
-      setRendererMode(rendererState, 'final-flash');
+      setRendererPhase(rendererState, 'flash');
     }
+    playCinematicTone(860, 0.34, 0.0003);
     setCinematicVisibility(cinematicFireSweep, false);
     if (cinematicFireSweep) {
       cinematicFireSweep.classList.remove('is-animating');
     }
 
-    await wait(700);
+    await wait(900);
 
     const elapsedMs = performance.now() - sequenceStart;
     if (elapsedMs < minimumSequenceMs) {

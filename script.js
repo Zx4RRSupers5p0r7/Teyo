@@ -437,37 +437,45 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    /* 8 spikes — 4 long, 4 short, alternating. Thick at base, tapers to a point. */
-
-    const drawSpike = (angle, length, baseWidth, alpha) => {
+    const drawSoftRay = (angle, length, width, alpha) => {
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate(angle);
-      const g = ctx.createLinearGradient(0, 0, length, 0);
-      g.addColorStop(0,    `rgba(190,190,190,${alpha})`);
-      g.addColorStop(0.18, `rgba(185,185,185,${alpha * 0.85})`);
-      g.addColorStop(0.55, `rgba(170,170,170,${alpha * 0.45})`);
-      g.addColorStop(1,    'rgba(160,160,160,0)');
-      ctx.fillStyle = g;
-      /* Diamond/blade shape: wide at base, tapers to sharp point */
+      const ray = ctx.createLinearGradient(-size * 0.02, 0, length, 0);
+      ray.addColorStop(0, `rgba(255,255,255,${alpha})`);
+      ray.addColorStop(0.14, `rgba(255,255,255,${alpha * 0.92})`);
+      ray.addColorStop(0.52, `rgba(255,255,255,${alpha * 0.28})`);
+      ray.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = ray;
       ctx.beginPath();
-      ctx.moveTo(0,  baseWidth);   /* base top */
-      ctx.lineTo(length, 0);       /* tip */
-      ctx.lineTo(0, -baseWidth);   /* base bottom */
-      ctx.lineTo(-baseWidth * 0.3, 0); /* back notch */
+      ctx.moveTo(-size * 0.02, 0);
+      ctx.quadraticCurveTo(length * 0.08, -width * 0.92, length * 0.52, -width * 0.34);
+      ctx.quadraticCurveTo(length * 0.9, -width * 0.04, length, 0);
+      ctx.quadraticCurveTo(length * 0.9, width * 0.04, length * 0.52, width * 0.34);
+      ctx.quadraticCurveTo(length * 0.08, width * 0.92, -size * 0.02, 0);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
     };
 
-    for (let i = 0; i < 8; i++) {
-      const angle = (Math.PI * 2 * i) / 8;
-      const isLong = i % 2 === 0;
-      const length    = size * (isLong ? 0.46 : 0.24);
-      const baseWidth = size * (isLong ? 0.072 : 0.048);
-      const alpha     = isLong ? 0.62 : 0.48;
-      drawSpike(angle, length, baseWidth, alpha);
-    }
+    drawSoftRay(0, size * 0.43, size * 0.06, 0.84);
+    drawSoftRay(Math.PI, size * 0.43, size * 0.06, 0.84);
+    drawSoftRay(Math.PI * 0.5, size * 0.54, size * 0.082, 0.94);
+    drawSoftRay(Math.PI * 1.5, size * 0.54, size * 0.082, 0.94);
+
+    const centerGlow = ctx.createRadialGradient(c, c, 0, c, c, size * 0.16);
+    centerGlow.addColorStop(0, 'rgba(255,255,255,1)');
+    centerGlow.addColorStop(0.18, 'rgba(255,255,255,0.98)');
+    centerGlow.addColorStop(0.42, 'rgba(255,255,255,0.56)');
+    centerGlow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = centerGlow;
+    ctx.fillRect(0, 0, size, size);
+
+    const bloom = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.3);
+    bloom.addColorStop(0, 'rgba(255,255,255,0.2)');
+    bloom.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = bloom;
+    ctx.fillRect(0, 0, size, size);
 
     return finalizeTexture(new THREE.CanvasTexture(canvas));
   };

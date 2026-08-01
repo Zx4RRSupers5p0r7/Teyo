@@ -997,6 +997,10 @@ article { padding: 24px; }
 .cinematic-logo-name {
   position: relative;
   overflow: visible;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  height: clamp(6.8rem, 14vw, 10.5rem);
   font-size: clamp(2.8rem, 5.8vmin, 4.4rem);
   font-weight: 900;
   letter-spacing: 0.06em;

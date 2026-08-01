@@ -915,7 +915,17 @@ article { padding: 24px; }
 #cinematicOnboardingOverlay.cinematic-mode-final-flash .cinematic-flash-layer { opacity: 1; }
 
 /* Stage backgrounds */
-#cinematicOnboardingOverlay.cinematic-mode-star-stage  { background: #fff; }
+#cinematicOnboardingOverlay.cinematic-mode-star-stage  {
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.82) 20%, rgba(226,226,233,0.62) 38%, transparent 54%),
+    radial-gradient(circle at 82% 18%, rgba(248,248,250,0.96) 0%, rgba(227,227,233,0.7) 24%, rgba(203,203,211,0.46) 42%, transparent 60%),
+    radial-gradient(circle at 24% 76%, rgba(236,236,241,0.9) 0%, rgba(216,216,223,0.58) 26%, rgba(255,255,255,0.18) 50%, transparent 68%),
+    radial-gradient(circle at 74% 72%, rgba(250,250,252,0.92) 0%, rgba(224,224,230,0.62) 22%, rgba(193,193,202,0.36) 40%, transparent 62%),
+    linear-gradient(135deg, #f9f9fb 0%, #ececf1 26%, #d7d7df 46%, #f8f8fa 66%, #e2e2e9 84%, #fcfcfd 100%);
+  background-size: 130% 130%, 145% 145%, 135% 135%, 150% 150%, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
+  animation: cStarMarbleDrift 12s ease-in-out infinite alternate;
+}
 #cinematicOnboardingOverlay.cinematic-mode-flash-white { background: #fff; }
 #cinematicOnboardingOverlay.cinematic-mode-flash-flicker-1 { background: #888; }
 #cinematicOnboardingOverlay.cinematic-mode-flash-flicker-2 { background: #bbb; }
@@ -1108,6 +1118,21 @@ article { padding: 24px; }
 @keyframes cWordZoom {
   0%   { transform:translate(-50%,-50%) scale(0.92); }
   100% { transform:translate(-50%,-50%) scale(1.65); }
+}
+
+@keyframes cStarMarbleDrift {
+  0% {
+    background-position: 0% 0%, 100% 0%, 0% 100%, 100% 100%, 50% 50%;
+    filter: saturate(0.98) brightness(1);
+  }
+  50% {
+    background-position: 8% 6%, 92% 8%, 6% 92%, 94% 90%, 50% 50%;
+    filter: saturate(1.02) brightness(1.01);
+  }
+  100% {
+    background-position: 14% 10%, 88% 14%, 10% 88%, 90% 84%, 50% 50%;
+    filter: saturate(1) brightness(1.02);
+  }
 }
 
 /* ── keyframes for legacy elements (keep so nothing crashes) ────── */
@@ -1760,5 +1785,4 @@ article { padding: 24px; }
   .access-tabs { flex-direction: column; }
   .tab-panel { flex-direction: column; align-items: flex-start; }
 }
-
 

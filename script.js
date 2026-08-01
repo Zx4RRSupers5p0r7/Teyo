@@ -329,18 +329,18 @@ function createThreeStarScene(mount) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setClearColor(0xffffff, 1);
+  renderer.setClearColor(0xffffff, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.5;
   mount.appendChild(renderer.domElement);
   renderer.domElement.style.cssText = 'position:absolute;inset:0;z-index:1;';
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
-  scene.fog = new THREE.FogExp2(0xffffff, 0.025);
+  scene.background = null;
+  scene.fog = new THREE.FogExp2(0xe8e8ee, 0.02);
 
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
   camera.position.set(0, 0, 5);
@@ -430,10 +430,10 @@ function createParticleCanvas(mount) {
   }));
 
   /* Subtle star-background dust */
-  const dust = Array.from({ length: 500 }, () => ({
+  const dust = Array.from({ length: 720 }, () => ({
     x: Math.random() * W, y: Math.random() * H,
-    size: Math.random() * 1.1 + 0.2, alpha: Math.random() * 0.14 + 0.02,
-    dx: (Math.random() - 0.5) * 0.13, dy: (Math.random() - 0.5) * 0.07,
+    size: Math.random() * 1.6 + 0.35, alpha: Math.random() * 0.28 + 0.08,
+    dx: (Math.random() - 0.5) * 0.2, dy: (Math.random() - 0.5) * 0.12,
     phase: Math.random() * Math.PI * 2,
   }));
 
@@ -445,17 +445,21 @@ function drawStarDust(pState, elapsed) {
   const { ctx, dust } = pState;
   const W = window.innerWidth, H = window.innerHeight;
   ctx.clearRect(0, 0, W, H);
+  ctx.save();
   dust.forEach((p) => {
-    p.x += p.dx + Math.sin(elapsed * 0.38 + p.phase) * 0.05;
-    p.y += p.dy + Math.cos(elapsed * 0.29 + p.phase) * 0.04;
+    p.x += p.dx + Math.sin(elapsed * 0.4 + p.phase) * 0.08;
+    p.y += p.dy + Math.cos(elapsed * 0.32 + p.phase) * 0.06;
     if (p.x < -5) p.x = W + 5; if (p.x > W + 5) p.x = -5;
     if (p.y < -5) p.y = H + 5; if (p.y > H + 5) p.y = -5;
-    const tw = p.alpha * (0.45 + Math.sin(elapsed * 1.4 + p.phase) * 0.45);
+    const tw = p.alpha * (0.58 + Math.sin(elapsed * 1.35 + p.phase) * 0.42);
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.5, tw)})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(40,40,60,${tw})`;
+    ctx.fillStyle = `rgba(255,255,255,${tw})`;
     ctx.fill();
   });
+  ctx.restore();
 }
 
 function drawSpaceParticles(pState, elapsed, intensity) {

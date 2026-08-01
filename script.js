@@ -437,41 +437,46 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    const drawSoftRay = (angle, length, width, alpha) => {
+    const drawNeedleRay = (angle, length, peakWidth, alpha) => {
       ctx.save();
       ctx.translate(c, c);
       ctx.rotate(angle);
-      const ray = ctx.createLinearGradient(-size * 0.02, 0, length, 0);
+      const ray = ctx.createLinearGradient(0, 0, length, 0);
       ray.addColorStop(0, `rgba(255,255,255,${alpha})`);
-      ray.addColorStop(0.14, `rgba(255,255,255,${alpha * 0.92})`);
-      ray.addColorStop(0.52, `rgba(255,255,255,${alpha * 0.28})`);
+      ray.addColorStop(0.05, `rgba(255,255,255,${alpha * 0.92})`);
+      ray.addColorStop(0.18, `rgba(255,255,255,${alpha * 0.42})`);
+      ray.addColorStop(0.48, `rgba(255,255,255,${alpha * 0.12})`);
       ray.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = ray;
       ctx.beginPath();
-      ctx.moveTo(-size * 0.02, 0);
-      ctx.quadraticCurveTo(length * 0.08, -width * 0.92, length * 0.52, -width * 0.34);
-      ctx.quadraticCurveTo(length * 0.9, -width * 0.04, length, 0);
-      ctx.quadraticCurveTo(length * 0.9, width * 0.04, length * 0.52, width * 0.34);
-      ctx.quadraticCurveTo(length * 0.08, width * 0.92, -size * 0.02, 0);
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(length * 0.04, -peakWidth, length * 0.18, -peakWidth * 0.14);
+      ctx.quadraticCurveTo(length * 0.7, -peakWidth * 0.012, length, 0);
+      ctx.quadraticCurveTo(length * 0.7, peakWidth * 0.012, length * 0.18, peakWidth * 0.14);
+      ctx.quadraticCurveTo(length * 0.04, peakWidth, 0, 0);
       ctx.closePath();
       ctx.fill();
       ctx.restore();
     };
 
-    drawSoftRay(0, size * 0.43, size * 0.06, 0.84);
-    drawSoftRay(Math.PI, size * 0.43, size * 0.06, 0.84);
-    drawSoftRay(Math.PI * 0.5, size * 0.54, size * 0.082, 0.94);
-    drawSoftRay(Math.PI * 1.5, size * 0.54, size * 0.082, 0.94);
+    drawNeedleRay(0, size * 0.35, size * 0.0095, 0.96);
+    drawNeedleRay(Math.PI, size * 0.35, size * 0.0095, 0.96);
+    drawNeedleRay(Math.PI * 0.5, size * 0.44, size * 0.0105, 0.98);
+    drawNeedleRay(Math.PI * 1.5, size * 0.44, size * 0.0105, 0.98);
+    drawNeedleRay(Math.PI * 0.25, size * 0.235, size * 0.0075, 0.72);
+    drawNeedleRay(Math.PI * 0.75, size * 0.235, size * 0.0075, 0.72);
+    drawNeedleRay(Math.PI * 1.25, size * 0.235, size * 0.0075, 0.72);
+    drawNeedleRay(Math.PI * 1.75, size * 0.235, size * 0.0075, 0.72);
 
-    const centerGlow = ctx.createRadialGradient(c, c, 0, c, c, size * 0.16);
-    centerGlow.addColorStop(0, 'rgba(255,255,255,1)');
-    centerGlow.addColorStop(0.18, 'rgba(255,255,255,0.98)');
-    centerGlow.addColorStop(0.42, 'rgba(255,255,255,0.56)');
-    centerGlow.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = centerGlow;
+    const coreGlow = ctx.createRadialGradient(c, c, 0, c, c, size * 0.062);
+    coreGlow.addColorStop(0, 'rgba(255,255,255,1)');
+    coreGlow.addColorStop(0.16, 'rgba(255,255,255,0.96)');
+    coreGlow.addColorStop(0.42, 'rgba(255,255,255,0.32)');
+    coreGlow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = coreGlow;
     ctx.fillRect(0, 0, size, size);
 
-    const bloom = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.3);
+    const bloom = ctx.createRadialGradient(c, c, size * 0.008, c, c, size * 0.13);
     bloom.addColorStop(0, 'rgba(255,255,255,0.2)');
     bloom.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = bloom;
@@ -516,7 +521,7 @@ function createThreeStarScene(mount) {
     blending: THREE.AdditiveBlending,
     depthWrite: false
   }));
-  starSprite.scale.set(1.6, 1.6, 1);
+  starSprite.scale.set(1.22, 1.22, 1);
 
   const coreSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: coreTexture,
@@ -883,7 +888,7 @@ async function runCinematicOnboarding(task) {
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
         const pulse = 0.5 + Math.sin(el * 1.75) * 0.5;
         starFx.starSprite.material.opacity = 0.9 + flicker * 0.08;
-        const starScale = 1.55 + pulse * 0.07;
+        const starScale = 1.18 + pulse * 0.035;
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.starSprite.material.rotation = spinAngle * 0.72 + 0.12;
       }

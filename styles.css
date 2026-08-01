@@ -363,7 +363,7 @@ article {
   border-radius: 28px;
   background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
   box-shadow: var(--shadow);
-  overflow: hidden;
+  overflow: visible;
 }
 .access-tabs {
   display: flex;
@@ -569,7 +569,7 @@ article { padding: 24px; }
   height: 280px;
   border-radius: 18px;
   background: linear-gradient(135deg, #0f0f0f 0%, #242424 100%);
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid var(--line);
 }
 .map-embed {
@@ -578,7 +578,7 @@ article { padding: 24px; }
   border: 0;
   border-radius: 16px;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
 }
 #mapLeaflet { z-index: 0; background: #1a1a1a; filter: grayscale(1) contrast(1.1) brightness(0.85); }
 .leaflet-control-attribution { font-size: 10px !important; }
@@ -828,7 +828,7 @@ article { padding: 24px; }
   border: 1px dashed rgba(255,255,255,0.18);
   border-radius: 18px;
   padding: 16px;
-  overflow: hidden;
+  overflow: visible;
   background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
 }
 .plushie-preview {
@@ -875,7 +875,7 @@ article { padding: 24px; }
   inset: 0;
   z-index: 99999;
   background: #fff;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
 }
 
@@ -968,7 +968,7 @@ article { padding: 24px; }
 
 .cinematic-logo-mark {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   width:  clamp(80px, 13vmin, 152px);
   height: clamp(80px, 13vmin, 152px);
   display: inline-flex;
@@ -989,28 +989,31 @@ article { padding: 24px; }
 .cinematic-logo-mark::after {
   content: '';
   position: absolute;
-  top: -22%;
-  left: -55%;
-  width: 18%;
-  height: 145%;
-  transform: rotate(28deg);
-  background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.08) 26%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0.18) 72%, transparent 100%);
-  box-shadow: 0 0 12px rgba(255,255,255,0.55), 0 0 26px rgba(255,255,255,0.28);
-  animation: logoSpark 3.6s cubic-bezier(0.16, 0, 0.1, 1) forwards;
-  animation-delay: 0s;
+  left: -10px;
+  top: 72%;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.74) 35%, rgba(255,255,255,0) 78%);
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.9),
+    0 0 18px rgba(255,255,255,0.45),
+    14px -6px 0 -2px rgba(255,255,255,0.72),
+    22px 2px 0 -3px rgba(255,255,255,0.52),
+    -10px 7px 0 -3px rgba(255,255,255,0.36);
   pointer-events: none;
+  animation: logoSpark 3.6s cubic-bezier(0.16, 0, 0.1, 1) forwards;
 }
 @keyframes logoSpark {
-  0%   { left: -55%; opacity: 0; }
-  54%  { left: -55%; opacity: 0; }
-  63%  { left: 8%; opacity: 1; }
-  74%  { left: 82%; opacity: 0.7; }
-  100% { left: 82%; opacity: 0; }
+  0%   { opacity: 0; transform: translate(-12px, 12px) scale(0.25); }
+  56%  { opacity: 0; transform: translate(-12px, 12px) scale(0.25); }
+  64%  { opacity: 1; transform: translate(12px, -6px) scale(1); }
+  76%  { opacity: 0.85; transform: translate(58px, -40px) scale(1.05); }
+  100% { opacity: 0; transform: translate(86px, -62px) scale(0.8); }
 }
-
 .cinematic-logo-name {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   color: #fff;
   font-size: clamp(3.6rem, 11vw, 9.5rem);
   letter-spacing: 0.42em;
@@ -1024,24 +1027,27 @@ article { padding: 24px; }
 .cinematic-logo-name::after {
   content: '';
   position: absolute;
-  top: -18%;
-  left: -48%;
-  width: 11%;
-  height: 145%;
-  transform: rotate(22deg);
-  background: linear-gradient(105deg, transparent 0%, rgba(255,255,255,0.04) 22%, rgba(255,255,255,0.82) 50%, rgba(255,255,255,0.14) 76%, transparent 100%);
-  box-shadow: 0 0 10px rgba(255,255,255,0.45), 0 0 20px rgba(255,255,255,0.18);
-  animation: logoSparkText 3.6s cubic-bezier(0.16, 0, 0.1, 1) forwards;
+  left: -12px;
+  top: 70%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255,255,255,0.98) 0%, rgba(255,255,255,0.68) 35%, rgba(255,255,255,0) 78%);
+  box-shadow:
+    0 0 8px rgba(255,255,255,0.82),
+    0 0 16px rgba(255,255,255,0.35),
+    10px -4px 0 -2px rgba(255,255,255,0.64),
+    18px 2px 0 -3px rgba(255,255,255,0.42);
   pointer-events: none;
+  animation: logoSparkText 3.6s cubic-bezier(0.16, 0, 0.1, 1) forwards;
 }
 @keyframes logoSparkText {
-  0%   { left: -48%; opacity: 0; }
-  58%  { left: -48%; opacity: 0; }
-  68%  { left: 12%; opacity: 1; }
-  80%  { left: 108%; opacity: 0.6; }
-  100% { left: 108%; opacity: 0; }
+  0%   { opacity: 0; transform: translate(-14px, 10px) scale(0.25); }
+  60%  { opacity: 0; transform: translate(-14px, 10px) scale(0.25); }
+  69%  { opacity: 1; transform: translate(18px, -5px) scale(1); }
+  82%  { opacity: 0.72; transform: translate(180px, -42px) scale(1.02); }
+  100% { opacity: 0; transform: translate(260px, -58px) scale(0.8); }
 }
-
 /* ── Thank you line ─────────────────────────────────────────────── */
 .cinematic-thank-you {
   position: absolute;
@@ -1299,7 +1305,7 @@ article { padding: 24px; }
   letter-spacing: 0.1em;
   white-space: nowrap;
   max-width: 100px;
-  overflow: hidden;
+  overflow: visible;
   text-overflow: ellipsis;
 }
 .pet-name-tag:empty { display: none; }

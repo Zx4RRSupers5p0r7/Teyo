@@ -916,7 +916,7 @@ article { padding: 24px; }
 
 /* Stage backgrounds */
 #cinematicOnboardingOverlay.cinematic-mode-star-stage  {
-  background: radial-gradient(circle at 50% 42%, #2a2a2a 0%, #1f1f1f 36%, #171717 64%, #121212 100%);
+  background: radial-gradient(circle at 50% 44%, #414754 0%, #2d333f 36%, #1e232d 64%, #12151c 100%);
 }
 
 #cinematicOnboardingOverlay.cinematic-mode-flash-white { background: #fff; }

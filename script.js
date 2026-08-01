@@ -353,11 +353,11 @@ function createThreeStarScene(mount) {
     const ctx = canvas.getContext('2d');
     const c = size / 2;
 
-    const bgHalo = ctx.createRadialGradient(c, c, size * 0.03, c, c, size * 0.48);
-    bgHalo.addColorStop(0, 'rgba(255,255,255,0.95)');
-    bgHalo.addColorStop(0.2, 'rgba(216,226,255,0.58)');
-    bgHalo.addColorStop(0.55, 'rgba(178,190,240,0.2)');
-    bgHalo.addColorStop(1, 'rgba(130,144,200,0)');
+    const bgHalo = ctx.createRadialGradient(c, c, size * 0.02, c, c, size * 0.5);
+    bgHalo.addColorStop(0, 'rgba(255,255,255,0.98)');
+    bgHalo.addColorStop(0.2, 'rgba(255,255,255,0.58)');
+    bgHalo.addColorStop(0.58, 'rgba(235,242,255,0.2)');
+    bgHalo.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = bgHalo;
     ctx.fillRect(0, 0, size, size);
 
@@ -374,15 +374,13 @@ function createThreeStarScene(mount) {
       ctx.restore();
     };
 
-    drawSpike(0, size * 0.9, size * 0.06, 0.98);
-    drawSpike(Math.PI / 2, size * 1.05, size * 0.08, 1);
-    drawSpike(Math.PI / 4, size * 0.44, size * 0.028, 0.34);
-    drawSpike(-Math.PI / 4, size * 0.44, size * 0.028, 0.34);
+    drawSpike(0, size * 0.95, size * 0.07, 0.9);
+    drawSpike(Math.PI / 2, size * 1.08, size * 0.095, 1);
 
     const core = ctx.createRadialGradient(c, c, 0, c, c, size * 0.12);
     core.addColorStop(0, 'rgba(255,255,255,1)');
     core.addColorStop(0.35, 'rgba(255,255,255,0.98)');
-    core.addColorStop(0.75, 'rgba(231,238,255,0.28)');
+    core.addColorStop(0.75, 'rgba(255,255,255,0.34)');
     core.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = core;
     ctx.fillRect(0, 0, size, size);
@@ -397,14 +395,14 @@ function createThreeStarScene(mount) {
   const auraSprite = new THREE.Sprite(
     new THREE.SpriteMaterial({
       map: sparkTexture,
-      color: 0x9aa8d9,
+      color: 0xffffff,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.46,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
-  auraSprite.scale.set(3.3, 3.3, 1);
+  auraSprite.scale.set(3.55, 3.55, 1);
   auraSprite.position.z = -0.02;
 
   const starSprite = new THREE.Sprite(
@@ -417,7 +415,7 @@ function createThreeStarScene(mount) {
       depthWrite: false
     })
   );
-  starSprite.scale.set(2.28, 2.28, 1);
+  starSprite.scale.set(2.34, 2.34, 1);
 
   const coreSprite = new THREE.Sprite(
     new THREE.SpriteMaterial({
@@ -429,13 +427,27 @@ function createThreeStarScene(mount) {
       depthWrite: false
     })
   );
-  coreSprite.scale.set(0.92, 0.92, 1);
+  coreSprite.scale.set(1.02, 1.02, 1);
   coreSprite.position.z = 0.01;
+
+  const spinMarker = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: sparkTexture,
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.2,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  spinMarker.scale.set(0.22, 0.22, 1);
+  spinMarker.position.set(0.58, -0.12, 0.012);
 
   const starMesh = new THREE.Group();
   starMesh.add(auraSprite);
   starMesh.add(starSprite);
   starMesh.add(coreSprite);
+  starMesh.add(spinMarker);
   scene.add(starMesh);
   const onResize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -444,7 +456,7 @@ function createThreeStarScene(mount) {
   };
   window.addEventListener('resize', onResize);
 
-  return { renderer, scene, camera, starMesh, onResize, disposed: false, starFx: { auraSprite, starSprite, coreSprite } };
+  return { renderer, scene, camera, starMesh, onResize, disposed: false, starFx: { auraSprite, starSprite, coreSprite, spinMarker } };
 }
 
 function disposeThreeStarScene(ts) {
@@ -733,29 +745,32 @@ async function runCinematicOnboarding(task) {
         /* Zoom OUT */
         const t = easeOutCubic(el / 3.4);
         starMesh.position.z = 4 * (1 - t);
-        starMesh.rotation.set(0, 0, el * 0.18);
+        starMesh.rotation.set(0, 0, el * 0.34);
       } else if (el < 7.8) {
         /* Spin in place */
         const sp = el - 3.4;
         starMesh.position.z = 0;
-        starMesh.rotation.set(0, 0, 3.4 * 0.18 + sp * 0.2);
+        starMesh.rotation.set(0, 0, 3.4 * 0.34 + sp * 0.38);
       } else {
         /* Zoom INTO camera */
         const zi = el - 7.8;
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
-        starMesh.rotation.set(0, 0, 3.4 * 0.18 + (7.8 - 3.4) * 0.2 + zi * 0.16);
+        starMesh.rotation.set(0, 0, 3.4 * 0.34 + (7.8 - 3.4) * 0.38 + zi * 0.28);
       }
       if (starFx) {
         const pulse = 0.5 + Math.sin(el * 2.0) * 0.5;
-        starFx.auraSprite.material.opacity = 0.34 + pulse * 0.34;
-        starFx.starSprite.material.opacity = 0.82 + pulse * 0.16;
-        starFx.coreSprite.material.opacity = 0.74 + pulse * 0.24;
-        const auraScale = 3.15 + pulse * 0.34;
-        const starScale = 2.2 + pulse * 0.14;
-        const coreScale = 0.86 + pulse * 0.09;
+        starFx.auraSprite.material.opacity = 0.3 + pulse * 0.32;
+        starFx.starSprite.material.opacity = 0.86 + pulse * 0.14;
+        starFx.coreSprite.material.opacity = 0.78 + pulse * 0.22;
+        const auraScale = 3.35 + pulse * 0.42;
+        const starScale = 2.28 + pulse * 0.2;
+        const coreScale = 0.94 + pulse * 0.12;
         starFx.auraSprite.scale.set(auraScale, auraScale, 1);
         starFx.starSprite.scale.set(starScale, starScale, 1);
         starFx.coreSprite.scale.set(coreScale, coreScale, 1);
+        if (starFx.spinMarker) {
+          starFx.spinMarker.material.opacity = 0.1 + pulse * 0.28;
+        }
       }
       drawStarDust(pState, el);
       renderer.render(scene, camera);

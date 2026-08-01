@@ -2101,3 +2101,93 @@ article { padding: 24px; }
   #cinematicOnboardingOverlay #cinematicOnboardingSubtext { bottom: 14vh; width: 94vw; }
   #cinematicOnboardingOverlay .cinematic-progress-track { bottom: 8.5vh; width: 90vw; }
 }
+
+/* ===== Cinematic deep-space override ===== */
+#cinematicOnboardingOverlay.cinematic-onboarding-overlay {
+  background:
+    radial-gradient(circle at center, rgba(18, 20, 26, 0.96) 0%, rgba(6, 6, 8, 0.98) 54%, rgba(0, 0, 0, 1) 100%);
+  backdrop-filter: blur(2px);
+}
+
+#cinematicOnboardingOverlay .cinematic-onboarding-content {
+  background: radial-gradient(circle at center, rgba(255,255,255,0.02), rgba(0,0,0,0.92) 64%);
+}
+
+#cinematicOnboardingOverlay .cinematic-vignette {
+  background: radial-gradient(circle at center, transparent 18%, rgba(0,0,0,0.88) 100%);
+}
+
+#cinematicOnboardingOverlay .cinematic-three-mount canvas {
+  filter: brightness(0.92) contrast(1.18) saturate(0.95);
+}
+
+#cinematicOnboardingOverlay .cinematic-kicker {
+  top: 12vh;
+  color: rgba(255,255,255,0.72);
+  letter-spacing: 0.24em;
+}
+
+#cinematicOnboardingOverlay .cinematic-future-line {
+  top: 18vh;
+  color: rgba(255,255,255,0.6);
+  letter-spacing: 0.26em;
+}
+
+#cinematicOnboardingOverlay #cinematicOnboardingTitle {
+  bottom: 20vh;
+  font-size: clamp(1.8rem, 4.8vw, 3.6rem);
+  text-shadow: 0 0 32px rgba(255,255,255,0.2);
+}
+
+#cinematicOnboardingOverlay #cinematicOnboardingSubtext {
+  bottom: 14vh;
+  color: rgba(255,255,255,0.72);
+}
+
+#cinematicOnboardingOverlay .cinematic-install-line {
+  top: 34vh;
+  color: rgba(255,255,255,0.9);
+  letter-spacing: 0.14em;
+}
+
+#cinematicOnboardingOverlay .cinematic-flash-word {
+  top: 42vh;
+  font-size: clamp(3rem, 14vw, 9rem);
+  text-shadow: 0 0 56px rgba(255,255,255,0.8);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-reveal {
+  top: 50vh;
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-mark {
+  box-shadow: 0 0 44px rgba(255,255,255,0.28);
+}
+
+#cinematicOnboardingOverlay .cinematic-logo-name {
+  letter-spacing: 0.34em;
+}
+
+#cinematicOnboardingOverlay .cinematic-thank-you {
+  top: 64vh;
+  font-size: clamp(0.9rem, 1.5vw, 1.2rem);
+  color: rgba(255,255,255,0.92);
+}
+
+#cinematicOnboardingOverlay .cinematic-progress-track {
+  bottom: 7.5vh;
+  background: rgba(255,255,255,0.12);
+}
+
+#cinematicOnboardingOverlay.cinematic-mode-flash .cinematic-flash-layer {
+  animation-duration: 0.42s;
+}
+
+@keyframes cinematicSubtleShake {
+  0% { transform: translate3d(0, 0, 0); }
+  15% { transform: translate3d(-6px, 3px, 0); }
+  30% { transform: translate3d(8px, -4px, 0); }
+  45% { transform: translate3d(-5px, -3px, 0); }
+  60% { transform: translate3d(6px, 4px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}

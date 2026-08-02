@@ -351,10 +351,17 @@ function easeInCubic(t) {
 function createThreeStarScene(mount) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
+  const getRenderSize = () => {
+    const rect = mount.getBoundingClientRect();
+    const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
+    const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
+    return { width, height };
+  };
+  const { width: initialWidth, height: initialHeight } = getRenderSize();
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(initialWidth, initialHeight, false);
   renderer.setClearColor(0xffffff, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.5;
@@ -365,7 +372,7 @@ function createThreeStarScene(mount) {
   scene.background = null;
   scene.fog = new THREE.FogExp2(0x8b909f, 0.016);
 
-  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.01, 200);
+  const camera = new THREE.PerspectiveCamera(55, initialWidth / initialHeight, 0.01, 200);
   camera.position.set(0, 0, 5); camera.lookAt(0, 0, 0);
 
   /* Original celestial twilight star */
@@ -590,10 +597,12 @@ function createThreeStarScene(mount) {
   starMesh.position.set(0, 0, 0);
   scene.add(starMesh);
   const onResize = () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
+    const { width, height } = getRenderSize();
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(width, height, false);
   };
+  onResize();
   window.addEventListener('resize', onResize);
 
   return {
@@ -917,6 +926,8 @@ async function runCinematicOnboarding(task) {
         starMesh.position.z = easeInCubic(Math.min(1, zi / 1.9)) * 4.8;
         spinAngle = 3.4 * 0.93 + (7.8 - 3.4) * 1.02 + zi * 0.55;
       }
+      starMesh.position.x = 0;
+      starMesh.position.y = 0;
       starMesh.rotation.set(0, 0, spinAngle);
       if (starFx) {
         const flicker = 0.5 + Math.sin(el * 5.3 + Math.sin(el * 1.8)) * 0.5;
@@ -995,7 +1006,7 @@ async function runCinematicOnboarding(task) {
     /* PHASE 5b: Typewrite second line alone, then hide before ONE */
     if (cinematicInstallLine) {
       cinematicInstallLine.setAttribute('aria-hidden', 'false');
-      await typewriteText(cinematicInstallLine, 'Your whole store is about to be listed.', 52);
+      await typewriteText(cinematicInstallLine, 'Your whole store it going to be listed with', 52);
     }
     await wait(1400);
     if (cinematicInstallLine) {

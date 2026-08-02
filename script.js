@@ -613,8 +613,13 @@ function createThreeStarScene(mount) {
     camera.updateProjectionMatrix();
     renderer.setSize(width, height, false);
   };
+  const onVisualViewportResize = () => onResize();
   onResize();
   window.addEventListener('resize', onResize);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onVisualViewportResize);
+    window.visualViewport.addEventListener('scroll', onVisualViewportResize);
+  }
 
   return {
     renderer,
@@ -622,6 +627,7 @@ function createThreeStarScene(mount) {
     camera,
     starMesh,
     onResize,
+    onVisualViewportResize,
     disposed: false,
     starFx: { auraSprite, ringSprite, starSprite, coreSprite, shimmerGroup, shimmerSprites, shimmerMeta }
   };
@@ -631,6 +637,10 @@ function disposeThreeStarScene(ts) {
   if (!ts || ts.disposed) return;
   ts.disposed = true;
   if (ts.onResize) window.removeEventListener('resize', ts.onResize);
+  if (window.visualViewport && ts.onVisualViewportResize) {
+    window.visualViewport.removeEventListener('resize', ts.onVisualViewportResize);
+    window.visualViewport.removeEventListener('scroll', ts.onVisualViewportResize);
+  }
   try { ts.renderer.dispose(); } catch (e) { /* ignore */ }
   try { if (ts.renderer.domElement.parentNode) ts.renderer.domElement.parentNode.removeChild(ts.renderer.domElement); } catch (e) { /* ignore */ }
 }
@@ -890,16 +900,38 @@ async function runCinematicOnboarding(task) {
     document.body.appendChild(cinematicOnboardingOverlay);
   }
 
-  /* Measure exact visual viewport before any layout changes */
-  const _VW = window.innerWidth;
-  const _VH = window.innerHeight;
-  /* Pin overlay to exact pixel dims (fixes mobile Safari 100vh bug) */
-  cinematicOnboardingOverlay.style.cssText =
-    'position:fixed;left:0;top:0;width:' + _VW + 'px;height:' + _VH + 'px;z-index:99999;overflow:hidden;opacity:1;transition:opacity 0s linear;';
+  const getViewportRect = () => {
+    const vv = window.visualViewport;
+    return {
+      left: Math.round(vv ? vv.offsetLeft : 0),
+      top: Math.round(vv ? vv.offsetTop : 0),
+      width: Math.max(1, Math.round(vv ? vv.width : window.innerWidth)),
+      height: Math.max(1, Math.round(vv ? vv.height : window.innerHeight))
+    };
+  };
+  const syncOverlayViewport = () => {
+    const box = getViewportRect();
+    cinematicOnboardingOverlay.style.cssText =
+      'position:fixed;left:' + box.left + 'px;top:' + box.top + 'px;width:' + box.width + 'px;height:' + box.height + 'px;z-index:99999;overflow:hidden;opacity:1;transition:opacity 0s linear;';
+    if (cinematicThreeMount) {
+      cinematicThreeMount.style.cssText =
+        'position:absolute;left:0;top:0;width:' + box.width + 'px;height:' + box.height + 'px;z-index:1;overflow:hidden;';
+    }
+  };
+  syncOverlayViewport();
+  const onViewportChange = () => syncOverlayViewport();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', onViewportChange);
+    window.visualViewport.addEventListener('scroll', onViewportChange);
+  }
 
   cinematicOnboardingOverlay.hidden = false;
+  const bodyScrollY = window.scrollY || window.pageYOffset || 0;
   document.body.style.overflow = 'hidden';
   document.body.style.position = 'fixed';
+  document.body.style.top = '-' + bodyScrollY + 'px';
+  document.body.style.left = '0';
+  document.body.style.right = '0';
   document.body.style.width = '100%';
   clearCinematicOverlayModes();
   setCinematicOverlayMode('star-stage');
@@ -1080,10 +1112,19 @@ async function runCinematicOnboarding(task) {
     if (mount) mount.innerHTML = '';
     clearCinematicOverlayModes();
     cinematicOnboardingOverlay.hidden = true;
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', onViewportChange);
+      window.visualViewport.removeEventListener('scroll', onViewportChange);
+    }
     document.body.style.overflow = '';
-  document.body.style.position = '';
-  document.body.style.width = '';
-  cinematicOnboardingOverlay.style.cssText = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    window.scrollTo(0, bodyScrollY);
+    cinematicOnboardingOverlay.style.cssText = '';
+    if (cinematicThreeMount) cinematicThreeMount.style.cssText = '';
   }
 }
 

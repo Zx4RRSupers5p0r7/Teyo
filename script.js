@@ -89,6 +89,10 @@ const customerPlushiePreview = document.getElementById('customerPlushiePreview')
 const customerPlushieCaption = document.getElementById('customerPlushieCaption');
 const tabButtons = document.querySelectorAll('.tab-btn');
 const tabPanels = document.querySelectorAll('.tab-panel');
+const referralNameInput = document.getElementById('referralNameInput');
+const referralLinkInput = document.getElementById('referralLinkInput');
+const referralCopyBtn = document.getElementById('referralCopyBtn');
+const referralStatus = document.getElementById('referralStatus');
 
 const customerThemeStorageKey = 'teyoCustomerThemeV1';
 const customerThemeUnlockedKey = 'teyoCustomerThemeUnlockedV1';
@@ -189,6 +193,41 @@ let companyStoreSyncState = null;
 
 function wait(duration = 0) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
+}
+
+function getReferralBaseUrl() {
+  if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.host) {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  return 'https://teyo.ca';
+}
+
+function buildReferralLink(name = '') {
+  const cleanName = String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'friend';
+  return `${getReferralBaseUrl()}/?ref=${cleanName}`;
+}
+
+function updateReferralLinkField() {
+  if (!referralLinkInput) {
+    return;
+  }
+  referralLinkInput.value = buildReferralLink(referralNameInput?.value || '');
+}
+
+async function copyReferralLink() {
+  if (!referralLinkInput) {
+    return;
+  }
+  const inviteLink = referralLinkInput.value || buildReferralLink(referralNameInput?.value || '');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(inviteLink);
+  } else {
+    referralLinkInput.select();
+    document.execCommand('copy');
+  }
+  if (referralStatus) {
+    referralStatus.textContent = `Invite ready ? ${inviteLink}`;
+  }
 }
 
 /* Typewriter helper with per-character glow spark */
@@ -3627,6 +3666,14 @@ async function deleteProduct(id) {
 tabButtons.forEach((button) => {
   button.addEventListener('click', () => activateTab(button.dataset.tab));
 });
+
+if (referralNameInput) {
+  referralNameInput.addEventListener('input', updateReferralLinkField);
+}
+if (referralCopyBtn) {
+  referralCopyBtn.addEventListener('click', copyReferralLink);
+}
+updateReferralLinkField();
 
 if (searchInput) {
   searchInput.addEventListener('input', renderResults);

@@ -586,7 +586,7 @@ article { padding: 24px; }
 .grayscale-map {
   filter: grayscale(1) contrast(1.1) brightness(0.85);
 }
-.map-water { position: absolute; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.1), transparent 30%); }
+.map-water { position: fixed; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,0.1), transparent 30%); }
 .map-road {
   position: absolute;
   inset: 20px 40px;
@@ -1156,9 +1156,11 @@ article { padding: 24px; }
 }
 
 .cinematic-flash-word {
-  position: absolute;
+  position: fixed;
   left: 50%;
   top: 50%;
+  width: 100vw;
+  text-align: center;
   transform: translate(-50%, -50%) scale(0.7);
   font-size: clamp(6.5rem, 24vw, 17rem);
   font-weight: 900;
@@ -1195,7 +1197,7 @@ article { padding: 24px; }
 
 @keyframes cWordZoom {
   0%   { transform:translate(-50%,-50%) scale(0.92); }
-  100% { transform:translate(-50%,-58%) scale(1.92); }
+  100% { transform:translate(-50%,-50%) scale(1.92); }
 }
 
 @keyframes cWordBeat {

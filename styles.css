@@ -1162,7 +1162,7 @@ article { padding: 24px; }
 }
 .cinematic-flash-inner {
   display: block;
-  font-size: clamp(6.5rem, 22vw, 16rem);
+  font-size: clamp(3.5rem, 18vw, 16rem);
   font-weight: 900;
   letter-spacing: 0.02em;
   color: #fff;

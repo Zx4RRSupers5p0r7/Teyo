@@ -888,6 +888,10 @@ article { padding: 24px; }
   position: absolute;
   inset: 0;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 /* Edge vignette to add cinematic letterbox feel */
@@ -1015,21 +1019,20 @@ article { padding: 24px; }
 .cinematic-thank-you {
   position: absolute;
   left: 50%;
-  top: 64%;
-  transform: translateX(-50%);
+  top: 50%;
+  transform: translate(-50%, -50%);
   margin: 0;
   white-space: nowrap;
-  font-size: clamp(0.82rem, 1.45vw, 1.05rem);
-  letter-spacing: 0.26em;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.82);
-  text-shadow: 0 0 18px rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.9);
+  text-shadow: 0 0 24px rgba(255,255,255,0.45);
   z-index: 6;
   opacity: 0;
-  overflow: hidden;
 }
 .cinematic-thank-you[aria-hidden='false'] {
-  animation: cFadeUp 1s ease-out 0.05s forwards;
+  /* opacity driven by typewriter JS */
 }
 .cinematic-thank-you.is-spark-trace::before,
 .cinematic-thank-you.is-spark-trace::after {
@@ -1095,10 +1098,10 @@ article { padding: 24px; }
   transform: translate(-50%, -50%);
   margin: 0;
   white-space: nowrap;
-  font-size: clamp(0.82rem, 1.4vw, 1.1rem);
-  letter-spacing: 0.24em;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.9);
   text-shadow: 0 0 18px rgba(255,255,255,0.3);
   z-index: 6;
   opacity: 0;
@@ -1124,6 +1127,27 @@ article { padding: 24px; }
 /* Fire sweep is drawn on a canvas by JS — no CSS animation needed */
 
 /* ── Flash word (ONE / CLICK) ──────────────────────────────────── */
+/* ?? Typewriter effect ???????????????????????????????????????????? */
+.tw-cursor {
+  display: inline-block;
+  color: rgba(255,255,255,0.9);
+  font-weight: 300;
+  animation: twBlink 0.55s step-end infinite;
+  text-shadow: 0 0 10px rgba(255,255,255,0.85), 0 0 22px rgba(200,220,255,0.5);
+  margin-left: 1px;
+}
+@keyframes twBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.tw-char-new {
+  animation: twCharGlow 0.45s ease-out forwards;
+}
+@keyframes twCharGlow {
+  0%   { text-shadow: 0 0 10px rgba(255,255,255,1), 0 0 22px rgba(255,255,255,0.9), 0 0 44px rgba(200,220,255,0.75); }
+  100% { text-shadow: none; }
+}
+
 .cinematic-flash-word {
   position: absolute;
   left: 50%;

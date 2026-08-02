@@ -191,6 +191,29 @@ function wait(duration = 0) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
 }
 
+/* Typewriter helper with per-character glow spark */
+async function typewriteText(el, text, charDelayMs) {
+  charDelayMs = charDelayMs || 55;
+  if (!el) return;
+  el.textContent = '';
+  el.style.opacity = '1';
+  const cursor = document.createElement('span');
+  cursor.className = 'tw-cursor';
+  cursor.textContent = '|';
+  el.appendChild(cursor);
+  for (var i = 0; i < text.length; i++) {
+    var ch = document.createElement('span');
+    ch.className = 'tw-char tw-char-new';
+    ch.textContent = text[i];
+    el.insertBefore(ch, cursor);
+    await wait(charDelayMs);
+    setTimeout(function(s){ s.classList.remove('tw-char-new'); }, 380, ch);
+  }
+  await wait(280);
+  cursor.remove();
+}
+
+
 function hasPlacementFeePaid() {
   return sessionStorage.getItem(placementFeePaidStorageKey) === 'true';
 }
@@ -336,7 +359,7 @@ function createThreeStarScene(mount) {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.5;
   mount.appendChild(renderer.domElement);
-  renderer.domElement.style.cssText = 'position:absolute;inset:0;z-index:1;';
+  renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block;';
 
   const scene = new THREE.Scene();
   scene.background = null;
@@ -953,29 +976,35 @@ async function runCinematicOnboarding(task) {
     /* PHASE 4: fire sweep removed */
 
     /* Ã¢â€â‚¬Ã¢â€â‚¬ PHASE 5: Fade logo out then thank-you spark trace Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
-    /* PHASE 5a: Fade logo out, show thank-you alone */
+    /* PHASE 5a: Fade logo out, typewrite thank-you alone, centered */
     await fadeOutLogoReveal();
-    setCinematicVisibility(cinematicThankYou, true);
-    if (cinematicThankYou) cinematicThankYou.classList.add('is-spark-trace');
-    await wait(2600);
+    if (cinematicThankYou) {
+      cinematicThankYou.classList.remove('is-spark-trace');
+      cinematicThankYou.setAttribute('aria-hidden', 'false');
+      await typewriteText(cinematicThankYou, 'Thank you for choosing Teyo.', 58);
+    }
+    await wait(1600);
     if (cinematicThankYou) {
       cinematicThankYou.style.transition = 'opacity 0.6s ease';
       cinematicThankYou.style.opacity = '0';
     }
-    await wait(700);
+    await wait(650);
     setCinematicVisibility(cinematicThankYou, false);
-    if (cinematicThankYou) { cinematicThankYou.style.opacity = ''; cinematicThankYou.style.transition = ''; }
+    if (cinematicThankYou) { cinematicThankYou.style.opacity = ''; cinematicThankYou.style.transition = ''; cinematicThankYou.textContent = ''; }
 
-    /* PHASE 5b: Install line alone, then hide before ONE */
-    setCinematicVisibility(cinematicInstallLine, true);
-    await wait(2200);
+    /* PHASE 5b: Typewrite second line alone, then hide before ONE */
+    if (cinematicInstallLine) {
+      cinematicInstallLine.setAttribute('aria-hidden', 'false');
+      await typewriteText(cinematicInstallLine, 'Your whole store is about to be listed.', 52);
+    }
+    await wait(1400);
     if (cinematicInstallLine) {
       cinematicInstallLine.style.transition = 'opacity 0.5s ease';
       cinematicInstallLine.style.opacity = '0';
     }
     await wait(550);
     setCinematicVisibility(cinematicInstallLine, false);
-    if (cinematicInstallLine) { cinematicInstallLine.style.opacity = ''; cinematicInstallLine.style.transition = ''; }
+    if (cinematicInstallLine) { cinematicInstallLine.style.opacity = ''; cinematicInstallLine.style.transition = ''; cinematicInstallLine.textContent = ''; }
 
     /* PHASE 6: ONE alone, centered */
     await flashWord('ONE', 2200, 160);

@@ -895,7 +895,7 @@ async function runCinematicOnboarding(task) {
   const _VH = window.innerHeight;
   /* Pin overlay to exact pixel dims (fixes mobile Safari 100vh bug) */
   cinematicOnboardingOverlay.style.cssText =
-    'position:fixed;left:0;top:0;width:' + _VW + 'px;height:' + _VH + 'px;z-index:99999;overflow:hidden;';
+    'position:fixed;left:0;top:0;width:' + _VW + 'px;height:' + _VH + 'px;z-index:99999;overflow:hidden;opacity:1;transition:opacity 0s linear;';
 
   cinematicOnboardingOverlay.hidden = false;
   document.body.style.overflow = 'hidden';
@@ -1057,9 +1057,18 @@ async function runCinematicOnboarding(task) {
     if (used < MIN_MS) await wait(MIN_MS - used);
 
     /* Ã¢â€â‚¬Ã¢â€â‚¬ Final white flash out Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
-    playCinematicTone(960, 0.45, 0.0003);
+    playCinematicTone(960, 0.55, 0.00034);
     setCinematicOverlayMode('final-flash');
-    await wait(750);
+    await wait(140);
+    setCinematicOverlayMode('flash-black');
+    await wait(80);
+    setCinematicOverlayMode('final-flash');
+    await wait(980);
+
+    /* Smoothly fade the overlay out so listed products are revealed cleanly */
+    cinematicOnboardingOverlay.style.transition = 'opacity 0.72s cubic-bezier(0.22, 0.61, 0.36, 1)';
+    cinematicOnboardingOverlay.style.opacity = '0';
+    await wait(740);
     return taskResult;
 
   } catch (err) {

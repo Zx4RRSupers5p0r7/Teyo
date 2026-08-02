@@ -46,3 +46,29 @@ Production-hardened Node.js marketplace with Stripe checkout, admin approvals, a
 5. Confirm Postgres connectivity (`DATABASE_URL`) and check readiness endpoint reports storage ready.
 6. Verify `GET /api/health` and `GET /api/ready` return healthy statuses.
 7. Ensure CI workflow passes (`npm run ci`) before deploy.
+
+## Mobile App (Android + iOS)
+
+A cross-platform wrapper is included in `teyo-mobile/` using Capacitor, pointed at the live Teyo site.
+
+### Setup
+
+1. `cd teyo-mobile`
+2. `npm install`
+3. `npm run cap:add:android`
+4. `npm run cap:add:ios`
+5. `npm run cap:sync`
+
+### Open native projects
+
+- Android Studio: `npm run cap:open:android`
+- Xcode (macOS only): `npm run cap:open:ios`
+
+### Publishing
+
+- **Play Store (Android):** build signed AAB in Android Studio, then upload to Google Play Console.
+- **App Store (iOS):** archive in Xcode and upload via App Store Connect (requires macOS + Apple Developer account).
+
+### Branding
+
+Set app icons/splash assets in native projects to match the Teyo logo (`favicon.svg`/brand assets in repo).

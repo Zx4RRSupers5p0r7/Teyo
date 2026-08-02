@@ -351,10 +351,20 @@ function easeInCubic(t) {
 function createThreeStarScene(mount) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
+  const getViewportSize = () => {
+    const vv = window.visualViewport;
+    const width = vv ? vv.width : window.innerWidth;
+    const height = vv ? vv.height : window.innerHeight;
+    return {
+      width: Math.max(1, Math.round(width || document.documentElement.clientWidth || 1)),
+      height: Math.max(1, Math.round(height || document.documentElement.clientHeight || 1))
+    };
+  };
   const getRenderSize = () => {
     const rect = mount.getBoundingClientRect();
-    const width = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
-    const height = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
+    const vp = getViewportSize();
+    const width = Math.max(1, Math.round(rect.width || vp.width));
+    const height = Math.max(1, Math.round(rect.height || vp.height));
     return { width, height };
   };
   const { width: initialWidth, height: initialHeight } = getRenderSize();
@@ -871,6 +881,9 @@ async function fadeOutLogoReveal() {
 Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 async function runCinematicOnboarding(task) {
   if (!cinematicOnboardingOverlay) return task();
+  if (cinematicOnboardingOverlay.parentElement !== document.body) {
+    document.body.appendChild(cinematicOnboardingOverlay);
+  }
 
   cinematicOnboardingOverlay.hidden = false;
   document.body.style.overflow = 'hidden';

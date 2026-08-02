@@ -872,7 +872,10 @@ article { padding: 24px; }
 ═══════════════════════════════════════════════════════════════ */
 .cinematic-onboarding-overlay {
   position: fixed;
-  inset: 0;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
   z-index: 99999;
   background: #fff;
   overflow: visible;
@@ -885,8 +888,12 @@ article { padding: 24px; }
 
 /* The Three.js + canvas mount fills the entire overlay */
 .cinematic-three-mount {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: 100vw;
+  height: 100vh;
+  transform: translate(-50%, -50%);
   z-index: 1;
   display: flex;
   align-items: center;

@@ -1068,6 +1068,7 @@ function serializePublicAd(entry) {
 function serializePublicProduct(entry) {
   return {
     id: entry.id,
+    slug: buildProductSlug(entry),
     productName: entry.productName,
     companyName: entry.companyName,
     category: entry.category,
@@ -2283,6 +2284,228 @@ app.post('/api/customer/theme-access', (req, res) => {
   }
 
   res.json({ success: true, message: 'Paid access verified. Private theme controls are now unlocked.' });
+});
+
+
+/* ???????????????????????????????????????????????????????????????
+   SEO PRODUCT PAGES  /products/:slug
+   Each approved product gets its own crawlable URL with full
+   Open Graph + Twitter Card meta so Google/social can index it.
+??????????????????????????????????????????????????????????????? */
+
+function slugify(str) {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 96);
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function buildProductSlug(product) {
+  return slugify(`${product.productName}-${product.companyName}-${product.id}`);
+}
+
+function findProductBySlug(slug) {
+  const data = loadData();
+  return data.products.find((p) => {
+    if (!p.approved || !p.visible) return false;
+    return buildProductSlug(p) === slug;
+  }) || null;
+}
+
+function buildProductPageHtml(product, baseUrl) {
+  const title = escapeHtml(`${product.productName} ? ${product.companyName} | Teyo`);
+  const desc  = escapeHtml(
+    product.description
+      ? String(product.description).slice(0, 160)
+      : `Buy ${product.productName} by ${product.companyName} on Teyo ? Canada\'s product discovery marketplace.`
+  );
+  const imageUrl     = escapeHtml(product.imageUrl || '');
+  const productName  = escapeHtml(product.productName);
+  const companyName  = escapeHtml(product.companyName);
+  const category     = escapeHtml(product.category || '');
+  const price        = escapeHtml(product.price || '');
+  const stockStatus  = escapeHtml(product.stockStatus || 'In Stock');
+  const websiteUrl   = escapeHtml(product.websiteUrl || '');
+  const slug         = buildProductSlug(product);
+  const canonical    = `${baseUrl}/products/${slug}`;
+  const sizeList     = Array.isArray(product.sizeOptions) && product.sizeOptions.length
+    ? `<p class="psp-sizes"><strong>Available sizes:</strong> ${product.sizeOptions.map(s => `<span class="psp-size-tag">${escapeHtml(String(s))}</span>`).join(' ')}</p>`
+    : '';
+  const storeList    = Array.isArray(product.stores) && product.stores.length
+    ? `<ul class="psp-stores">${product.stores.map(s => `<li>${escapeHtml(String(s))}</li>`).join('')}</ul>`
+    : '';
+  const imgHtml      = imageUrl
+    ? `<div class="psp-img-wrap"><img src="${imageUrl}" alt="${productName}" loading="lazy" /></div>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <meta name="description" content="${desc}" />
+  <link rel="canonical" href="${canonical}" />
+
+  <!-- Open Graph -->
+  <meta property="og:type"        content="product" />
+  <meta property="og:title"       content="${title}" />
+  <meta property="og:description" content="${desc}" />
+  <meta property="og:url"         content="${canonical}" />
+  ${imageUrl ? `<meta property="og:image" content="${imageUrl}" />` : ''}
+  <meta property="og:site_name"   content="Teyo" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card"        content="${imageUrl ? 'summary_large_image' : 'summary'}" />
+  <meta name="twitter:title"       content="${title}" />
+  <meta name="twitter:description" content="${desc}" />
+  ${imageUrl ? `<meta name="twitter:image" content="${imageUrl}" />` : ''}
+
+  <!-- Schema.org Product -->
+  <script type="application/ld+json">${JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.productName,
+    description: product.description || '',
+    image: product.imageUrl || undefined,
+    brand: { '@type': 'Brand', name: product.companyName },
+    offers: {
+      '@type': 'Offer',
+      priceCurrency: 'CAD',
+      price: String(product.price || '').replace(/[^0-9.]/g, '') || '0',
+      availability: product.stockStatus === 'Out of Stock'
+        ? 'https://schema.org/OutOfStock'
+        : 'https://schema.org/InStock',
+      url: product.websiteUrl || canonical,
+      seller: { '@type': 'Organization', name: product.companyName }
+    }
+  })}</script>
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .psp-wrap{max-width:820px;margin:0 auto;padding:32px 20px 72px;}
+    .psp-breadcrumb{font-size:0.82rem;color:var(--muted);margin-bottom:20px;}
+    .psp-breadcrumb a{color:var(--muted);text-decoration:none;}
+    .psp-breadcrumb a:hover{color:var(--text);}
+    .psp-img-wrap{margin-bottom:24px;border-radius:12px;overflow:hidden;background:var(--surface);}
+    .psp-img-wrap img{width:100%;max-height:460px;object-fit:contain;display:block;}
+    .psp-company{font-size:0.82rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+    .psp-name{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin:0 0 8px;}
+    .psp-price{font-size:1.45rem;font-weight:700;color:var(--accent);margin:0 0 10px;}
+    .psp-stock{display:inline-block;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 10px;border-radius:99px;border:1px solid;margin-bottom:16px;}
+    .psp-stock.in-stock{color:#4ade80;border-color:#4ade80;}
+    .psp-stock.out-stock{color:#f87171;border-color:#f87171;}
+    .psp-desc{color:var(--muted);line-height:1.7;margin-bottom:20px;}
+    .psp-sizes{margin-bottom:16px;}
+    .psp-size-tag{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:2px 9px;font-size:0.8rem;margin:2px;}
+    .psp-stores{padding-left:18px;color:var(--muted);font-size:0.88rem;margin-bottom:20px;}
+    .psp-cta{display:inline-block;margin-top:8px;padding:12px 32px;background:var(--accent);color:#000;font-weight:700;border-radius:8px;text-decoration:none;font-size:0.97rem;letter-spacing:0.04em;}
+    .psp-cta:hover{opacity:0.88;}
+    .psp-back{display:inline-block;margin-top:32px;font-size:0.85rem;color:var(--muted);text-decoration:none;}
+    .psp-back:hover{color:var(--text);}
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Teyo home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+            <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+            <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+            <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+          </svg>
+        </span>
+        <span class="brand-text">Teyo</span>
+      </a>
+    </header>
+    <div class="psp-wrap">
+      <p class="psp-breadcrumb">
+        <a href="/">Home</a> / <a href="/marketplace.html">Marketplace</a> / ${productName}
+      </p>
+      ${imgHtml}
+      <p class="psp-company">${companyName}</p>
+      <h1 class="psp-name">${productName}</h1>
+      ${price ? `<p class="psp-price">${price}</p>` : ''}
+      <span class="psp-stock ${product.stockStatus === 'Out of Stock' ? 'out-stock' : 'in-stock'}">${stockStatus}</span>
+      ${category ? `<p class="psp-breadcrumb" style="margin-top:4px">Category: ${category}</p>` : ''}
+      ${product.description ? `<p class="psp-desc">${escapeHtml(product.description)}</p>` : ''}
+      ${sizeList}
+      ${storeList.length ? `<p><strong>Available at:</strong></p>${storeList}` : ''}
+      ${websiteUrl ? `<a class="psp-cta" href="${websiteUrl}" target="_blank" rel="noopener">View on ${companyName}'s site &rarr;</a>` : ''}
+      <br/>
+      <a class="psp-back" href="/marketplace.html">&larr; Back to Marketplace</a>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+/* Individual product SEO page */
+app.get('/products/:slug', (req, res) => {
+  const slug = String(req.params.slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+  const product = findProductBySlug(slug);
+  if (!product) {
+    return res.status(404).sendFile(path.join(__dirname, 'index.html'));
+  }
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  res.send(buildProductPageHtml(product, baseUrl));
+});
+
+/* Sitemap ? lists all approved visible products */
+app.get('/sitemap.xml', (req, res) => {
+  const data = loadData();
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  const staticPages = [
+    { loc: `${baseUrl}/`,                changefreq: 'weekly',  priority: '1.0' },
+    { loc: `${baseUrl}/marketplace.html`,changefreq: 'daily',   priority: '0.9' },
+    { loc: `${baseUrl}/partners.html`,   changefreq: 'weekly',  priority: '0.7' },
+    { loc: `${baseUrl}/contact.html`,    changefreq: 'monthly', priority: '0.5' }
+  ];
+  const productUrls = data.products
+    .filter(p => p.approved && p.visible)
+    .map(p => ({
+      loc: `${baseUrl}/products/${buildProductSlug(p)}`,
+      changefreq: 'weekly',
+      priority: '0.8',
+      lastmod: p.createdAt ? new Date(p.createdAt).toISOString().slice(0, 10) : undefined
+    }));
+  const all = [...staticPages, ...productUrls];
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
+    all.map(u =>
+      `  <url>\n    <loc>${escapeHtml(u.loc)}</loc>\n` +
+      (u.lastmod ? `    <lastmod>${u.lastmod}</lastmod>\n` : '') +
+      `    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
+    ).join('\n')
+  }\n</urlset>`;
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(xml);
+});
+
+/* robots.txt ? allow crawling and point to sitemap */
+app.get('/robots.txt', (req, res) => {
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  const txt = `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(txt);
 });
 
 app.get('/', (req, res) => {

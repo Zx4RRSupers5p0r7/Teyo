@@ -2761,7 +2761,8 @@ async function renderProduct(product) {
     <p><strong>Safety guidance:</strong> ${getSafetySummary(product)}</p>
     <p><strong>Evidence source:</strong> Brand submission and admin review.</p>
     <div class="detail-actions">
-      <a class="btn btn-primary" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">Visit brand site</a>
+      ${safeWebsiteUrl ? `<a class="btn btn-primary" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">Visit brand site</a>` : ''}
+      <a class="btn btn-secondary" href="/products/${escapeHtml(product.slug || product.id)}" target="_blank" rel="noopener">Product page</a>
       <a class="btn btn-secondary" href="#map">Find nearby pickup</a>
     </div>
     <div id="stockReminderPanel"></div>

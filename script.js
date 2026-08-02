@@ -5,6 +5,7 @@ const categorySelect = document.getElementById('categorySelect');
 const sizeFilterSelect = document.getElementById('sizeFilterSelect');
 const sizeInStockOnly = document.getElementById('sizeInStockOnly');
 const stockReminderMessage = document.getElementById('stockReminderMessage');
+const interestAlertCenter = document.getElementById('interestAlertCenter');
 const resultsList = document.getElementById('resultsList');
 const selectedProduct = document.getElementById('selectedProduct');
 const storeList = document.getElementById('storeList');
@@ -102,6 +103,9 @@ const companyNameStorageKey = 'teyoCompanyNameV1';
 const companyEmailStorageKey = 'teyoCompanyEmailV1';
 const companyKeyStorageKey = 'teyoCompanyKeyV1';
 const stockReminderStorageKey = 'teyoStockRemindersV1';
+const recentSearchesStorageKey = 'teyoRecentSearchesV1';
+const interestWatchlistStorageKey = 'teyoInterestWatchlistV1';
+const interestAlertInboxStorageKey = 'teyoInterestAlertInboxV1';
 const placementFeePaidStorageKey = 'teyoPlacementFeePaidV1';
 const customerStyleClasses = [
   'theme-style-midnight',
@@ -190,6 +194,7 @@ let lastSubmittedAdId = null;
 let adminAccessGranted = false;
 let marketplaceLoadError = '';
 let companyStoreSyncState = null;
+let interestSearchDebounceTimer = 0;
 
 function wait(duration = 0) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
@@ -1497,6 +1502,290 @@ function setStockReminderMessage(text) {
   }
 }
 
+function readStoredArray(storageKey) {
+  try {
+    const raw = localStorage.getItem(storageKey);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function writeStoredArray(storageKey, entries) {
+  localStorage.setItem(storageKey, JSON.stringify(Array.isArray(entries) ? entries : []));
+}
+
+function readRecentSearches() {
+  return readStoredArray(recentSearchesStorageKey);
+}
+
+function writeRecentSearches(entries) {
+  writeStoredArray(recentSearchesStorageKey, entries);
+}
+
+function readInterestWatchlist() {
+  return readStoredArray(interestWatchlistStorageKey);
+}
+
+function writeInterestWatchlist(entries) {
+  writeStoredArray(interestWatchlistStorageKey, entries);
+}
+
+function readInterestAlertInbox() {
+  return readStoredArray(interestAlertInboxStorageKey);
+}
+
+function writeInterestAlertInbox(entries) {
+  writeStoredArray(interestAlertInboxStorageKey, entries);
+}
+
+function parsePriceNumber(value) {
+  const raw = String(value || '').replace(/,/g, '');
+  const match = raw.match(/(\d+(?:\.\d+)?)/);
+  return match ? Number.parseFloat(match[1]) : 0;
+}
+
+function buildProductSearchBlob(product) {
+  const sizes = getProductSizes(product);
+  return `${product.productName || product.name} ${product.companyName || product.company} ${product.description || ''} ${product.category || ''} ${sizes.join(' ')}`.toLowerCase();
+}
+
+function buildProductInventorySignature(product) {
+  const inventory = getProductSizeInventory(product);
+  if (!inventory.length) {
+    return normalize(product.stockStatus || 'unknown');
+  }
+  return inventory
+    .map((entry) => `${normalize(entry.storeName)}:${normalizeSizeValue(entry.size)}:${normalize(entry.stockStatus)}:${entry.restockDate || ''}`)
+    .sort()
+    .join('||');
+}
+
+function buildInterestAlertLink(product) {
+  const slug = String(product?.slug || product?.id || '').trim();
+  return slug ? `/products/${slug}` : '#marketplace-search';
+}
+
+function createInterestAlertEntry(alert, shouldNotify = false) {
+  const alerts = readInterestAlertInbox();
+  if (alerts.some((entry) => entry.signature === alert.signature)) {
+    return false;
+  }
+
+  const nextEntry = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    createdAt: new Date().toISOString(),
+    ...alert
+  };
+  const nextAlerts = [nextEntry, ...alerts].slice(0, 40);
+  writeInterestAlertInbox(nextAlerts);
+
+  if (shouldNotify && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification('Teyo alert', {
+      body: alert.message
+    });
+  }
+
+  return true;
+}
+
+function recordRecentSearch(query) {
+  const trimmed = String(query || '').trim();
+  if (trimmed.length < 2) {
+    return;
+  }
+
+  const normalizedQuery = normalize(trimmed);
+  const nextEntries = [
+    {
+      query: trimmed,
+      normalizedQuery,
+      createdAt: new Date().toISOString()
+    },
+    ...readRecentSearches().filter((entry) => normalize(entry.normalizedQuery || entry.query) !== normalizedQuery)
+  ].slice(0, 8);
+  writeRecentSearches(nextEntries);
+}
+
+function upsertInterestedProduct(product, source = 'manual') {
+  if (!product || !product.id) {
+    return;
+  }
+
+  const watchlist = readInterestWatchlist();
+  const key = String(product.id);
+  const priceValue = parsePriceNumber(product.price);
+  const hasInventoryInStock = getProductSizeInventory(product).some((entry) => isInStockStatus(entry.stockStatus));
+  const currentInStock = hasInventoryInStock || isInStockStatus(product.stockStatus);
+  const existing = watchlist.find((entry) => String(entry.productId) === key);
+  const nextEntry = {
+    productId: key,
+    productName: String(product.productName || product.name || ''),
+    companyName: String(product.companyName || product.company || ''),
+    category: String(product.category || ''),
+    priceLabel: String(product.price || ''),
+    priceValue,
+    stockStatus: String(product.stockStatus || ''),
+    inStock: currentInStock,
+    inventorySignature: buildProductInventorySignature(product),
+    source,
+    updatedAt: new Date().toISOString()
+  };
+
+  const nextWatchlist = existing
+    ? watchlist.map((entry) => (String(entry.productId) === key ? { ...entry, ...nextEntry } : entry))
+    : [nextEntry, ...watchlist].slice(0, 12);
+
+  writeInterestWatchlist(nextWatchlist);
+}
+
+function formatAlertTimestamp(value) {
+  const timestamp = Date.parse(String(value || ''));
+  if (Number.isNaN(timestamp)) {
+    return '';
+  }
+  return new Date(timestamp).toLocaleString();
+}
+
+function getVisibleProducts() {
+  return marketplaceState.products.filter((product) => isVisibleProduct(product));
+}
+
+function getSimilarInterestSuggestions() {
+  const visibleProducts = getVisibleProducts();
+  const watchlist = readInterestWatchlist();
+  const recentSearches = readRecentSearches();
+  const seen = new Set();
+  const suggestions = [];
+
+  recentSearches.forEach((entry) => {
+    const query = normalize(entry.query);
+    if (!query) {
+      return;
+    }
+    const match = visibleProducts.find((product) => !seen.has(String(product.id)) && buildProductSearchBlob(product).includes(query));
+    if (!match) {
+      return;
+    }
+    seen.add(String(match.id));
+    suggestions.push({
+      product: match,
+      reason: `Matches your recent search for "${entry.query}".`
+    });
+  });
+
+  watchlist.forEach((watch) => {
+    const category = normalize(watch.category);
+    if (!category) {
+      return;
+    }
+    const match = visibleProducts.find((product) => String(product.id) !== String(watch.productId)
+      && !seen.has(String(product.id))
+      && normalize(product.category) === category);
+    if (!match) {
+      return;
+    }
+    seen.add(String(match.id));
+    suggestions.push({
+      product: match,
+      reason: `Similar category to ${watch.productName}.`
+    });
+  });
+
+  return suggestions.slice(0, 4);
+}
+
+function renderInterestAlertCenter() {
+  if (!interestAlertCenter) {
+    return;
+  }
+
+  const recentSearches = readRecentSearches();
+  const watchlist = readInterestWatchlist();
+  const alerts = readInterestAlertInbox().slice(0, 6);
+  const suggestions = getSimilarInterestSuggestions();
+  const notificationsSupported = 'Notification' in window;
+  const permissionLabel = !notificationsSupported
+    ? 'Browser alerts unavailable on this device'
+    : Notification.permission === 'granted'
+      ? 'Browser alerts enabled'
+      : 'Enable browser alerts';
+
+  interestAlertCenter.innerHTML = `
+    <div class="alert-center-head">
+      <div>
+        <p class="eyebrow">Smart alerts</p>
+        <h3>Get notified about searched items, tracked products, price drops, restocks, and similar picks.</h3>
+      </div>
+      <div class="alert-center-actions">
+        <button id="interestAlertEnableBtn" class="btn btn-secondary" type="button"${!notificationsSupported || Notification.permission === 'granted' ? ' disabled' : ''}>${escapeHtml(permissionLabel)}</button>
+        <button id="interestAlertClearBtn" class="btn btn-secondary" type="button"${alerts.length ? '' : ' disabled'}>Clear alerts</button>
+      </div>
+    </div>
+    <div class="alert-center-grid">
+      <div class="alert-center-block">
+        <strong>Recent searches</strong>
+        ${recentSearches.length
+          ? `<div class="alert-pill-row">${recentSearches.map((entry) => `<span class="alert-pill">${escapeHtml(entry.query)}</span>`).join('')}</div>`
+          : '<p class="form-help">Search for products and Teyo will remember what you looked for on this device.</p>'}
+      </div>
+      <div class="alert-center-block">
+        <strong>Tracked items</strong>
+        ${watchlist.length
+          ? `<div class="alert-watch-list">${watchlist.slice(0, 4).map((entry) => `
+            <div class="alert-watch-item">
+              <strong>${escapeHtml(entry.productName)}</strong>
+              <p>${escapeHtml(entry.companyName)}${entry.priceLabel ? ` • ${escapeHtml(entry.priceLabel)}` : ''}</p>
+              <span>${entry.inStock ? 'Currently showing in stock' : 'Waiting for stock or price movement'}</span>
+            </div>
+          `).join('')}</div>`
+          : '<p class="form-help">Open a product and click "Track this item" to follow it.</p>'}
+      </div>
+      <div class="alert-center-block">
+        <strong>Similar to what you looked for</strong>
+        ${suggestions.length
+          ? `<div class="alert-watch-list">${suggestions.map(({ product, reason }) => `
+            <div class="alert-watch-item">
+              <strong><a class="alert-link" href="${escapeHtml(buildInterestAlertLink(product))}" target="_blank" rel="noopener">${escapeHtml(product.productName || product.name || 'Product')}</a></strong>
+              <p>${escapeHtml(product.companyName || product.company || '')}${product.price ? ` • ${escapeHtml(product.price)}` : ''}</p>
+              <span>${escapeHtml(reason)}</span>
+            </div>
+          `).join('')}</div>`
+          : '<p class="form-help">Once you search or track items, similar products will appear here.</p>'}
+      </div>
+    </div>
+    <div class="alert-center-block" style="margin-top: 14px;">
+      <strong>Latest alerts</strong>
+      ${alerts.length
+        ? `<div class="alert-feed">${alerts.map((entry) => `
+          <div class="alert-feed-item">
+            <strong>${escapeHtml(entry.title)}</strong>
+            <p>${escapeHtml(entry.message)}</p>
+            <time>${escapeHtml(formatAlertTimestamp(entry.createdAt))}</time>
+          </div>
+        `).join('')}</div>`
+        : '<p class="form-help">No alerts yet. Search for an item or track a product to start getting updates.</p>'}
+    </div>
+  `;
+
+  interestAlertCenter.querySelector('#interestAlertEnableBtn')?.addEventListener('click', async () => {
+    const permission = await ensureNotificationPermission();
+    if (permission === 'granted') {
+      setStockReminderMessage('Browser notifications are now enabled for Teyo alerts.');
+    } else {
+      setStockReminderMessage('Teyo saved your alerts, but browser notifications are still disabled.');
+    }
+    renderInterestAlertCenter();
+  });
+
+  interestAlertCenter.querySelector('#interestAlertClearBtn')?.addEventListener('click', () => {
+    writeInterestAlertInbox([]);
+    renderInterestAlertCenter();
+    setStockReminderMessage('Alert history cleared for this device.');
+  });
+}
+
 function escapeHtml(value) {
   return String(value || '')
     .replace(/&/g, '&amp;')
@@ -2277,7 +2566,7 @@ function filteredProducts() {
       || (sizeFilter === 'ALL'
         ? (selectedInventory.length ? selectedInventory.some((entry) => isInStockStatus(entry.stockStatus)) : isInStockStatus(product.stockStatus))
         : selectedInventory.some((entry) => isInStockStatus(entry.stockStatus)));
-    const searchBlob = `${product.productName || product.name} ${product.companyName || product.company} ${product.description || ''} ${product.category || ''} ${sizes.join(' ')}`.toLowerCase();
+    const searchBlob = buildProductSearchBlob(product);
     const searchMatch = !query || searchBlob.includes(query);
     return categoryMatch && sizeMatch && stockMatch && searchMatch;
   });
@@ -2327,7 +2616,7 @@ function renderResults() {
         ${product.verifiedSeller ? '<span class="badge success-badge">Verified seller</span>' : ''}
       </div>
     `;
-    item.addEventListener('click', () => renderProduct(product));
+    item.addEventListener('click', () => renderProduct(product, { trackInterest: true }));
     resultsList.appendChild(item);
   });
 }
@@ -2745,7 +3034,7 @@ function renderStockReminderPanel(product, storeEntries, sizeFilter) {
   });
 }
 
-async function renderProduct(product) {
+async function renderProduct(product, options = {}) {
   if (!selectedProduct) return;
 
   const currentLookupToken = ++_storeLookupToken;
@@ -2769,6 +3058,7 @@ async function renderProduct(product) {
   const safeTrustSummary = escapeHtml(product.trustSummary || '');
   const safeImageUrl = safeUrl(product.imageUrl || '');
   const safeWebsiteUrl = safeUrl(product.websiteUrl || product.website || '');
+  const safeProductLink = escapeHtml(buildInterestAlertLink(product));
   const imageMarkup = product.imageUrl ? `<img src="${safeImageUrl}" alt="${safeProductName}" class="product-image" />` : '';
   const stores = Array.isArray(product.stores) ? product.stores : [];
   const features = product.description ? [escapeHtml(product.description)] : [];
@@ -2776,6 +3066,11 @@ async function renderProduct(product) {
   const ratingLine = product.rating ? `<p><strong>Customer rating:</strong> ${safeRating}</p>` : '<p><strong>Reviews:</strong> No public reviews yet. Buyer feedback will appear after verified purchases.</p>';
   const reviewLine = product.reviewCount ? `<p><strong>Review count:</strong> ${safeReviewCount}</p>` : '';
   const trustSummary = product.trustSummary ? `<p><strong>Seller promise:</strong> ${safeTrustSummary}</p>` : '';
+
+  if (options.trackInterest) {
+    upsertInterestedProduct(product, 'view');
+    renderInterestAlertCenter();
+  }
 
   selectedProduct.innerHTML = `
     ${imageMarkup}
@@ -2800,12 +3095,24 @@ async function renderProduct(product) {
     <p><strong>Safety guidance:</strong> ${getSafetySummary(product)}</p>
     <p><strong>Evidence source:</strong> Brand submission and admin review.</p>
     <div class="detail-actions">
+      <button id="interestWatchBtn" class="btn btn-secondary" type="button">Track this item</button>
       ${safeWebsiteUrl ? `<a class="btn btn-primary" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">Visit brand site</a>` : ''}
-      <a class="btn btn-secondary" href="/products/${escapeHtml(product.slug || product.id)}" target="_blank" rel="noopener">Product page</a>
+      <a class="btn btn-secondary" href="${safeProductLink}" target="_blank" rel="noopener">Product page</a>
       <a class="btn btn-secondary" href="#map">Find nearby pickup</a>
     </div>
     <div id="stockReminderPanel"></div>
   `;
+
+  selectedProduct.querySelector('#interestWatchBtn')?.addEventListener('click', async () => {
+    const permission = await ensureNotificationPermission();
+    upsertInterestedProduct(product, 'manual');
+    renderInterestAlertCenter();
+    if (permission === 'granted') {
+      setStockReminderMessage(`${product.productName || product.name || 'This item'} is now tracked for stock and price alerts.`);
+    } else {
+      setStockReminderMessage(`${product.productName || product.name || 'This item'} is now tracked. Enable browser notifications to receive pop-up alerts.`);
+    }
+  });
 
   renderStores(null, product.stockStatus, sizeFilter);
   const storeEntries = await resolveStoreEntriesForProduct(product, stores, sizeFilter);
@@ -3477,19 +3784,98 @@ function evaluateReminder(product, reminder) {
   return { reason };
 }
 
-async function checkStockReminders() {
+async function fetchProductsForAlertChecks() {
+  const response = await fetch('/api/products');
+  if (!response.ok) {
+    throw new Error('Unable to fetch latest products.');
+  }
+  const products = await response.json();
+  return Array.isArray(products) ? products : [];
+}
+
+async function checkInterestAlerts(latestProducts = null) {
+  const recentSearches = readRecentSearches();
+  const watchlist = readInterestWatchlist();
+  const products = Array.isArray(latestProducts) ? latestProducts.filter((product) => isVisibleProduct(product)) : [];
+
+  if (!products.length) {
+    renderInterestAlertCenter();
+    return;
+  }
+
+  const updatedWatchlist = watchlist.map((watch) => {
+    const product = products.find((entry) => String(entry.id) === String(watch.productId));
+    if (!product) {
+      return watch;
+    }
+
+    const currentPriceValue = parsePriceNumber(product.price);
+    const currentPriceLabel = String(product.price || '');
+    const currentInventorySignature = buildProductInventorySignature(product);
+    const inventoryHasStock = getProductSizeInventory(product).some((entry) => isInStockStatus(entry.stockStatus));
+    const currentInStock = inventoryHasStock || isInStockStatus(product.stockStatus);
+
+    if (Number(watch.priceValue || 0) > 0 && currentPriceValue > 0 && currentPriceValue < Number(watch.priceValue || 0)) {
+      createInterestAlertEntry({
+        signature: `price-drop|${product.id}|${currentPriceValue}`,
+        title: `${product.productName || product.name} price dropped`,
+        message: `${product.companyName || product.company} dropped the price from ${watch.priceLabel || 'its previous price'} to ${currentPriceLabel || 'a lower price'}.`
+      }, true);
+    }
+
+    if (!watch.inStock && currentInStock && currentInventorySignature !== watch.inventorySignature) {
+      createInterestAlertEntry({
+        signature: `back-in-stock|${product.id}|${currentInventorySignature}`,
+        title: `${product.productName || product.name} is back in stock`,
+        message: `${product.companyName || product.company} now shows new availability for this item.`
+      }, true);
+    }
+
+    return {
+      ...watch,
+      productName: String(product.productName || product.name || watch.productName || ''),
+      companyName: String(product.companyName || product.company || watch.companyName || ''),
+      category: String(product.category || watch.category || ''),
+      priceLabel: currentPriceLabel,
+      priceValue: currentPriceValue,
+      stockStatus: String(product.stockStatus || ''),
+      inStock: currentInStock,
+      inventorySignature: currentInventorySignature,
+      updatedAt: new Date().toISOString()
+    };
+  });
+
+  writeInterestWatchlist(updatedWatchlist);
+
+  recentSearches.forEach((entry) => {
+    const query = normalize(entry.query);
+    if (!query) {
+      return;
+    }
+
+    const match = products.find((product) => buildProductSearchBlob(product).includes(query));
+    if (!match) {
+      return;
+    }
+
+    createInterestAlertEntry({
+      signature: `search-match|${query}|${match.id}`,
+      title: `${match.productName || match.name} matches your recent search`,
+      message: `${match.companyName || match.company} has an item on Teyo related to "${entry.query}".`
+    });
+  });
+
+  renderInterestAlertCenter();
+}
+
+async function checkStockReminders(latestProducts = null) {
   const reminders = readStockReminders().filter((entry) => !entry.notified);
   if (!reminders.length) {
     return;
   }
 
   try {
-    const response = await fetch('/api/products');
-    if (!response.ok) {
-      return;
-    }
-
-    const products = await response.json();
+    const products = Array.isArray(latestProducts) ? latestProducts : await fetchProductsForAlertChecks();
     let triggeredCount = 0;
     const updatedReminders = readStockReminders().map((reminder) => {
       if (reminder.notified) {
@@ -3529,6 +3915,16 @@ async function checkStockReminders() {
   }
 }
 
+async function runBackgroundAlertChecks(latestProducts = null) {
+  try {
+    const products = Array.isArray(latestProducts) ? latestProducts : await fetchProductsForAlertChecks();
+    await checkStockReminders(products);
+    await checkInterestAlerts(products);
+  } catch (error) {
+    renderInterestAlertCenter();
+  }
+}
+
 async function loadMarketplaceData() {
   try {
     const useCompanyScope = Boolean(inventoryProductList && hasCompanySession() && !hasOwnerSession());
@@ -3553,7 +3949,8 @@ async function loadMarketplaceData() {
   renderAds();
   renderInventoryManager();
   renderResults();
-  await checkStockReminders();
+  renderInterestAlertCenter();
+  await runBackgroundAlertChecks(marketplaceState.products);
 }
 
 async function approvePartner(id) {
@@ -3676,7 +4073,17 @@ if (referralCopyBtn) {
 updateReferralLinkField();
 
 if (searchInput) {
-  searchInput.addEventListener('input', renderResults);
+  searchInput.addEventListener('input', () => {
+    renderResults();
+    window.clearTimeout(interestSearchDebounceTimer);
+    interestSearchDebounceTimer = window.setTimeout(() => {
+      const query = String(searchInput.value || '').trim();
+      if (query.length >= 2) {
+        recordRecentSearch(query);
+        checkInterestAlerts(marketplaceState.products).catch(() => {});
+      }
+    }, 450);
+  });
 }
 if (categorySelect) {
   categorySelect.addEventListener('change', renderResults);
@@ -4246,7 +4653,7 @@ if (companyAccessMessage && hasCompanySession()) {
 if (document.getElementById('mapLeaflet')) initMap();
 if (document.getElementById('mapLeaflet')) {
   setInterval(() => {
-    checkStockReminders().catch(() => {});
+    runBackgroundAlertChecks().catch(() => {});
   }, 60000);
 }
 

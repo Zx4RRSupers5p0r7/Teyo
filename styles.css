@@ -541,6 +541,97 @@ article { padding: 24px; }
 .detail-meta span { border: 1px solid var(--line); padding: 6px 9px; border-radius: 999px; color: var(--muted); font-size: 0.85rem; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .detail-actions .btn { flex: 1; min-width: 120px; }
+.alert-center-card {
+  margin: 18px 0 8px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  box-shadow: var(--shadow);
+}
+.alert-center-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.alert-center-head h3 {
+  margin: 8px 0 0;
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+}
+.alert-center-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.alert-center-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+.alert-center-block {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255,255,255,0.03);
+}
+.alert-center-block strong {
+  display: block;
+  margin-bottom: 8px;
+}
+.alert-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.alert-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+  background: rgba(255,255,255,0.03);
+}
+.alert-watch-list,
+.alert-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.alert-watch-item,
+.alert-feed-item {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: rgba(255,255,255,0.03);
+}
+.alert-watch-item p,
+.alert-feed-item p {
+  margin: 0;
+}
+.alert-feed-item strong,
+.alert-watch-item strong {
+  margin-bottom: 4px;
+}
+.alert-feed-item time,
+.alert-watch-item span {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.alert-link {
+  color: var(--text);
+  text-decoration: none;
+}
+.alert-link:hover {
+  color: var(--accent);
+}
 .reminder-panel {
   margin-top: 14px;
   border: 1px solid var(--line);
@@ -1859,6 +1950,9 @@ article { padding: 24px; }
     grid-template-columns: 1fr;
   }
   .customer-payment-actions {
+    grid-template-columns: 1fr;
+  }
+  .alert-center-grid {
     grid-template-columns: 1fr;
   }
 }

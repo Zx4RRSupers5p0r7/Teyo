@@ -1128,6 +1128,10 @@ async function runCinematicOnboarding(task) {
   }
 }
 
+async function runTeyoSuperpowerAnimation(task) {
+  return runCinematicOnboarding(task);
+}
+
 function isAdminPage() {
   return Boolean(adminPartnerList || adminAdsList || document.getElementById('adminProductList'));
 }
@@ -3673,7 +3677,7 @@ if (partnerForm) {
       if (submitBtn) {
         submitBtn.disabled = true;
       }
-      const response = await runCinematicOnboarding(() => fetch('/api/partner', {
+      const response = await runTeyoSuperpowerAnimation(() => fetch('/api/partner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attachOwnerAuth(payload))
@@ -3719,7 +3723,7 @@ if (superpowerDemoBtn) {
   superpowerDemoBtn.addEventListener('click', async () => {
     superpowerDemoBtn.disabled = true;
     try {
-      await runCinematicOnboarding(async () => {
+      await runTeyoSuperpowerAnimation(async () => {
         await wait(4200);
         return true;
       });

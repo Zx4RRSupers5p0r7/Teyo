@@ -361,11 +361,12 @@ function createThreeStarScene(mount) {
     };
   };
   const getRenderSize = () => {
-    const rect = mount.getBoundingClientRect();
+    /* Always use the actual visual viewport dimensions */
     const vp = getViewportSize();
-    const width = Math.max(1, Math.round(rect.width || vp.width));
-    const height = Math.max(1, Math.round(rect.height || vp.height));
-    return { width, height };
+    return {
+      width: Math.max(1, Math.round(vp.width)),
+      height: Math.max(1, Math.round(vp.height))
+    };
   };
   const { width: initialWidth, height: initialHeight } = getRenderSize();
 
@@ -852,11 +853,15 @@ function playCinematicTone(frequency, duration, gainValue = 0.00018) {
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Flash word (ONE / CLICK) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 async function flashWord(word, holdMs = 2000, exitMs = 200) {
   if (!cinematicFlashWord) return;
-  cinematicFlashWord.textContent = word;
+  /* Use inner span so outer element is full-screen flex container (reliable centering) */
+  cinematicFlashWord.innerHTML = '';
+  var inner = document.createElement('span');
+  inner.className = 'cinematic-flash-inner';
+  inner.textContent = word;
+  cinematicFlashWord.appendChild(inner);
   cinematicFlashWord.classList.remove('is-zooming');
-  cinematicFlashWord.style.animation = 'none';
+  cinematicFlashWord.style.cssText = '';
   void cinematicFlashWord.offsetHeight;
-  cinematicFlashWord.style.animation = '';
   setCinematicVisibility(cinematicFlashWord, true);
   cinematicFlashWord.classList.add('is-zooming');
   playCinematicTone(word === 'ONE' ? 720 : 880, 0.32, 0.00022);
@@ -885,8 +890,17 @@ async function runCinematicOnboarding(task) {
     document.body.appendChild(cinematicOnboardingOverlay);
   }
 
+  /* Measure exact visual viewport before any layout changes */
+  const _VW = window.innerWidth;
+  const _VH = window.innerHeight;
+  /* Pin overlay to exact pixel dims (fixes mobile Safari 100vh bug) */
+  cinematicOnboardingOverlay.style.cssText =
+    'position:fixed;left:0;top:0;width:' + _VW + 'px;height:' + _VH + 'px;z-index:99999;overflow:hidden;';
+
   cinematicOnboardingOverlay.hidden = false;
   document.body.style.overflow = 'hidden';
+  document.body.style.position = 'fixed';
+  document.body.style.width = '100%';
   clearCinematicOverlayModes();
   setCinematicOverlayMode('star-stage');
 
@@ -1058,6 +1072,9 @@ async function runCinematicOnboarding(task) {
     clearCinematicOverlayModes();
     cinematicOnboardingOverlay.hidden = true;
     document.body.style.overflow = '';
+  document.body.style.position = '';
+  document.body.style.width = '';
+  cinematicOnboardingOverlay.style.cssText = '';
   }
 }
 

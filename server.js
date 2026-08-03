@@ -3253,11 +3253,43 @@ function buildProductSlug(product) {
 }
 
 function buildLandingPagesIndexHtml(baseUrl) {
-  const cards = SEO_LANDING_PAGE_CATALOG.map((entry) => {
-    const href = `/city/${entry.city}/${entry.service}`;
-    const label = `${prettifySlug(entry.city)} • ${prettifySlug(entry.service)}`;
-    return `<a class="landing-page-chip" href="${href}">${escapeHtml(label)}</a>`;
-  }).join('');
+  const cityCatalog = SEO_LANDING_PAGE_CATALOG.reduce((accumulator, entry) => {
+    const cityKey = String(entry.city || '').trim().toLowerCase();
+    if (!cityKey) {
+      return accumulator;
+    }
+    accumulator[cityKey] = (accumulator[cityKey] || 0) + 1;
+    return accumulator;
+  }, {});
+
+  const cityButtons = ['all', ...Object.keys(cityCatalog).sort((left, right) => left.localeCompare(right))]
+    .map((city) => {
+      const label = city === 'all' ? 'All cities' : prettifySlug(city);
+      const count = city === 'all'
+        ? SEO_LANDING_PAGE_CATALOG.length
+        : Number(cityCatalog[city] || 0);
+      const active = city === 'all' ? ' is-active' : '';
+      return `<button type="button" class="lp-city-chip${active}" data-city-filter="${escapeHtml(city)}">${escapeHtml(label)} <span>${count}</span></button>`;
+    })
+    .join('');
+
+  const cards = SEO_LANDING_PAGE_CATALOG
+    .map((entry) => {
+      const citySlug = String(entry.city || '').trim().toLowerCase();
+      const serviceSlug = String(entry.service || '').trim().toLowerCase();
+      const cityLabel = prettifySlug(citySlug);
+      const serviceLabel = prettifySlug(serviceSlug);
+      const href = `/city/${citySlug}/${serviceSlug}`;
+      return `
+        <a class="lp-list-card" href="${href}" data-city="${escapeHtml(citySlug)}" data-service="${escapeHtml(serviceSlug)}" data-keywords="${escapeHtml(`${cityLabel} ${serviceLabel}`.toLowerCase())}">
+          <p class="lp-list-kicker">${escapeHtml(cityLabel)}</p>
+          <h3>${escapeHtml(serviceLabel)} shopping</h3>
+          <p>See live product listings, stock visibility, and company profiles in ${escapeHtml(cityLabel)}.</p>
+          <span class="lp-list-cta">Open page</span>
+        </a>
+      `;
+    })
+    .join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -3273,10 +3305,29 @@ function buildLandingPagesIndexHtml(baseUrl) {
   <link rel="apple-touch-icon" href="/favicon-48x48.png" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
-    .lp-wrap{max-width:1120px;margin:0 auto;padding:32px 20px 72px;}
-    .lp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:18px;}
-    .landing-page-chip{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.03);font-size:0.95rem;}
-    .landing-page-chip:hover{border-color:var(--accent);color:var(--accent);}
+    .lp-wrap{max-width:1200px;margin:0 auto;padding:30px 20px 72px;}
+    .lp-headline{max-width:920px;}
+    .lp-browser{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);gap:20px;margin-top:24px;}
+    .lp-city-panel,.lp-results-panel{background:rgba(8,10,16,.82);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 32px rgba(0,0,0,.22);}
+    .lp-city-panel{padding:14px;align-self:start;position:sticky;top:20px;}
+    .lp-city-panel h2{font-size:.88rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:4px 6px 12px;}
+    .lp-city-list{display:grid;gap:8px;max-height:68vh;overflow:auto;padding:4px;}
+    .lp-city-chip{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.02);color:var(--text);font-weight:600;cursor:pointer;}
+    .lp-city-chip span{font-size:.8rem;opacity:.8;}
+    .lp-city-chip.is-active,.lp-city-chip:hover{border-color:var(--accent);color:var(--accent);}
+    .lp-results-panel{padding:14px;}
+    .lp-results-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+    .lp-results-toolbar input{flex:1;min-width:180px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1320;color:var(--text);}
+    .lp-results-meta{font-size:.82rem;color:var(--muted);white-space:nowrap;}
+    .lp-results-list{display:grid;gap:12px;max-height:72vh;overflow:auto;padding:4px;}
+    .lp-list-card{display:block;padding:16px;border:1px solid var(--line);border-radius:14px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.02);}
+    .lp-list-card:hover{border-color:var(--accent);transform:translateY(-1px);}
+    .lp-list-kicker{font-size:.76rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;}
+    .lp-list-card h3{margin:0 0 7px;font-size:1.05rem;}
+    .lp-list-card p{margin:0;color:var(--muted);line-height:1.55;}
+    .lp-list-cta{display:inline-block;margin-top:10px;color:var(--accent);font-weight:700;font-size:.86rem;}
+    .lp-empty{border:1px dashed var(--line);border-radius:12px;padding:18px;color:var(--muted);text-align:center;}
+    @media (max-width:980px){.lp-browser{grid-template-columns:1fr;}.lp-city-panel{position:static;}.lp-city-list{max-height:240px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));}.lp-results-list{max-height:none;}}
   </style>
 </head>
 <body>
@@ -3294,12 +3345,69 @@ function buildLandingPagesIndexHtml(baseUrl) {
       </a>
     </header>
     <main class="lp-wrap">
-      <p class="eyebrow">Search-ready discovery pages</p>
-      <h1>Browse Teyo’s growing landing page catalog</h1>
-      <p class="section-heading">These pages target high-intent city and product searches so shoppers can find live products, nearby inventory, and partner stores faster.</p>
-      <div class="lp-grid">${cards}</div>
+      <div class="lp-headline">
+        <p class="eyebrow">Search-ready discovery pages</p>
+        <h1>Browse Teyo?s growing landing page catalog</h1>
+        <p class="section-heading">Find high-intent city and niche pages in a professional listing view. Use search and scroll to quickly open the landing page you need.</p>
+      </div>
+      <div class="lp-browser">
+        <aside class="lp-city-panel">
+          <h2>City filter</h2>
+          <div class="lp-city-list">${cityButtons}</div>
+        </aside>
+        <section class="lp-results-panel">
+          <div class="lp-results-toolbar">
+            <input id="lpSearchInput" type="search" placeholder="Search by city or niche (for example: Toronto, Beauty, Tech)" aria-label="Search landing pages" />
+            <span class="lp-results-meta" id="lpResultsMeta"></span>
+          </div>
+          <div class="lp-results-list" id="lpResultsList">${cards}</div>
+          <div class="lp-empty" id="lpEmptyState" hidden>No landing pages matched that filter yet. Try another city or niche.</div>
+        </section>
+      </div>
     </main>
   </div>
+  <script>
+    (function () {
+      const searchInput = document.getElementById('lpSearchInput');
+      const resultsList = document.getElementById('lpResultsList');
+      const resultMeta = document.getElementById('lpResultsMeta');
+      const emptyState = document.getElementById('lpEmptyState');
+      const cityButtons = Array.from(document.querySelectorAll('[data-city-filter]'));
+      const cards = Array.from(resultsList.querySelectorAll('.lp-list-card'));
+      let activeCity = 'all';
+
+      function render() {
+        const query = String(searchInput.value || '').trim().toLowerCase();
+        let visibleCount = 0;
+
+        cards.forEach((card) => {
+          const city = String(card.getAttribute('data-city') || '');
+          const keywords = String(card.getAttribute('data-keywords') || '');
+          const cityMatch = activeCity === 'all' || city === activeCity;
+          const textMatch = !query || keywords.includes(query);
+          const show = cityMatch && textMatch;
+          card.hidden = !show;
+          if (show) {
+            visibleCount += 1;
+          }
+        });
+
+        resultMeta.textContent = visibleCount + ' page' + (visibleCount === 1 ? '' : 's') + ' shown';
+        emptyState.hidden = visibleCount > 0;
+      }
+
+      cityButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          activeCity = String(button.getAttribute('data-city-filter') || 'all');
+          cityButtons.forEach((entry) => entry.classList.toggle('is-active', entry === button));
+          render();
+        });
+      });
+
+      searchInput.addEventListener('input', render);
+      render();
+    })();
+  </script>
 </body>
 </html>`;
 }
@@ -3733,6 +3841,7 @@ async function startServer() {
 }
 
 startServer();
+
 
 
 

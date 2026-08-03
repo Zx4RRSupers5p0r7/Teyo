@@ -1031,13 +1031,33 @@ function getPartnerRequestStatus(entry) {
   return 'pending';
 }
 
+function getPartnerClaimStatus(entry) {
+  const explicit = String(entry?.claimStatus || '').trim().toLowerCase();
+  if (explicit === 'unclaimed' || explicit === 'claimed') {
+    return explicit;
+  }
+  if (!sanitizeEmail(entry?.ownerEmail) && !entry?.activeListing) {
+    return 'unclaimed';
+  }
+  return 'claimed';
+}
+
+function isClaimablePartner(entry) {
+  return getPartnerClaimStatus(entry) === 'unclaimed' && getPartnerRequestStatus(entry) !== 'banned';
+}
+
 function serializePublicPartner(entry) {
   return {
     id: entry.id,
     companyName: entry.companyName,
     websiteUrl: entry.websiteUrl,
+    storeCatalogUrl: entry.storeCatalogUrl || '',
+    storeNiche: entry.storeNiche || '',
+    details: entry.details || '',
     paid: Boolean(entry.paid),
     activeListing: Boolean(entry.activeListing),
+    claimable: isClaimablePartner(entry),
+    claimStatus: getPartnerClaimStatus(entry),
     requestStatus: getPartnerRequestStatus(entry),
     createdAt: entry.createdAt
   };
@@ -1094,6 +1114,16 @@ function serializePublicProduct(entry) {
   };
 }
 
+function findClaimablePartner(data, companyName, websiteUrl = '') {
+  const normalizedCompany = normalizeName(companyName);
+  const normalizedWebsite = normalizeWebsite(websiteUrl);
+  const matches = data.partners
+    .filter((entry) => isClaimablePartner(entry))
+    .filter((entry) => normalizeName(entry.companyName) === normalizedCompany || (normalizedWebsite && normalizeWebsite(entry.websiteUrl || '') === normalizedWebsite))
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime());
+  return matches[0] || null;
+}
+
 function ensurePartnerRecord(companyName, ownerEmail = '') {
   const data = loadData();
   const safeCompanyName = sanitizePlainText(companyName, 120);
@@ -1119,10 +1149,12 @@ function ensurePartnerRecord(companyName, ownerEmail = '') {
     websiteUrl: '',
     storeCatalogUrl: '',
     details: '',
+    storeNiche: '',
     paymentConfirmed: false,
     paid: false,
     activeListing: false,
     requestStatus: 'pending',
+    claimStatus: safeOwnerEmail ? 'claimed' : 'unclaimed',
     storeSync: createDefaultStoreSyncConfig(''),
     companyAccessKey: generateCompanyAccessKey(),
     createdAt: new Date().toISOString()
@@ -1725,12 +1757,65 @@ app.post('/api/company/store-sync/run', adminLimiter, async (req, res) => {
   });
 });
 
+app.post('/api/partners/seed', requireAdmin, (req, res) => {
+  const companyName = sanitizePlainText(req.body.companyName, 120);
+  const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
+  const storeNiche = sanitizePlainText(req.body.storeNiche, 120);
+  const details = sanitizePlainText(req.body.details, 4000);
+  const normalizedWebsite = normalizeWebsite(websiteUrl);
+
+  if (!companyName || !normalizedWebsite || !isBusinessOwnerSubmission(companyName, normalizedWebsite)) {
+    return res.status(400).json({ success: false, message: 'Enter a real business name and valid business website before creating a claimable profile.' });
+  }
+
+  const data = loadData();
+  const existingClaimable = findClaimablePartner(data, companyName, normalizedWebsite);
+  if (existingClaimable) {
+    existingClaimable.companyName = companyName;
+    existingClaimable.websiteUrl = normalizedWebsite;
+    existingClaimable.storeNiche = storeNiche || existingClaimable.storeNiche || '';
+    existingClaimable.details = details || existingClaimable.details || '';
+    saveData(data);
+    return res.json({ success: true, message: `${companyName} is already live as a claimable business profile.`, partner: existingClaimable });
+  }
+
+  const activeMatch = findLatestPartner(data, companyName);
+  if (activeMatch && !isClaimablePartner(activeMatch)) {
+    return res.status(409).json({ success: false, message: 'A claimed or active listing already exists for this business.' });
+  }
+
+  const entry = {
+    id: Date.now(),
+    companyName,
+    ownerEmail: '',
+    websiteUrl: normalizedWebsite,
+    storeCatalogUrl: '',
+    details: details || '',
+    storeNiche: storeNiche || '',
+    hasPhysicalStore: false,
+    storeLocation: '',
+    paymentConfirmed: false,
+    paid: false,
+    activeListing: false,
+    requestStatus: 'pending',
+    claimStatus: 'unclaimed',
+    storeSync: createDefaultStoreSyncConfig(''),
+    companyAccessKey: generateCompanyAccessKey(),
+    createdAt: new Date().toISOString()
+  };
+
+  data.partners.push(entry);
+  saveData(data);
+  return res.json({ success: true, message: `${companyName} is now live as a claimable business profile.`, partner: entry });
+});
+
 app.post('/api/partner', async (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const websiteUrl = sanitizePlainText(req.body.websiteUrl, 2048);
   const storeCatalogUrl = sanitizePlainText(req.body.storeCatalogUrl, 2048);
   const details = sanitizePlainText(req.body.details, 4000);
+  const storeNiche = sanitizePlainText(req.body.storeNiche, 120);
   const hasPhysicalStore = normalizePhysicalStoreFlag(req.body.hasPhysicalStore);
   const storeLocation = sanitizePlainText(req.body.storeLocation, 220);
   const ownerKey = String(req.body.ownerKey || '').trim();
@@ -1745,26 +1830,35 @@ app.post('/api/partner', async (req, res) => {
   }
 
   const data = loadData();
-  const entry = {
+  const claimableMatch = findClaimablePartner(data, companyName, normalizedWebsite);
+  const nowIso = new Date().toISOString();
+  const entry = claimableMatch || {
     id: Date.now(),
-    companyName,
-    ownerEmail,
-    websiteUrl: normalizedWebsite,
-    storeCatalogUrl: isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '',
-    details: details || '',
-    hasPhysicalStore,
-    storeLocation: hasPhysicalStore ? storeLocation : '',
-    paymentConfirmed: true,
-    paid: true,
-    activeListing: true,
-    requestStatus: 'approved',
-    storeSync: createDefaultStoreSyncConfig(isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : ''),
     companyAccessKey: generateCompanyAccessKey(),
-    createdAt: new Date().toISOString(),
-    approvedAt: new Date().toISOString()
+    createdAt: nowIso
   };
 
-  data.partners.push(entry);
+  entry.companyName = companyName;
+  entry.ownerEmail = ownerEmail;
+  entry.websiteUrl = normalizedWebsite;
+  entry.storeCatalogUrl = isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '';
+  entry.details = details || entry.details || '';
+  entry.storeNiche = storeNiche || entry.storeNiche || '';
+  entry.hasPhysicalStore = hasPhysicalStore;
+  entry.storeLocation = hasPhysicalStore ? storeLocation : '';
+  entry.paymentConfirmed = true;
+  entry.paid = true;
+  entry.activeListing = true;
+  entry.requestStatus = 'approved';
+  entry.claimStatus = 'claimed';
+  entry.storeSync = createDefaultStoreSyncConfig(isSafeHttpUrl(normalizedStoreCatalogUrl) ? normalizedStoreCatalogUrl : '');
+  entry.approvedAt = nowIso;
+  entry.claimedAt = nowIso;
+
+  if (!claimableMatch) {
+    data.partners.push(entry);
+  }
+
   let syncResult = null;
   if (entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
     syncResult = await runPartnerStoreSync(entry, data, { reason: hasOwnerKeyAccess(ownerEmail, ownerKey) ? 'owner-override' : 'auto-setup' });
@@ -1774,8 +1868,10 @@ app.post('/api/partner', async (req, res) => {
   res.json({
     success: true,
     message: syncResult?.success
-      ? `Store setup complete. Imported ${syncResult.importedCount} products and updated ${syncResult.changedCount}.`
-      : 'Store setup complete. Your listing is live and automatic product sync is enabled.',
+      ? `${claimableMatch ? 'Profile claimed and store setup complete.' : 'Store setup complete.'} Imported ${syncResult.importedCount} products and updated ${syncResult.changedCount}.`
+      : (claimableMatch
+        ? 'Profile claimed. Your listing is live and automatic product sync is enabled.'
+        : 'Store setup complete. Your listing is live and automatic product sync is enabled.'),
     companyAccessKey: entry.companyAccessKey,
     importedCount: syncResult?.importedCount || 0,
     changedCount: syncResult?.changedCount || 0,

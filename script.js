@@ -64,6 +64,16 @@ const cinematicFlashLayer = document.getElementById('cinematicFlashLayer');
 const cinematicFireSweep = document.getElementById('cinematicFireSweep');
 const cinematicThreeMount = document.getElementById('cinematicThreeMount');
 const superpowerDemoBtn = document.getElementById('superpowerDemoBtn');
+const ownerThemeCompanyNameInput = document.getElementById('ownerThemeCompanyName');
+const ownerThemeWebsiteInput = document.getElementById('ownerThemeWebsiteUrl');
+const ownerThemeNicheInput = document.getElementById('ownerThemeNiche');
+const ownerThemeDetailsInput = document.getElementById('ownerThemeDetails');
+const ownerThemePreviewBtn = document.getElementById('ownerThemePreviewBtn');
+const ownerThemeRunBtn = document.getElementById('ownerThemeRunBtn');
+const ownerSeedProfileBtn = document.getElementById('ownerSeedProfileBtn');
+const ownerThemePalette = document.getElementById('ownerThemePalette');
+const ownerThemeMessage = document.getElementById('ownerThemeMessage');
+const claimablePartnerProfiles = document.getElementById('claimablePartnerProfiles');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -343,6 +353,109 @@ function getCinematicThemeForProfile(profile = {}) {
   };
 }
 
+function buildOwnerThemeSandboxProfile() {
+  return {
+    companyName: String(ownerThemeCompanyNameInput?.value || '').trim(),
+    websiteUrl: String(ownerThemeWebsiteInput?.value || '').trim(),
+    storeNiche: String(ownerThemeNicheInput?.value || '').trim(),
+    details: String(ownerThemeDetailsInput?.value || '').trim()
+  };
+}
+
+function renderOwnerThemePalette(theme) {
+  if (!ownerThemePalette) {
+    return;
+  }
+  ownerThemePalette.innerHTML = '';
+  const entries = [
+    ['Aura', theme.auraColor],
+    ['Ring', theme.ringColor],
+    ['Star', theme.starColor],
+    ['Core', theme.coreColor],
+    ['Sparkle', theme.sparkleColor],
+    ['Fog', theme.fogColor]
+  ];
+  entries.forEach(([label, color]) => {
+    const tile = document.createElement('div');
+    tile.className = 'owner-theme-swatch';
+
+    const chip = document.createElement('span');
+    chip.className = 'owner-theme-swatch-chip';
+    chip.style.background = color;
+
+    const title = document.createElement('strong');
+    title.textContent = label;
+
+    const value = document.createElement('small');
+    value.textContent = color;
+
+    tile.appendChild(chip);
+    tile.appendChild(title);
+    tile.appendChild(value);
+    ownerThemePalette.appendChild(tile);
+  });
+}
+
+function updateOwnerThemeSandboxPreview() {
+  if (!ownerThemePalette || !ownerThemeMessage) {
+    return;
+  }
+  const profile = buildOwnerThemeSandboxProfile();
+  const theme = getCinematicThemeForProfile(profile);
+  renderOwnerThemePalette(theme);
+
+  const label = profile.companyName || 'this test store';
+  const niche = profile.storeNiche || 'auto-detected niche';
+  ownerThemeMessage.textContent = `AI selected this palette for ${label} (${niche}).`;
+}
+
+function initializeOwnerThemeSandbox() {
+  if (!ownerThemePreviewBtn && !ownerThemeRunBtn) {
+    return;
+  }
+
+  const handlePreview = () => updateOwnerThemeSandboxPreview();
+  [ownerThemeCompanyNameInput, ownerThemeWebsiteInput, ownerThemeNicheInput, ownerThemeDetailsInput]
+    .forEach((input) => {
+      if (input) {
+        input.addEventListener('input', handlePreview);
+      }
+    });
+
+  if (ownerThemePreviewBtn) {
+    ownerThemePreviewBtn.addEventListener('click', () => {
+      updateOwnerThemeSandboxPreview();
+    });
+  }
+
+  if (ownerThemeRunBtn) {
+    ownerThemeRunBtn.addEventListener('click', async () => {
+      ownerThemeRunBtn.disabled = true;
+      try {
+        const profile = buildOwnerThemeSandboxProfile();
+        updateOwnerThemeSandboxPreview();
+        await runTeyoSuperpowerAnimation(async () => {
+          await wait(4200);
+          return true;
+        }, { storeProfile: profile });
+        if (ownerThemeMessage) {
+          ownerThemeMessage.textContent = 'Demo finished with your custom test store profile.';
+        }
+      } finally {
+        ownerThemeRunBtn.disabled = false;
+      }
+    });
+  }
+
+  if (ownerSeedProfileBtn) {
+    ownerSeedProfileBtn.addEventListener('click', async () => {
+      await createClaimableProfileFromOwnerSandbox();
+    });
+  }
+
+  updateOwnerThemeSandboxPreview();
+}
+
 function getReferralBaseUrl() {
   if (typeof window !== 'undefined' && window.location && window.location.protocol && window.location.host) {
     return `${window.location.protocol}//${window.location.host}`;
@@ -430,6 +543,126 @@ function syncPhysicalStoreLocationVisibility() {
   partnerStoreLocationInput.required = hasStore;
   if (!hasStore) {
     partnerStoreLocationInput.value = '';
+  }
+}
+
+function isClaimablePartnerProfile(partner) {
+  if (!partner) {
+    return false;
+  }
+  if (partner.claimable === true) {
+    return true;
+  }
+  const status = normalize(partner.requestStatus || partner.claimStatus || '');
+  const hasOwner = normalize(partner.ownerEmail || '').length > 0;
+  return !partner.activeListing && !hasOwner && status !== 'banned';
+}
+
+function claimPartnerProfile(partnerId) {
+  const partner = marketplaceState.partners.find((entry) => String(entry.id) === String(partnerId));
+  if (!partner || !partnerForm) {
+    return;
+  }
+
+  const companyField = partnerForm.querySelector('input[name="companyName"]');
+  const ownerEmailField = partnerForm.querySelector('input[name="ownerEmail"]');
+  const websiteField = partnerForm.querySelector('input[name="websiteUrl"]');
+  const catalogField = partnerForm.querySelector('input[name="storeCatalogUrl"]');
+  const nicheField = partnerForm.querySelector('input[name="storeNiche"]');
+  const detailsField = partnerForm.querySelector('textarea[name="details"]');
+
+  if (companyField) companyField.value = String(partner.companyName || '');
+  if (ownerEmailField) ownerEmailField.focus();
+  if (websiteField) websiteField.value = String(partner.websiteUrl || '');
+  if (catalogField) catalogField.value = String(partner.storeCatalogUrl || partner.websiteUrl || '');
+  if (nicheField) nicheField.value = String(partner.storeNiche || '');
+  if (detailsField) detailsField.value = String(partner.details || '');
+
+  if (checkoutMessage && !hasPlacementFeePaid()) {
+    checkoutMessage.textContent = 'Confirm the $0 setup fee, then finish claiming this profile below.';
+  }
+  if (formMessage) {
+    formMessage.textContent = `Claiming ${String(partner.companyName || 'this business')}: add your owner email and run Teyo's Superpower.`;
+  }
+  window.location.hash = '#partner-request';
+}
+
+function renderClaimablePartnerProfiles() {
+  if (!claimablePartnerProfiles) {
+    return;
+  }
+
+  const profiles = marketplaceState.partners.filter((partner) => isClaimablePartnerProfile(partner));
+  claimablePartnerProfiles.innerHTML = '';
+
+  if (!profiles.length) {
+    claimablePartnerProfiles.innerHTML = '<p class="form-help">No claimable business profiles are live yet.</p>';
+    return;
+  }
+
+  profiles.slice(0, 18).forEach((partner) => {
+    const card = document.createElement('article');
+    card.className = 'claimable-profile-card';
+    const safeCompanyName = escapeHtml(partner.companyName || 'Business profile');
+    const safeWebsiteUrl = safeUrl(partner.websiteUrl || '');
+    const safeWebsiteText = escapeHtml(partner.websiteUrl || '');
+    const safeNiche = escapeHtml(partner.storeNiche || 'Business profile');
+    const safeDetails = escapeHtml(partner.details || 'Teyo spotted this business and prepared a profile that can be claimed by the owner.');
+    card.innerHTML = `
+      <h4>${safeCompanyName}</h4>
+      <div class="claimable-profile-meta">
+        <span>Ready to claim</span>
+        <span>${safeNiche}</span>
+      </div>
+      <p>${safeDetails}</p>
+      ${safeWebsiteUrl ? `<p><a class="alert-link" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">${safeWebsiteText}</a></p>` : ''}
+      <button class="btn btn-primary" type="button" data-claim-partner="${partner.id}">Claim this business</button>
+    `;
+    card.querySelector('[data-claim-partner]')?.addEventListener('click', () => claimPartnerProfile(partner.id));
+    claimablePartnerProfiles.appendChild(card);
+  });
+}
+
+async function createClaimableProfileFromOwnerSandbox() {
+  const profile = buildOwnerThemeSandboxProfile();
+  if (!profile.companyName || !profile.websiteUrl || !isBusinessOwnerSubmission(profile.companyName, profile.websiteUrl)) {
+    if (ownerThemeMessage) {
+      ownerThemeMessage.textContent = 'Enter a company name and valid website URL before creating a claimable profile.';
+    }
+    return;
+  }
+
+  if (!ownerSeedProfileBtn) {
+    return;
+  }
+
+  ownerSeedProfileBtn.disabled = true;
+  try {
+    const response = await fetch('/api/partners/seed', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAdminHeaders()
+      },
+      body: JSON.stringify(profile)
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      if (ownerThemeMessage) {
+        ownerThemeMessage.textContent = result.message || 'Unable to create a claimable profile right now.';
+      }
+      return;
+    }
+    if (ownerThemeMessage) {
+      ownerThemeMessage.textContent = result.message || 'Claimable business profile created.';
+    }
+    await loadMarketplaceData();
+  } catch (error) {
+    if (ownerThemeMessage) {
+      ownerThemeMessage.textContent = 'Unable to create a claimable profile right now.';
+    }
+  } finally {
+    ownerSeedProfileBtn.disabled = false;
   }
 }
 
@@ -1454,6 +1687,9 @@ function syncOwnerOnlyVisibility() {
   document.querySelectorAll('[data-owner-only]').forEach((element) => {
     element.hidden = !ownerVisible;
   });
+  if (ownerVisible) {
+    updateOwnerThemeSandboxPreview();
+  }
 }
 
 function requestAndStoreAdminKey() {
@@ -4122,6 +4358,7 @@ async function loadMarketplaceData() {
 
   refreshSizeFilterOptions();
   renderAds();
+  renderClaimablePartnerProfiles();
   renderInventoryManager();
   renderResults();
   renderInterestAlertCenter();
@@ -4365,6 +4602,8 @@ if (superpowerDemoBtn) {
     }
   });
 }
+
+initializeOwnerThemeSandbox();
 
 if (productForm) {
   productForm.addEventListener('submit', async (event) => {

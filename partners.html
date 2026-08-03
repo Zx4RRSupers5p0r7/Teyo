@@ -90,6 +90,36 @@
             <div id="partnerPreviewPanel" class="partner-preview-panel"></div>
           </div>
 
+          <div class="partner-form-card" data-owner-only hidden>
+            <div>
+              <h3>Owner AI theme sandbox</h3>
+              <p>Test made-up company profiles and preview the exact star colors Teyo AI will pick before a store goes live.</p>
+            </div>
+            <div class="partner-form owner-theme-sandbox">
+              <input id="ownerThemeCompanyName" type="text" placeholder="Test company name (example: Nova Streetwear)" />
+              <input id="ownerThemeWebsiteUrl" type="text" placeholder="Test website URL (example: https://novastreetwear.com)" />
+              <input id="ownerThemeNiche" type="text" placeholder="Test niche (example: clothes, tech, beauty)" />
+              <textarea id="ownerThemeDetails" rows="4" placeholder="Optional details (style, products, vibe)"></textarea>
+              <div class="hero-actions">
+                <button id="ownerThemePreviewBtn" class="btn btn-secondary" type="button">Preview AI color picks</button>
+                <button id="ownerThemeRunBtn" class="btn btn-primary" type="button">Run animation with this test store</button>
+                <button id="ownerSeedProfileBtn" class="btn btn-secondary" type="button">Create claimable business profile</button>
+              </div>
+              <div id="ownerThemePalette" class="owner-theme-palette" aria-live="polite"></div>
+              <p id="ownerThemeMessage" class="form-message" aria-live="polite"></p>
+            </div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Claim your business profile</h3>
+              <p>Teyo can spotlight businesses before they register. If your company appears below, claim it and finish the same fast onboarding flow you already use.</p>
+            </div>
+            <div id="claimablePartnerProfiles" class="claimable-profile-grid">
+              <p class="form-help">Claimable company profiles will appear here.</p>
+            </div>
+          </div>
+
           <div class="partner-form-card">
             <div>
               <h3>Launch a monthly ad campaign</h3>

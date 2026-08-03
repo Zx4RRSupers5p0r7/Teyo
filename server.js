@@ -51,6 +51,8 @@ const PRICING = {
 const STORE_SYNC_INTERVAL_MS = Math.max(60 * 1000, Number.parseInt(process.env.STORE_SYNC_INTERVAL_MS || '300000', 10) || (5 * 60 * 1000));
 const STORE_SYNC_TIMEOUT_MS = Math.max(3000, Number.parseInt(process.env.STORE_SYNC_TIMEOUT_MS || '12000', 10) || 12000);
 const STORE_SYNC_MAX_PRODUCTS = 250;
+const PARTNER_REMINDER_INTERVAL_MS = Math.max(30 * 60 * 1000, Number.parseInt(process.env.PARTNER_REMINDER_INTERVAL_MS || '21600000', 10) || (6 * 60 * 60 * 1000));
+const PARTNER_REMINDER_COOLDOWN_MS = Math.max(60 * 60 * 1000, Number.parseInt(process.env.PARTNER_REMINDER_COOLDOWN_MS || '604800000', 10) || (7 * 24 * 60 * 60 * 1000));
 const CUSTOMER_THEME_ENTITLEMENT_DAYS = 30;
 const PUBLIC_FILE_ALLOWLIST = new Set([
   'index.html',
@@ -1794,6 +1796,72 @@ function scheduleStoreSyncWorker() {
   }, STORE_SYNC_INTERVAL_MS);
 }
 
+let partnerReminderRunning = false;
+async function runScheduledPartnerClaimReminders() {
+  if (partnerReminderRunning) {
+    return;
+  }
+
+  partnerReminderRunning = true;
+  try {
+    const data = loadData();
+    const analytics = buildPartnerAnalyticsSummary(data);
+    const reminders = Array.isArray(analytics.reminders) ? analytics.reminders : [];
+
+    if (!reminders.length) {
+      return;
+    }
+
+    const now = Date.now();
+    for (const reminder of reminders) {
+      const partner = data.partners.find((entry) => String(entry.id) === String(reminder.partnerId));
+      if (!partner) {
+        continue;
+      }
+
+      const latestSentLog = data.partnerReminderLog
+        .filter((entry) => String(entry.partnerId) === String(partner.id) && String(entry.status || '').toLowerCase() === 'sent')
+        .sort((left, right) => new Date(right.sentAt || 0).getTime() - new Date(left.sentAt || 0).getTime())[0] || null;
+
+      if (latestSentLog) {
+        const lastSentAt = new Date(latestSentLog.sentAt || 0).getTime();
+        if (Number.isFinite(lastSentAt) && (now - lastSentAt) < PARTNER_REMINDER_COOLDOWN_MS) {
+          continue;
+        }
+      }
+
+      const outcome = await deliverPartnerReminderEmail(partner, reminder);
+      data.partnerReminderLog.push({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        partnerId: partner.id,
+        reminderId: reminder.id,
+        companyName: partner.companyName || reminder.companyName || '',
+        ownerEmail: sanitizeEmail(partner.ownerEmail || ''),
+        status: outcome.status || 'queued',
+        sentAt: new Date().toISOString(),
+        reason: outcome.reason || 'Scheduled reminder run'
+      });
+    }
+
+    saveData(data);
+  } finally {
+    partnerReminderRunning = false;
+  }
+}
+
+function schedulePartnerReminderWorker() {
+  setTimeout(() => {
+    runScheduledPartnerClaimReminders().catch((error) => {
+      console.warn(`Partner reminder warm-up failed: ${error.message}`);
+    });
+  }, 45000);
+
+  setInterval(() => {
+    runScheduledPartnerClaimReminders().catch((error) => {
+      console.warn(`Scheduled partner reminders failed: ${error.message}`);
+    });
+  }, PARTNER_REMINDER_INTERVAL_MS);
+}
 function markAdPaidByAdId(adId, paymentMeta = {}) {
   const data = loadData();
   const ad = data.ads.find((entry) => String(entry.id) === String(adId));
@@ -3570,10 +3638,50 @@ app.get('/sitemap.xml', (req, res) => {
   res.send(xml);
 });
 
+app.get('/feed.xml', (req, res) => {
+  const data = loadData();
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+
+  const latestProducts = data.products
+    .filter((entry) => entry && entry.approved && entry.visible)
+    .slice()
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())
+    .slice(0, 40)
+    .map((entry) => ({
+      title: `${sanitizePlainText(entry.productName || 'Product', 120)} by ${sanitizePlainText(entry.companyName || 'Company', 120)}`,
+      link: `${baseUrl}/products/${buildProductSlug(entry)}`,
+      guid: `product-${sanitizePlainText(entry.id || '', 80)}`,
+      pubDate: new Date(entry.createdAt || Date.now()).toUTCString(),
+      description: sanitizePlainText(entry.description || entry.stockStatus || 'Live product discovery on Teyo.', 500)
+    }));
+
+  const latestPartners = data.partners
+    .filter((entry) => entry && isClaimedPartnerProfile(entry))
+    .slice()
+    .sort((left, right) => new Date(right.claimedAt || right.createdAt || 0).getTime() - new Date(left.claimedAt || left.createdAt || 0).getTime())
+    .slice(0, 20)
+    .map((entry) => ({
+      title: `${sanitizePlainText(entry.companyName || 'Company', 120)} joined Teyo`,
+      link: `${baseUrl}/partners.html`,
+      guid: `partner-${sanitizePlainText(entry.id || '', 80)}`,
+      pubDate: new Date(entry.claimedAt || entry.createdAt || Date.now()).toUTCString(),
+      description: sanitizePlainText(entry.storeNiche || entry.details || 'Company profile is now active on Teyo.', 500)
+    }));
+
+  const items = [...latestProducts, ...latestPartners]
+    .sort((left, right) => new Date(right.pubDate).getTime() - new Date(left.pubDate).getTime())
+    .slice(0, 60);
+
+  const rss = `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel>\n<title>Teyo discovery feed</title>\n<link>${escapeHtml(baseUrl)}</link>\n<description>Latest products and partner activations from Teyo.</description>\n<language>en-ca</language>\n${items.map((item) => `\n<item>\n<title>${escapeHtml(item.title)}</title>\n<link>${escapeHtml(item.link)}</link>\n<guid>${escapeHtml(item.guid)}</guid>\n<pubDate>${escapeHtml(item.pubDate)}</pubDate>\n<description>${escapeHtml(item.description)}</description>\n</item>`).join('')}\n</channel></rss>`;
+
+  res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(rss);
+});
 /* robots.txt ? allow crawling and point to sitemap */
 app.get('/robots.txt', (req, res) => {
   const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
-  const txt = `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${baseUrl}/sitemap.xml\n`;
+  const txt = `User-agent: *\nAllow: /\nDisallow: /api/\nSitemap: ${baseUrl}/sitemap.xml\n# Feed: ${baseUrl}/feed.xml\n`;
   res.setHeader('Content-Type', 'text/plain');
   res.setHeader('Cache-Control', 'public, max-age=3600');
   res.send(txt);
@@ -3608,6 +3716,7 @@ async function startServer() {
     });
     await initializeStorage();
     scheduleStoreSyncWorker();
+    schedulePartnerReminderWorker();
   } catch (error) {
     console.error('Failed to initialize storage. Server aborted.', error.message);
     process.exit(1);
@@ -3615,6 +3724,10 @@ async function startServer() {
 }
 
 startServer();
+
+
+
+
 
 
 

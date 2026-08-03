@@ -1106,6 +1106,20 @@ async function runCinematicOnboarding(task) {
     setCinematicVisibility(cinematicThankYou, false);
     if (cinematicThankYou) { cinematicThankYou.style.opacity = ''; cinematicThankYou.style.transition = ''; cinematicThankYou.textContent = ''; }
 
+    /* PHASE 5a-ii: Typewrite era line, then fade out */
+    if (cinematicInstallLine) {
+      cinematicInstallLine.setAttribute('aria-hidden', 'false');
+      await typewriteText(cinematicInstallLine, 'A new era of shopping has arrived.', 60);
+    }
+    await wait(1800);
+    if (cinematicInstallLine) {
+      cinematicInstallLine.style.transition = 'opacity 0.65s ease';
+      cinematicInstallLine.style.opacity = '0';
+    }
+    await wait(700);
+    setCinematicVisibility(cinematicInstallLine, false);
+    if (cinematicInstallLine) { cinematicInstallLine.style.opacity = ''; cinematicInstallLine.style.transition = ''; cinematicInstallLine.textContent = ''; }
+
     /* PHASE 5b: Typewrite second line alone, then hide before ONE */
     if (cinematicInstallLine) {
       cinematicInstallLine.setAttribute('aria-hidden', 'false');

@@ -74,6 +74,7 @@ const ownerSeedProfileBtn = document.getElementById('ownerSeedProfileBtn');
 const ownerThemePalette = document.getElementById('ownerThemePalette');
 const ownerThemeMessage = document.getElementById('ownerThemeMessage');
 const claimablePartnerProfiles = document.getElementById('claimablePartnerProfiles');
+const partnerAnalyticsDashboard = document.getElementById('partnerAnalyticsDashboard');
 const customerThemePanel = document.getElementById('customerThemePanel');
 const customerThemeControls = document.getElementById('customerThemeControls');
 const customerVerifyAccessBtn = document.getElementById('customerVerifyAccessBtn');
@@ -204,6 +205,8 @@ let marketplaceState = {
 let lastSubmittedAdId = null;
 let adminAccessGranted = false;
 let marketplaceLoadError = '';
+let partnerAnalyticsDashboardLoaded = false;
+let partnerReminderState = { lastResult: null, latestAnalytics: null };
 let companyStoreSyncState = null;
 let interestSearchDebounceTimer = 0;
 
@@ -587,6 +590,283 @@ function claimPartnerProfile(partnerId) {
   window.location.hash = '#partner-request';
 }
 
+async function recordPartnerInteraction(partnerId, eventType = 'profile-view') {
+  if (!partnerId) {
+    return;
+  }
+
+  const storageKey = `teyo_partner_interactions_v1`;
+  try {
+    const existing = JSON.parse(sessionStorage.getItem(storageKey) || '{}');
+    if (eventType === 'profile-view' && existing[String(partnerId)] === true) {
+      return;
+    }
+    existing[String(partnerId)] = true;
+    sessionStorage.setItem(storageKey, JSON.stringify(existing));
+  } catch (error) {
+    // Ignore storage errors and keep the request attempt going.
+  }
+
+  try {
+    await fetch(`/api/partners/${encodeURIComponent(String(partnerId))}/interaction`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ eventType, source: 'partners-page' })
+    });
+  } catch (error) {
+    // Ignore network errors and keep the experience smooth.
+  }
+}
+
+function renderPartnerAnalyticsDashboard(analytics = {}) {
+  if (!partnerAnalyticsDashboard) {
+    return;
+  }
+
+  partnerReminderState.latestAnalytics = analytics;
+  const profiles = Array.isArray(analytics.profiles) ? analytics.profiles : [];
+  const triggerProfiles = profiles.filter((entry) => entry.shouldTrigger);
+  const recentEvents = Array.isArray(analytics.recentEvents) ? analytics.recentEvents : [];
+  const reminders = Array.isArray(analytics.reminders) ? analytics.reminders : [];
+  const sourceBreakdown = Array.isArray(analytics.sourceBreakdown) ? analytics.sourceBreakdown : [];
+  const upgradeHooks = Array.isArray(analytics.upgradeHooks) ? analytics.upgradeHooks : [];
+  const upgradeSummary = analytics.upgradeSummary || {};
+  const deliverySummary = analytics.deliverySummary || {};
+  const lastResult = partnerReminderState.lastResult || null;
+  const reminderStatusText = lastResult?.error
+    ? `Reminder delivery failed: ${escapeHtml(lastResult.error)}`
+    : lastResult
+      ? `Last run: ${Number(lastResult.deliveredCount || 0)} sent / ${Number(lastResult.totalCount || 0)} targeted`
+      : (Number(deliverySummary.totalSent || 0) || Number(deliverySummary.totalQueued || 0)
+        ? `Sent ${Number(deliverySummary.totalSent || 0)} reminders and queued ${Number(deliverySummary.totalQueued || 0)} more.`
+        : 'Ready to send reminder emails to hot profiles.');
+  const deliveryLog = Array.isArray(lastResult?.reminders) ? lastResult.reminders : [];
+
+  partnerAnalyticsDashboard.innerHTML = `
+    <div class="partner-analytics-toolbar">
+      <button class="btn btn-secondary" type="button" data-send-partner-reminders>Send reminder emails</button>
+      <p class="partner-analytics-status">${reminderStatusText}</p>
+    </div>
+    <div class="partner-analytics-metrics">
+      <div class="partner-analytics-card">
+        <strong>${Number(analytics.totalViews || 0)}</strong>
+        <span>Profile views</span>
+      </div>
+      <div class="partner-analytics-card">
+        <strong>${Number(analytics.totalClaimClicks || 0)}</strong>
+        <span>Claim clicks</span>
+      </div>
+      <div class="partner-analytics-card">
+        <strong>${Number(analytics.claimedProfiles || 0)}</strong>
+        <span>Claimed profiles</span>
+      </div>
+      <div class="partner-analytics-card">
+        <strong>${formatPercentValue(analytics.conversionRate || 0)}</strong>
+        <span>Claim conversion</span>
+      </div>
+      <div class="partner-analytics-card">
+        <strong>${Number(upgradeSummary.readyCount || upgradeHooks.length || 0)}</strong>
+        <span>Upgrade-ready profiles</span>
+      </div>
+      <div class="partner-analytics-card">
+        <strong>${formatMoneyValue(upgradeSummary.potentialMonthlyRevenue || 0)}</strong>
+        <span>Potential MRR</span>
+      </div>
+    </div>
+    <div class="partner-analytics-list">
+      <h4 class="partner-analytics-subtitle">Hot profiles</h4>
+      ${triggerProfiles.length
+        ? triggerProfiles.slice(0, 6).map((entry) => `
+          <div class="partner-analytics-item">
+            <div>
+              <strong>${escapeHtml(entry.companyName || 'Business profile')}</strong>
+              <p>${escapeHtml(entry.storeNiche || 'Unclaimed business profile')}</p>
+              <p>${entry.claimed ? 'Claimed business profile' : 'Unclaimed business profile'}</p>
+            </div>
+            <div class="partner-analytics-pill-row">
+              <span class="partner-analytics-pill">${entry.viewCount} views</span>
+              <span class="partner-analytics-pill">${entry.clickCount} clicks</span>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="form-help">No profile attention triggers yet. Once shoppers view a business profile several times, it will show up here.</p>'}
+    </div>
+    <div class="partner-analytics-list">
+      <h4 class="partner-analytics-subtitle">Claim reminders</h4>
+      ${reminders.length
+        ? reminders.slice(0, 6).map((entry) => `
+          <div class="partner-reminder-item partner-analytics-item">
+            <div>
+              <strong>${escapeHtml(entry.companyName || 'Business profile')}</strong>
+              <p>${escapeHtml(entry.reason || 'This profile is attracting attention')}</p>
+              <p class="partner-reminder-action">${escapeHtml(entry.suggestedAction || 'Follow up with the business owner')}</p>
+            </div>
+            <div class="partner-analytics-pill-row">
+              <span class="partner-analytics-pill partner-reminder-pill">${escapeHtml(entry.urgency || 'low')}</span>
+              <span class="partner-analytics-pill">${entry.viewCount} views</span>
+              <span class="partner-analytics-pill">${entry.clickCount} clicks</span>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="form-help">No reminder-worthy profiles yet. Once a business profile starts getting views or clicks, this box will light up.</p>'}
+    </div>
+    <div class="partner-analytics-list">
+      <h4 class="partner-analytics-subtitle">Upgrade hooks</h4>
+      ${upgradeHooks.length
+        ? upgradeHooks.slice(0, 6).map((entry) => `
+          <div class="partner-reminder-item partner-analytics-item">
+            <div>
+              <strong>${escapeHtml(entry.companyName || 'Business profile')}</strong>
+              <p>${escapeHtml(entry.triggerReason || 'This business is ready for more reach.')}</p>
+              <p class="partner-reminder-action">${escapeHtml(entry.nextAction || 'Invite this business to upgrade.')}</p>
+            </div>
+            <div class="partner-analytics-pill-row">
+              <span class="partner-analytics-pill partner-analytics-tier">${escapeHtml(entry.tierLabel || 'Growth')} ${formatMoneyValue(entry.monthlyPrice || 0)}/mo</span>
+              <span class="partner-analytics-pill">${escapeHtml(entry.claimState || 'unclaimed')}</span>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="form-help">Upgrade hooks will appear once business profiles start generating enough attention to justify paid growth tools.</p>'}
+    </div>
+    <div class="partner-analytics-list">
+      <h4 class="partner-analytics-subtitle">Traffic source quality</h4>
+      ${sourceBreakdown.length
+        ? sourceBreakdown.slice(0, 6).map((entry) => `
+          <div class="partner-analytics-item">
+            <div>
+              <strong>${escapeHtml(entry.source || 'partners-page')}</strong>
+              <p>${escapeHtml(entry.quality || 'emerging')} traffic source</p>
+            </div>
+            <div class="partner-analytics-pill-row">
+              <span class="partner-analytics-pill">${entry.profileViews} views</span>
+              <span class="partner-analytics-pill">${entry.claimClicks} clicks</span>
+              <span class="partner-analytics-pill">${formatPercentValue(entry.conversionRate || 0)} conversion</span>
+            </div>
+          </div>
+        `).join('')
+        : '<p class="form-help">Traffic-source quality will appear once multiple discovery channels start sending visitors into claimable profiles.</p>'}
+    </div>
+    <div class="partner-analytics-list">
+      <h4 class="partner-analytics-subtitle">Reminder delivery log</h4>
+      ${deliveryLog.length
+        ? deliveryLog.map((entry) => `
+          <div class="partner-reminder-item partner-analytics-item">
+            <div>
+              <strong>${escapeHtml(entry.companyName || 'Business profile')}</strong>
+              <p>${escapeHtml(entry.reason || entry.status || 'Reminder sent')}</p>
+            </div>
+            <div class="partner-analytics-pill-row">
+              <span class="partner-analytics-pill partner-reminder-pill">${escapeHtml(entry.status || 'queued')}</span>
+              ${entry.recipient ? `<span class="partner-analytics-pill">${escapeHtml(entry.recipient)}</span>` : ''}
+            </div>
+          </div>
+        `).join('')
+        : '<p class="form-help">Send reminder emails to log the delivery results here.</p>'}
+    </div>
+    <div class="partner-analytics-feed">
+      ${recentEvents.length
+        ? recentEvents.slice(0, 6).map((entry) => `
+          <div class="partner-analytics-feed-item">
+            <strong>${escapeHtml(entry.companyName || 'Business profile')}</strong>
+            <p>${escapeHtml(entry.eventType === 'claim-click' ? 'Claim CTA clicked' : 'Profile viewed')}</p>
+            <time>${escapeHtml(entry.createdAt ? new Date(entry.createdAt).toLocaleString() : '')}</time>
+          </div>
+        `).join('')
+        : '<p class="form-help">Recent profile signals will appear here as shoppers engage with claimable listings.</p>'}
+    </div>
+  `;
+
+  const sendButton = partnerAnalyticsDashboard.querySelector('[data-send-partner-reminders]');
+  if (sendButton) {
+    sendButton.addEventListener('click', sendPartnerClaimReminders);
+  }
+}
+
+async function sendPartnerClaimReminders() {
+  if (!partnerAnalyticsDashboard || !hasOwnerSession()) {
+    return;
+  }
+
+  const sendButton = partnerAnalyticsDashboard.querySelector('[data-send-partner-reminders]');
+  if (sendButton) {
+    sendButton.disabled = true;
+    sendButton.textContent = 'Sending…';
+  }
+
+  try {
+    const response = await fetch('/api/partners/analytics/send-reminders', {
+      method: 'POST',
+      headers: {
+        ...getOwnerHeaders(),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({})
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to send reminder emails.');
+    }
+
+    partnerReminderState.lastResult = {
+      deliveredCount: Number(result.deliveredCount || 0),
+      totalCount: Array.isArray(result.reminders) ? result.reminders.length : 0,
+      reminders: Array.isArray(result.reminders) ? result.reminders : []
+    };
+
+    if (result.analytics) {
+      partnerReminderState.latestAnalytics = result.analytics;
+      renderPartnerAnalyticsDashboard(result.analytics);
+    } else {
+      await loadPartnerAnalyticsDashboard(true);
+    }
+  } catch (error) {
+    partnerReminderState.lastResult = {
+      deliveredCount: 0,
+      totalCount: 0,
+      reminders: [],
+      error: error.message || 'Unable to send reminder emails.'
+    };
+    renderPartnerAnalyticsDashboard(partnerReminderState.latestAnalytics || {});
+  } finally {
+    if (sendButton) {
+      sendButton.disabled = false;
+      sendButton.textContent = 'Send reminder emails';
+    }
+  }
+}
+
+async function loadPartnerAnalyticsDashboard(force = false) {
+  if (!partnerAnalyticsDashboard) {
+    return;
+  }
+
+  if (!hasOwnerSession()) {
+    partnerAnalyticsDashboard.innerHTML = '<p class="form-help">Owner access unlocks this dashboard.</p>';
+    partnerAnalyticsDashboardLoaded = false;
+    return;
+  }
+
+  if (!force && partnerAnalyticsDashboardLoaded) {
+    return;
+  }
+
+  partnerAnalyticsDashboard.innerHTML = '<p class="form-help">Loading profile attention signals…</p>';
+  try {
+    const response = await fetch('/api/partners/analytics', {
+      headers: getOwnerHeaders()
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      throw new Error(result.message || 'Unable to load analytics.');
+    }
+    partnerAnalyticsDashboardLoaded = true;
+    partnerReminderState.latestAnalytics = result.analytics || {};
+    renderPartnerAnalyticsDashboard(result.analytics || {});
+  } catch (error) {
+    partnerAnalyticsDashboard.innerHTML = '<p class="form-help">Unable to load profile attention signals right now.</p>';
+  }
+}
+
 function renderClaimablePartnerProfiles() {
   if (!claimablePartnerProfiles) {
     return;
@@ -618,7 +898,11 @@ function renderClaimablePartnerProfiles() {
       ${safeWebsiteUrl ? `<p><a class="alert-link" href="${safeWebsiteUrl}" target="_blank" rel="noreferrer">${safeWebsiteText}</a></p>` : ''}
       <button class="btn btn-primary" type="button" data-claim-partner="${partner.id}">Claim this business</button>
     `;
-    card.querySelector('[data-claim-partner]')?.addEventListener('click', () => claimPartnerProfile(partner.id));
+    card.querySelector('[data-claim-partner]')?.addEventListener('click', async () => {
+      await recordPartnerInteraction(partner.id, 'claim-click');
+      claimPartnerProfile(partner.id);
+    });
+    void recordPartnerInteraction(partner.id, 'profile-view');
     claimablePartnerProfiles.appendChild(card);
   });
 }
@@ -1689,6 +1973,7 @@ function syncOwnerOnlyVisibility() {
   });
   if (ownerVisible) {
     updateOwnerThemeSandboxPreview();
+    void loadPartnerAnalyticsDashboard();
   }
 }
 
@@ -2204,6 +2489,14 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function formatPercentValue(value) {
+  return `${Math.round(Number(value || 0) * 100)}%`;
+}
+
+function formatMoneyValue(value) {
+  return `$${Math.round(Number(value || 0)).toLocaleString()}`;
 }
 
 function safeUrl(value) {
@@ -4359,6 +4652,7 @@ async function loadMarketplaceData() {
   refreshSizeFilterOptions();
   renderAds();
   renderClaimablePartnerProfiles();
+  await loadPartnerAnalyticsDashboard();
   renderInventoryManager();
   renderResults();
   renderInterestAlertCenter();

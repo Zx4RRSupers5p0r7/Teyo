@@ -10,6 +10,7 @@ const path = require('path');
 const { Pool } = require('pg');
 const sanitizeHtml = require('sanitize-html');
 const Stripe = require('stripe');
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -55,6 +56,8 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'admin.html',
   'inventory.html',
   'contact.html',
+  'favicon.ico',
+  'favicon-48x48.png',
   'styles.css',
   'script.js',
   'favicon.svg',
@@ -868,7 +871,9 @@ function getDefaultData() {
     products: [],
     webhookEvents: [],
     customerEntitlements: [],
-    customerSubscriptions: []
+    customerSubscriptions: [],
+    partnerAnalytics: [],
+    partnerReminderLog: []
   };
 }
 
@@ -880,6 +885,8 @@ function ensureDataShape(parsed) {
     webhookEvents: Array.isArray(parsed.webhookEvents) ? parsed.webhookEvents : [],
     customerEntitlements: Array.isArray(parsed.customerEntitlements) ? parsed.customerEntitlements : [],
     customerSubscriptions: Array.isArray(parsed.customerSubscriptions) ? parsed.customerSubscriptions : [],
+    partnerAnalytics: Array.isArray(parsed.partnerAnalytics) ? parsed.partnerAnalytics : [],
+    partnerReminderLog: Array.isArray(parsed.partnerReminderLog) ? parsed.partnerReminderLog : [],
     totalVisitors: Number.isInteger(parsed.totalVisitors) ? parsed.totalVisitors : 0
   };
 }
@@ -1112,6 +1119,292 @@ function serializePublicProduct(entry) {
     visible: Boolean(entry.visible),
     createdAt: entry.createdAt
   };
+}
+
+function isClaimedPartnerProfile(entry) {
+  const claimState = String(entry?.claimStatus || '').toLowerCase();
+  return getPartnerRequestStatus(entry) !== 'banned'
+    && Boolean(entry?.ownerEmail || claimState === 'claimed' || entry?.activeListing || entry?.paymentConfirmed || entry?.approvedAt);
+}
+
+function buildPartnerUpgradeHook(summary, isClaimed) {
+  if (!summary?.shouldTrigger) {
+    return null;
+  }
+
+  let tierId = 'growth';
+  let tierLabel = 'Growth';
+  let monthlyPrice = 29;
+  let features = [
+    'Verified badge',
+    'Priority search ranking',
+    'Profile analytics dashboard'
+  ];
+
+  if (summary.clickCount >= 3 || summary.viewCount >= 12) {
+    tierId = 'scale';
+    tierLabel = 'Scale';
+    monthlyPrice = 99;
+    features = [
+      'Featured placement',
+      'Priority search ranking',
+      'Advanced analytics dashboard',
+      'Automated customer messaging'
+    ];
+  } else if (summary.clickCount >= 1 || summary.viewCount >= 7) {
+    tierId = 'performance';
+    tierLabel = 'Performance';
+    monthlyPrice = 59;
+    features = [
+      'Featured placement',
+      'Traffic-source analytics',
+      'Lead follow-up tools',
+      'Conversion tracking'
+    ];
+  }
+
+  const triggerReason = summary.clickCount > 0
+    ? `${summary.clickCount} shoppers already clicked to claim or engage with this profile.`
+    : `${summary.viewCount} shoppers already viewed this profile.`;
+
+  return {
+    partnerId: summary.id,
+    companyName: summary.companyName,
+    claimState: isClaimed ? 'claimed' : 'unclaimed',
+    tierId,
+    tierLabel,
+    monthlyPrice,
+    triggerReason,
+    nextAction: isClaimed
+      ? `Invite ${summary.companyName} to unlock ${tierLabel} tools.`
+      : `Invite ${summary.companyName} to claim the profile first, then unlock ${tierLabel}.`,
+    features
+  };
+}
+
+function buildPartnerAnalyticsSummary(data) {
+  const analytics = Array.isArray(data.partnerAnalytics) ? data.partnerAnalytics : [];
+  const reminderLog = Array.isArray(data.partnerReminderLog) ? data.partnerReminderLog : [];
+  const partnerSummaries = data.partners
+    .filter((entry) => isClaimablePartner(entry))
+    .map((entry) => {
+      const events = analytics.filter((event) => String(event.partnerId) === String(entry.id));
+      const viewCount = events.filter((event) => event.eventType === 'profile-view').length;
+      const clickCount = events.filter((event) => event.eventType === 'claim-click').length;
+      const lastEvent = events.slice().sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())[0] || null;
+      const shouldTrigger = viewCount >= 3 || clickCount > 0;
+      const claimed = isClaimedPartnerProfile(entry);
+      const upgradeHook = buildPartnerUpgradeHook({
+        id: entry.id,
+        companyName: entry.companyName,
+        viewCount,
+        clickCount,
+        shouldTrigger
+      }, claimed);
+      return {
+        id: entry.id,
+        companyName: entry.companyName,
+        websiteUrl: entry.websiteUrl || '',
+        storeNiche: entry.storeNiche || '',
+        viewCount,
+        clickCount,
+        lastEventAt: lastEvent?.createdAt || '',
+        shouldTrigger,
+        urgency: clickCount > 0 ? 'high' : (viewCount >= 5 ? 'medium' : 'low'),
+        claimed,
+        upgradeHook
+      };
+    })
+    .sort((left, right) => {
+      if (right.viewCount !== left.viewCount) {
+        return right.viewCount - left.viewCount;
+      }
+      if (right.clickCount !== left.clickCount) {
+        return right.clickCount - left.clickCount;
+      }
+      return new Date(right.lastEventAt || 0).getTime() - new Date(left.lastEventAt || 0).getTime();
+    });
+
+  const recentEvents = analytics
+    .slice()
+    .sort((left, right) => new Date(right.createdAt || 0).getTime() - new Date(left.createdAt || 0).getTime())
+    .slice(0, 10)
+    .map((event) => ({
+      id: event.id,
+      partnerId: event.partnerId,
+      companyName: event.companyName || '',
+      eventType: event.eventType,
+      createdAt: event.createdAt,
+      source: event.source || 'profile'
+    }));
+
+  const reminders = partnerSummaries
+    .filter((entry) => entry.shouldTrigger)
+    .map((entry) => ({
+      id: `reminder-${entry.id}`,
+      partnerId: entry.id,
+      companyName: entry.companyName,
+      websiteUrl: entry.websiteUrl || '',
+      storeNiche: entry.storeNiche || '',
+      reason: entry.clickCount > 0
+        ? 'Claim CTA clicked by a visitor'
+        : `${entry.viewCount} profile views already happened`,
+      suggestedAction: entry.clickCount > 0
+        ? 'Send a follow-up invite to claim the profile and finish onboarding.'
+        : 'Send a reminder that this profile is attracting real attention.',
+      urgency: entry.urgency,
+      viewCount: entry.viewCount,
+      clickCount: entry.clickCount,
+      lastEventAt: entry.lastEventAt
+    }));
+
+  const sourceBreakdown = Object.entries(
+    analytics.reduce((accumulator, event) => {
+      const source = sanitizePlainText(event.source || 'partners-page', 80) || 'partners-page';
+      const record = accumulator[source] || { source, profileViews: 0, claimClicks: 0 };
+      if (event.eventType === 'profile-view') {
+        record.profileViews += 1;
+      } else if (event.eventType === 'claim-click') {
+        record.claimClicks += 1;
+      }
+      accumulator[source] = record;
+      return accumulator;
+    }, {})
+  )
+    .map(([, entry]) => ({
+      source: entry.source,
+      profileViews: Number(entry.profileViews || 0),
+      claimClicks: Number(entry.claimClicks || 0),
+      conversionRate: entry.profileViews > 0 ? Number(entry.claimClicks || 0) / Number(entry.profileViews || 1) : 0
+    }))
+    .map((entry) => {
+      let quality = 'emerging';
+      if (entry.claimClicks >= 2 || entry.conversionRate >= 0.25) {
+        quality = 'high intent';
+      } else if (entry.claimClicks >= 1 || entry.profileViews >= 4 || entry.conversionRate >= 0.1) {
+        quality = 'qualified';
+      }
+      return {
+        ...entry,
+        quality
+      };
+    })
+    .sort((left, right) => {
+      if (right.claimClicks !== left.claimClicks) {
+        return right.claimClicks - left.claimClicks;
+      }
+      if (right.profileViews !== left.profileViews) {
+        return right.profileViews - left.profileViews;
+      }
+      return left.source.localeCompare(right.source);
+    });
+
+  const claimedProfiles = data.partners.filter((entry) => isClaimedPartnerProfile(entry)).length;
+  const upgradeHooks = partnerSummaries
+    .map((entry) => entry.upgradeHook)
+    .filter(Boolean)
+    .sort((left, right) => right.monthlyPrice - left.monthlyPrice || left.companyName.localeCompare(right.companyName));
+
+  const totalProfileViews = analytics.filter((event) => event.eventType === 'profile-view').length;
+  const totalClaimClicks = analytics.filter((event) => event.eventType === 'claim-click').length;
+  const deliverySummary = {
+    totalSent: reminderLog.filter((entry) => String(entry.status || '').toLowerCase() === 'sent').length,
+    totalQueued: reminderLog.filter((entry) => String(entry.status || '').toLowerCase() === 'queued').length,
+    recent: reminderLog.slice(-6).map((entry) => ({
+      partnerId: entry.partnerId,
+      companyName: entry.companyName || '',
+      status: entry.status || 'queued',
+      sentAt: entry.sentAt || ''
+    }))
+  };
+
+  return {
+    totalViews: totalProfileViews,
+    totalClaimClicks: totalClaimClicks,
+    conversionRate: totalProfileViews > 0 ? totalClaimClicks / totalProfileViews : 0,
+    claimedProfiles,
+    upgradeSummary: {
+      readyCount: upgradeHooks.length,
+      potentialMonthlyRevenue: upgradeHooks.reduce((sum, entry) => sum + Number(entry.monthlyPrice || 0), 0)
+    },
+    triggerProfiles: partnerSummaries.filter((entry) => entry.shouldTrigger),
+    profiles: partnerSummaries,
+    recentEvents,
+    reminders,
+    sourceBreakdown,
+    deliverySummary,
+    upgradeHooks
+  };
+}
+
+function getReminderTransporter() {
+  if (global.__teyoReminderTransporter) {
+    return global.__teyoReminderTransporter;
+  }
+
+  const host = String(process.env.SMTP_HOST || '').trim();
+  const port = Number.parseInt(process.env.SMTP_PORT || '587', 10);
+  const user = String(process.env.SMTP_USER || '').trim();
+  const pass = String(process.env.SMTP_PASS || '').trim();
+  const secure = String(process.env.SMTP_SECURE || '').toLowerCase() === 'true' || port === 465;
+
+  if (!host || !user || !pass) {
+    global.__teyoReminderTransporter = null;
+    return null;
+  }
+
+  global.__teyoReminderTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass }
+  });
+
+  return global.__teyoReminderTransporter;
+}
+
+async function deliverPartnerReminderEmail(partner, reminder) {
+  const recipient = sanitizeEmail(partner?.ownerEmail || '');
+  if (!recipient) {
+    return { delivered: false, status: 'queued', recipient: '', reason: 'No owner email on file.' };
+  }
+
+  const transporter = getReminderTransporter();
+  if (!transporter) {
+    return { delivered: false, status: 'queued', recipient, reason: 'SMTP delivery is not configured. Reminder queued for later.' };
+  }
+
+  const fromAddress = sanitizeEmail(process.env.SMTP_FROM_EMAIL || process.env.NOTIFICATION_FROM_EMAIL || process.env.OWNER_EMAIL || '') || 'noreply@teyo.ca';
+  const subject = `Teyo reminder: ${sanitizePlainText(reminder.companyName || 'Your company profile', 120)}`;
+  const text = [
+    `Hi there,`,
+    '',
+    `Teyo noticed that your company profile is getting attention.`,
+    `Reason: ${sanitizePlainText(reminder.reason || 'Keep your profile live and up to date.', 500)}`,
+    `Suggested action: ${sanitizePlainText(reminder.suggestedAction || 'Claim your profile and finish onboarding.', 500)}`,
+    '',
+    `Visit https://teyo.ca/partners to claim or update your profile.`
+  ].join('\n');
+  const html = `
+    <div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.55;">
+      <h3 style="margin-bottom: 8px;">Teyo reminder</h3>
+      <p>Hi there,</p>
+      <p>Teyo noticed that your company profile is getting attention.</p>
+      <p><strong>Why this matters:</strong> ${sanitizeHtml(sanitizePlainText(reminder.reason || 'Keep your profile live and up to date.', 500))}</p>
+      <p><strong>Suggested action:</strong> ${sanitizeHtml(sanitizePlainText(reminder.suggestedAction || 'Claim your profile and finish onboarding.', 500))}</p>
+      <p>Visit <a href="https://teyo.ca/partners" target="_blank" rel="noreferrer">https://teyo.ca/partners</a> to claim or update your profile.</p>
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: `Teyo <${fromAddress}>`,
+    to: recipient,
+    subject,
+    text,
+    html
+  });
+
+  return { delivered: true, status: 'sent', recipient, reason: 'Email delivered.' };
 }
 
 function findClaimablePartner(data, companyName, websiteUrl = '') {
@@ -1809,6 +2102,104 @@ app.post('/api/partners/seed', requireAdmin, (req, res) => {
   return res.json({ success: true, message: `${companyName} is now live as a claimable business profile.`, partner: entry });
 });
 
+app.get('/api/partners/analytics', requireAdmin, (req, res) => {
+  const data = loadData();
+  return res.json({ success: true, analytics: buildPartnerAnalyticsSummary(data) });
+});
+
+app.post('/api/partners/analytics/send-reminders', requireAdmin, async (req, res) => {
+  const data = loadData();
+  const requestedPartnerId = String(req.body?.partnerId || '').trim();
+  const analytics = buildPartnerAnalyticsSummary(data);
+  const reminders = analytics.reminders.filter((entry) => {
+    if (!requestedPartnerId) {
+      return true;
+    }
+    return String(entry.partnerId) === requestedPartnerId;
+  });
+
+  if (!reminders.length) {
+    return res.json({ success: true, deliveredCount: 0, reminders: [], analytics: buildPartnerAnalyticsSummary(data) });
+  }
+
+  const results = [];
+  for (const reminder of reminders) {
+    const partner = data.partners.find((entry) => String(entry.id) === String(reminder.partnerId));
+    if (!partner) {
+      continue;
+    }
+
+    const alreadyDelivered = data.partnerReminderLog.some((entry) => {
+      return String(entry.partnerId) === String(partner.id)
+        && String(entry.reminderId || '') === String(reminder.id || '')
+        && String(entry.status || '').toLowerCase() === 'sent';
+    });
+
+    const outcome = alreadyDelivered
+      ? { delivered: true, status: 'sent', recipient: sanitizeEmail(partner.ownerEmail || ''), reason: 'Already sent recently.' }
+      : await deliverPartnerReminderEmail(partner, reminder);
+
+    data.partnerReminderLog.push({
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      partnerId: partner.id,
+      reminderId: reminder.id,
+      companyName: partner.companyName || reminder.companyName || '',
+      ownerEmail: sanitizeEmail(partner.ownerEmail || ''),
+      status: outcome.status || 'queued',
+      sentAt: new Date().toISOString(),
+      reason: outcome.reason || ''
+    });
+
+    results.push({
+      partnerId: partner.id,
+      companyName: partner.companyName || reminder.companyName || '',
+      recipient: outcome.recipient || '',
+      status: outcome.status || 'queued',
+      reason: outcome.reason || ''
+    });
+  }
+
+  saveData(data);
+  return res.json({ success: true, deliveredCount: results.filter((entry) => entry.status === 'sent').length, reminders: results, analytics: buildPartnerAnalyticsSummary(data) });
+});
+
+app.post('/api/partners/:id/interaction', (req, res) => {
+  const partnerId = sanitizePlainText(req.params.id, 80);
+  const eventType = sanitizePlainText(req.body?.eventType || 'profile-view', 40);
+  const source = sanitizePlainText(req.body?.source || 'profile', 60);
+
+  if (!partnerId) {
+    return res.status(400).json({ success: false, message: 'A partner profile id is required.' });
+  }
+
+  if (!['profile-view', 'claim-click'].includes(eventType)) {
+    return res.status(400).json({ success: false, message: 'Unsupported partner interaction.' });
+  }
+
+  const data = loadData();
+  const partner = data.partners.find((entry) => String(entry.id) === partnerId);
+  if (!partner) {
+    return res.status(404).json({ success: false, message: 'Partner profile not found.' });
+  }
+
+  const entry = {
+    id: `${eventType}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    partnerId: partner.id,
+    companyName: partner.companyName,
+    eventType,
+    source,
+    createdAt: new Date().toISOString()
+  };
+
+  data.partnerAnalytics.push(entry);
+  if (data.partnerAnalytics.length > 3000) {
+    data.partnerAnalytics = data.partnerAnalytics.slice(-3000);
+  }
+  saveData(data);
+
+  return res.json({ success: true, analytics: buildPartnerAnalyticsSummary(data), event: entry });
+});
+
 app.post('/api/partner', async (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
@@ -2406,8 +2797,124 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+function prettifySlug(value) {
+  return String(value || '')
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+}
+
 function buildProductSlug(product) {
   return slugify(`${product.productName}-${product.companyName}-${product.id}`);
+}
+
+function buildLocalSeoLandingPageHtml(citySlug, serviceSlug, baseUrl, data) {
+  const cityLabel = prettifySlug(citySlug);
+  const serviceLabel = prettifySlug(serviceSlug);
+  const title = `${serviceLabel} in ${cityLabel} | Teyo`;
+  const description = `Discover ${serviceLabel.toLowerCase()} in ${cityLabel} on Teyo. Find nearby stores, compare availability, and browse live products that match what shoppers are searching for.`;
+  const canonical = `${baseUrl}/city/${citySlug}/${serviceSlug}`;
+  const relatedPartners = (data.partners || [])
+    .filter((entry) => entry && (entry.companyName || entry.storeNiche || entry.details))
+    .filter((entry) => {
+      const haystack = `${entry.companyName || ''} ${entry.storeNiche || ''} ${entry.details || ''}`.toLowerCase();
+      const haystackSlug = slugify(haystack);
+      return haystack.includes(serviceSlug.toLowerCase())
+        || haystack.includes(serviceLabel.toLowerCase())
+        || haystackSlug.includes(serviceSlug.toLowerCase())
+        || haystack.includes(cityLabel.toLowerCase())
+        || haystack.includes(citySlug.toLowerCase());
+    })
+    .slice(0, 6);
+  const relatedProducts = (data.products || [])
+    .filter((entry) => entry && entry.approved && entry.visible)
+    .filter((entry) => {
+      const haystack = `${entry.productName || ''} ${entry.category || ''} ${entry.description || ''}`.toLowerCase();
+      return haystack.includes(serviceSlug.toLowerCase()) || haystack.includes(serviceLabel.toLowerCase()) || haystack.includes(cityLabel.toLowerCase()) || haystack.includes(citySlug.toLowerCase());
+    })
+    .slice(0, 6);
+  const partnerMarkup = relatedPartners.length
+    ? `<ul class="seo-card-list">${relatedPartners.map((partner) => `<li><strong>${escapeHtml(partner.companyName || 'Local brand')}</strong><br /><span>${escapeHtml(partner.storeNiche || 'Growing partner')}</span></li>`).join('')}</ul>`
+    : `<p class="seo-card-copy">New partner profiles are seeded live so this page can convert search demand into profile claims.</p>`;
+  const productMarkup = relatedProducts.length
+    ? `<ul class="seo-card-list">${relatedProducts.map((product) => `<li><strong>${escapeHtml(product.productName || 'Featured product')}</strong><br /><span>${escapeHtml(product.price || '')} • ${escapeHtml(product.stockStatus || 'Live availability')}</span></li>`).join('')}</ul>`
+    : `<p class="seo-card-copy">As more companies join Teyo, this page will automatically surface more matching products and local inventory.</p>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${escapeHtml(title)}</title>
+  <meta name="description" content="${escapeHtml(description)}" />
+  <link rel="canonical" href="${canonical}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:description" content="${escapeHtml(description)}" />
+  <meta property="og:url" content="${canonical}" />
+  <meta property="og:site_name" content="Teyo" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="${escapeHtml(title)}" />
+  <meta name="twitter:description" content="${escapeHtml(description)}" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .seo-hero{max-width:960px;margin:0 auto;padding:48px 20px 20px;}
+    .seo-shell{display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));margin-top:24px;}
+    .seo-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 20px 40px rgba(0,0,0,.12);}
+    .seo-card h2{font-size:1.1rem;margin:0 0 8px;}
+    .seo-card p{color:var(--muted);line-height:1.7;margin:0 0 10px;}
+    .seo-card-list{list-style:none;padding:0;margin:0;display:grid;gap:10px;}
+    .seo-card-list li{padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid var(--line);}
+    .seo-card-list li strong{display:block;margin-bottom:2px;}
+    .seo-card-list li span{font-size:0.92rem;color:var(--muted);}
+    .seo-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;}
+    .seo-actions a{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:999px;background:var(--accent);color:#000;text-decoration:none;font-weight:700;}
+    .seo-actions a.secondary{background:transparent;border:1px solid var(--line);color:var(--text);} 
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Teyo home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+            <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+            <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+            <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+          </svg>
+        </span>
+        <span class="brand-text">Teyo</span>
+      </a>
+    </header>
+    <main class="seo-hero">
+      <p class="eyebrow">Teyo local discovery</p>
+      <h1>${escapeHtml(`Find ${serviceLabel.toLowerCase()} in ${cityLabel}`)}</h1>
+      <p class="section-heading">${escapeHtml(`Search for ${serviceLabel.toLowerCase()} in ${cityLabel} and discover stores that are already building live product listings, stock visibility, and size-based availability on Teyo.`)}</p>
+      <div class="seo-actions">
+        <a href="/marketplace.html">Open marketplace</a>
+        <a class="secondary" href="/partners.html">Claim your business profile</a>
+      </div>
+      <div class="seo-shell">
+        <article class="seo-card">
+          <h2>Why this page exists</h2>
+          <p>These high-intent city + service pages give Teyo a scalable way to attract shoppers who are already searching for specific products in specific places.</p>
+          <p>Each page can surface matching partner profiles, nearby inventory visibility, and live products so businesses discover Teyo through search rather than outreach.</p>
+        </article>
+        <article class="seo-card">
+          <h2>Featured partners</h2>
+          ${partnerMarkup}
+        </article>
+        <article class="seo-card">
+          <h2>Featured products</h2>
+          ${productMarkup}
+        </article>
+      </div>
+    </main>
+  </div>
+</body>
+</html>`;
 }
 
 function findProductBySlug(slug) {
@@ -2564,6 +3071,38 @@ app.get('/products/:slug', (req, res) => {
   res.send(buildProductPageHtml(product, baseUrl));
 });
 
+app.get('/:city/:service', (req, res, next) => {
+  const city = slugify(String(req.params.city || ''));
+  const service = slugify(String(req.params.service || ''));
+  const reservedPaths = new Set(['api', 'products', 'city', 'partners', 'marketplace', 'inventory', 'contact', 'admin', 'index', 'sitemap.xml', 'robots.txt']);
+
+  if (!city || !service || reservedPaths.has(city) || PUBLIC_FILE_ALLOWLIST.has(city) || PUBLIC_FILE_ALLOWLIST.has(service)) {
+    return next();
+  }
+
+  const data = loadData();
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(buildLocalSeoLandingPageHtml(city, service, baseUrl, data));
+});
+
+app.get('/city/:city/:service', (req, res, next) => {
+  const city = slugify(String(req.params.city || ''));
+  const service = slugify(String(req.params.service || ''));
+  const reservedPaths = new Set(['api', 'products', 'city', 'partners', 'marketplace', 'inventory', 'contact', 'admin', 'index', 'sitemap.xml', 'robots.txt']);
+
+  if (!city || !service || reservedPaths.has(city) || PUBLIC_FILE_ALLOWLIST.has(city) || PUBLIC_FILE_ALLOWLIST.has(service)) {
+    return next();
+  }
+
+  const data = loadData();
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(buildLocalSeoLandingPageHtml(city, service, baseUrl, data));
+});
+
 /* Sitemap ? lists all approved visible products */
 app.get('/sitemap.xml', (req, res) => {
   const data = loadData();
@@ -2582,7 +3121,14 @@ app.get('/sitemap.xml', (req, res) => {
       priority: '0.8',
       lastmod: p.createdAt ? new Date(p.createdAt).toISOString().slice(0, 10) : undefined
     }));
-  const all = [...staticPages, ...productUrls];
+  const seoLandingUrls = [
+    { loc: `${baseUrl}/city/toronto/clothes`, changefreq: 'weekly', priority: '0.75' },
+    { loc: `${baseUrl}/city/vancouver/tech`, changefreq: 'weekly', priority: '0.75' },
+    { loc: `${baseUrl}/city/calgary/beauty`, changefreq: 'weekly', priority: '0.72' },
+    { loc: `${baseUrl}/city/montreal/fashion`, changefreq: 'weekly', priority: '0.72' },
+    { loc: `${baseUrl}/city/halifax/home-decor`, changefreq: 'weekly', priority: '0.7' }
+  ];
+  const all = [...staticPages, ...productUrls, ...seoLandingUrls];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
     all.map(u =>
       `  <url>\n    <loc>${escapeHtml(u.loc)}</loc>\n` +

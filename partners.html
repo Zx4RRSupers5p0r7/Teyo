@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/favicon-48x48.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="partners-page">
@@ -112,11 +115,80 @@
 
           <div class="partner-form-card">
             <div>
+              <h3>Inbound SEO landing pages</h3>
+              <p>Teyo now builds scalable city + product pages so shoppers can find your niche from search engines before they ever visit your website. These pages are designed to bring in high-intent traffic and route it into the same fast partner setup flow.</p>
+            </div>
+            <div class="seo-landing-links">
+              <a href="/city/toronto/clothes">Toronto clothes</a>
+              <a href="/city/vancouver/tech">Vancouver tech</a>
+              <a href="/city/calgary/beauty">Calgary beauty</a>
+              <a href="/city/montreal/fashion">Montreal fashion</a>
+              <a href="/city/halifax/home-decor">Halifax home decor</a>
+            </div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
               <h3>Claim your business profile</h3>
               <p>Teyo can spotlight businesses before they register. If your company appears below, claim it and finish the same fast onboarding flow you already use.</p>
             </div>
             <div id="claimablePartnerProfiles" class="claimable-profile-grid">
               <p class="form-help">Claimable company profiles will appear here.</p>
+            </div>
+          </div>
+
+          <div class="partner-form-card" data-owner-only hidden>
+            <div>
+              <h3>Owner claim activity dashboard</h3>
+              <p>Track which unclaimed profiles are already getting attention so you can turn interest into claimed listings and new onboarded partners.</p>
+            </div>
+            <div id="partnerAnalyticsDashboard" class="partner-analytics-dashboard">
+              <p class="form-help">Owner access unlocks this dashboard.</p>
+            </div>
+          </div>
+
+          <div class="partner-form-card">
+            <div>
+              <h3>Free-to-claim growth tiers</h3>
+              <p>Businesses can claim their profile for free, then unlock stronger growth tools only after Teyo proves they are getting real attention from shoppers.</p>
+            </div>
+            <div class="partner-growth-plan-grid">
+              <article class="plan-card">
+                <h4>Free</h4>
+                <p class="price">$0 <span>to claim</span></p>
+                <ul>
+                  <li>Free profile claiming</li>
+                  <li>Basic traffic stats</li>
+                  <li>Catalog + listing management</li>
+                </ul>
+              </article>
+              <article class="plan-card">
+                <h4>Growth</h4>
+                <p class="price">$29 <span>per month</span></p>
+                <ul>
+                  <li>Verified badge</li>
+                  <li>Priority search ranking</li>
+                  <li>Profile analytics dashboard</li>
+                </ul>
+              </article>
+              <article class="plan-card">
+                <h4>Performance</h4>
+                <p class="price">$59 <span>per month</span></p>
+                <ul>
+                  <li>Featured placement</li>
+                  <li>Traffic-source analytics</li>
+                  <li>Lead follow-up tools</li>
+                </ul>
+              </article>
+              <article class="plan-card">
+                <h4>Scale</h4>
+                <p class="price">$99 <span>per month</span></p>
+                <ul>
+                  <li>Priority search ranking</li>
+                  <li>Advanced analytics</li>
+                  <li>Automated customer messaging</li>
+                </ul>
+              </article>
             </div>
           </div>
 
@@ -157,9 +229,9 @@
         <a href="index.html">Home</a>
         <a href="marketplace.html">Marketplace</a>
         <a href="partners.html" class="active">Partners</a>
-        <a href="inventory.html">Company inventory</a>
+        <a href="inventory.html">Stock insights</a>
         <a href="contact.html">Contact</a>
-        <a href="admin.html" data-owner-only hidden>Admin</a>
+        <a href="admin.html">Admin</a>
       </nav>
 
       <footer class="footer">

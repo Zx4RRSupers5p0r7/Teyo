@@ -63,11 +63,14 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'contact.html',
   'favicon.ico',
   'favicon-48x48.png',
+  'favicon-192x192.png',
+  'favicon-512x512.png',
   'styles.css',
   'script.js',
   'favicon.svg',
   'teyo-watermark.svg',
-  'teyo-watermark-secondary.svg'
+  'teyo-watermark-secondary.svg',
+  'site.webmanifest'
 ]);
 
 let inMemoryData = null;
@@ -3300,9 +3303,13 @@ function buildLandingPagesIndexHtml(baseUrl) {
   <meta name="description" content="Browse a large catalog of searchable city and product landing pages built for Teyo to attract shoppers and convert local business interest." />
   <link rel="canonical" href="${baseUrl}/landing-pages.html" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
-  <link rel="apple-touch-icon" href="/favicon-48x48.png" />
+  <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/favicon-192x192.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#7c7cff" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
     .lp-wrap{max-width:1200px;margin:0 auto;padding:30px 20px 72px;}
@@ -3461,9 +3468,13 @@ function buildLocalSeoLandingPageHtml(citySlug, serviceSlug, baseUrl, data) {
   <meta name="twitter:title" content="${escapeHtml(title)}" />
   <meta name="twitter:description" content="${escapeHtml(description)}" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
-  <link rel="apple-touch-icon" href="/favicon-48x48.png" />
+  <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/favicon-192x192.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#7c7cff" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
     .seo-hero{max-width:960px;margin:0 auto;padding:48px 20px 20px;}
@@ -3601,9 +3612,13 @@ function buildProductPageHtml(product, baseUrl) {
   })}</script>
 
   <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon-48x48.png" type="image/png" sizes="48x48" />
-  <link rel="apple-touch-icon" href="/favicon-48x48.png" />
+  <link rel="icon" href="/favicon-192x192.png" type="image/png" sizes="192x192" />
+  <link rel="apple-touch-icon" href="/favicon-192x192.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#7c7cff" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />

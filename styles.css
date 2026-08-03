@@ -2270,3 +2270,34 @@ article { padding: 24px; }
   background: rgba(255, 255, 255, 0.03);
   font-size: 0.84rem;
 }
+
+
+.owner-contact-card {
+  margin: 16px 0 18px;
+  padding: 16px 18px;
+  border: 1px solid rgba(124, 124, 255, 0.35);
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(124, 124, 255, 0.16), rgba(255, 255, 255, 0.04));
+}
+
+.owner-contact-label {
+  margin: 0 0 10px;
+  color: var(--text);
+  font-size: 0.82rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.owner-contact-link {
+  display: block;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+  text-decoration: none;
+}
+
+.owner-contact-link:hover {
+  color: var(--accent);
+}

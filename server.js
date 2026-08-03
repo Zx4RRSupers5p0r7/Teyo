@@ -65,12 +65,15 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'favicon-48x48.png',
   'favicon-192x192.png',
   'favicon-512x512.png',
+  'teyo-logo.png',
+  'teyo-logo-1024.png',
   'styles.css',
   'script.js',
   'favicon.svg',
   'teyo-watermark.svg',
   'teyo-watermark-secondary.svg',
-  'site.webmanifest'
+  'site.webmanifest',
+  'teyo-logo-1024.png'
 ]);
 
 let inMemoryData = null;

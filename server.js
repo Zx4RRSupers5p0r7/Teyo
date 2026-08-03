@@ -42,6 +42,9 @@ const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
   placement: { amount: 0, description: 'Teyo one-time company setup fee is $0 with AI catalog onboarding.' },
   monthlyAd: { amount: 1500, description: 'Teyo monthly sponsor ad placement for $15/month.' },
+  growth: { amount: 2900, description: 'Teyo Growth plan for verified visibility and analytics.' },
+  performance: { amount: 5900, description: 'Teyo Performance plan for featured growth tools and source analytics.' },
+  scale: { amount: 9900, description: 'Teyo Scale plan for advanced automation and premium ranking.' },
   customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
   customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' }
 };
@@ -1623,6 +1626,49 @@ function markPartnerPaid(companyName, ownerEmail = '') {
   return partner;
 }
 
+function markPartnerGrowthPlan(companyName, ownerEmail = '', plan = '', paymentMeta = {}) {
+  const data = loadData();
+  const safeCompanyName = sanitizePlainText(companyName, 120);
+  const safeOwnerEmail = sanitizeEmail(ownerEmail);
+  const safePlan = sanitizePlainText(plan, 40).toLowerCase();
+  let partner = findLatestPartner(data, safeCompanyName, safeOwnerEmail)
+    || findLatestPartner(data, safeCompanyName);
+
+  if (!partner) {
+    const created = ensurePartnerRecord(safeCompanyName, safeOwnerEmail);
+    if (!created) {
+      return null;
+    }
+    partner = created;
+  }
+
+  partner.growthPlan = safePlan;
+  partner.growthPlanLabel = safePlan === 'growth' ? 'Growth' : (safePlan === 'performance' ? 'Performance' : 'Scale');
+  partner.growthSubscriptionStatus = 'active';
+  partner.growthPlanActivatedAt = new Date().toISOString();
+  if (paymentMeta.subscriptionId) {
+    partner.growthSubscriptionId = sanitizePlainText(paymentMeta.subscriptionId, 120);
+  }
+  if (paymentMeta.customerId) {
+    partner.growthCustomerId = sanitizePlainText(paymentMeta.customerId, 120);
+  }
+  saveData(data);
+  return partner;
+}
+
+function setPartnerGrowthSubscriptionState(subscriptionId, status) {
+  const data = loadData();
+  const partner = data.partners.find((entry) => String(entry.growthSubscriptionId || '') === String(subscriptionId || ''));
+  if (!partner) {
+    return null;
+  }
+
+  partner.growthSubscriptionStatus = sanitizePlainText(status, 40) || 'inactive';
+  partner.growthUpdatedAt = new Date().toISOString();
+  saveData(data);
+  return partner;
+}
+
 async function runPartnerStoreSync(partner, data, options = {}) {
   const lockKey = `${normalizeName(partner.companyName)}::${normalizeName(partner.ownerEmail)}`;
   if (storeSyncLocks.has(lockKey)) {
@@ -1915,7 +1961,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
       const { plan } = metadata;
       const expectedAmount = plan === 'placement'
         ? PRICING.placement.amount
-        : (plan === 'monthly-ad' ? PRICING.monthlyAd.amount : (plan === 'customer-one-time' ? PRICING.customerOneTime.amount : null));
+        : (plan === 'monthly-ad'
+          ? PRICING.monthlyAd.amount
+          : ((plan === 'growth' || plan === 'performance' || plan === 'scale')
+            ? PRICING[plan].amount
+            : (plan === 'customer-one-time' ? PRICING.customerOneTime.amount : null)));
       const paid = session.payment_status === 'paid' || session.status === 'complete';
       const amountMatches = expectedAmount === null || Number(session.amount_total || 0) === expectedAmount;
 
@@ -1930,6 +1980,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
           subscriptionId: session.subscription || '',
           customerId: session.customer || ''
         });
+      } else if (plan === 'growth' || plan === 'performance' || plan === 'scale') {
+        markPartnerGrowthPlan(metadata.companyName || '', metadata.ownerEmail || '', plan, {
+          subscriptionId: session.subscription || '',
+          customerId: session.customer || ''
+        });
       } else if (plan === 'customer-one-time') {
         grantCustomerEntitlement(metadata.customerEmail || '', 'customer-one-time');
       } else if (plan === 'customer-plus') {
@@ -1940,17 +1995,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
       if (invoice.subscription) {
         setAdSubscriptionState(invoice.subscription, true);
         setCustomerSubscriptionState(invoice.subscription, 'active');
+        setPartnerGrowthSubscriptionState(invoice.subscription, 'active');
       }
     } else if (event.type === 'invoice.payment_failed') {
       const invoice = event.data.object;
       if (invoice.subscription) {
         setAdSubscriptionState(invoice.subscription, false);
         setCustomerSubscriptionState(invoice.subscription, 'inactive');
+        setPartnerGrowthSubscriptionState(invoice.subscription, 'inactive');
       }
     } else if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
       setAdSubscriptionState(subscription.id, false);
       setCustomerSubscriptionState(subscription.id, 'inactive');
+      setPartnerGrowthSubscriptionState(subscription.id, 'cancelled');
     }
 
     res.json({ received: true });
@@ -2780,11 +2838,16 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 
   try {
-    const { plan = 'monthly-ad', companyName = '', ownerEmail = '', adId = '' } = req.body;
-    const normalizedPlan = plan === 'placement' ? 'placement' : (plan === 'monthly-ad' ? 'monthly-ad' : '');
+    const { plan = 'monthly-ad', companyName = '', ownerEmail = '', adId = '', websiteUrl = '' } = req.body;
+    const normalizedPlan = plan === 'placement'
+      ? 'placement'
+      : (plan === 'monthly-ad'
+        ? 'monthly-ad'
+        : ((plan === 'growth' || plan === 'performance' || plan === 'scale') ? plan : ''));
     const safeCompanyName = sanitizePlainText(companyName, 120);
     const safeOwnerEmail = sanitizeEmail(ownerEmail);
     const safeAdId = sanitizePlainText(adId, 40);
+    const safeWebsiteUrl = normalizeWebsite(websiteUrl || '');
 
     if (!normalizedPlan) {
       return res.status(400).json({ success: false, message: 'Invalid checkout request.' });
@@ -2806,7 +2869,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         url: null,
         sessionId: null
       });
-    } else {
+    } else if (normalizedPlan === 'monthly-ad') {
       const data = loadData();
       const ad = data.ads.find((entry) => String(entry.id) === String(safeAdId));
       if (!ad) {
@@ -2833,6 +2896,31 @@ app.post('/api/create-checkout-session', async (req, res) => {
         },
         quantity: 1
       });
+    } else {
+      if (!safeCompanyName || !safeOwnerEmail) {
+        return res.status(400).json({ success: false, message: 'Company name and owner email are required before starting a growth plan.' });
+      }
+
+      metadata = {
+        plan: normalizedPlan,
+        companyName: safeCompanyName,
+        ownerEmail: safeOwnerEmail,
+        websiteUrl: safeWebsiteUrl
+      };
+      subscriptionData = { metadata };
+
+      lineItems.push({
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: normalizedPlan === 'growth' ? 'Teyo Growth Plan' : (normalizedPlan === 'performance' ? 'Teyo Performance Plan' : 'Teyo Scale Plan'),
+            description: PRICING[normalizedPlan].description
+          },
+          unit_amount: PRICING[normalizedPlan].amount,
+          recurring: { interval: 'month' }
+        },
+        quantity: 1
+      });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -2841,8 +2929,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
       line_items: lineItems,
       metadata,
       subscription_data: subscriptionData,
-      success_url: `${successBase}/partners.html?checkout=success`,
-      cancel_url: `${successBase}/partners.html?checkout=cancelled`
+      success_url: `${successBase}/partners.html?checkout=success&plan=${normalizedPlan}`,
+      cancel_url: `${successBase}/partners.html?checkout=cancelled&plan=${normalizedPlan}`
     });
 
     res.json({ success: true, url: session.url, sessionId: session.id });
@@ -2850,7 +2938,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.status(500).json({ success: false, message: 'Unable to create checkout session.' });
   }
 });
-
 app.post('/api/create-customer-checkout-session', async (req, res) => {
   if (!stripe) {
     return res.status(501).json({ success: false, message: 'Stripe is not configured yet.' });
@@ -3354,4 +3441,5 @@ async function startServer() {
 }
 
 startServer();
+
 

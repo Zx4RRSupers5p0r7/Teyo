@@ -21,6 +21,8 @@ const productForm = document.getElementById('productForm');
 const productFormMessage = document.getElementById('productFormMessage');
 const placementCheckoutBtn = document.getElementById('placementCheckoutBtn');
 const monthlyCheckoutBtn = document.getElementById('monthlyCheckoutBtn');
+const growthPlanButtons = document.querySelectorAll('[data-growth-plan-checkout]');
+const growthPlanMessage = document.getElementById('growthPlanMessage');
 const checkoutMessage = document.getElementById('checkoutMessage');
 const activeAdsList = document.getElementById('activeAdsList');
 const adminAdsList = document.getElementById('adminAdsList');
@@ -716,7 +718,7 @@ async function sendPartnerClaimReminders() {
   const sendButton = partnerAnalyticsDashboard.querySelector('[data-send-partner-reminders]');
   if (sendButton) {
     sendButton.disabled = true;
-    sendButton.textContent = 'Sending…';
+    sendButton.textContent = 'Sendingï¿½';
   }
 
   try {
@@ -776,7 +778,7 @@ async function loadPartnerAnalyticsDashboard(force = false) {
     return;
   }
 
-  partnerAnalyticsDashboard.innerHTML = '<p class="form-help">Loading profile attention signals…</p>';
+  partnerAnalyticsDashboard.innerHTML = '<p class="form-help">Loading profile attention signalsï¿½</p>';
   try {
     const response = await fetch('/api/partners/analytics', {
       headers: getOwnerHeaders()
@@ -892,13 +894,24 @@ function initPlacementCheckoutState() {
     }
   }
   const checkoutState = String(params.get('checkout') || '').toLowerCase();
+  const checkoutPlan = String(params.get('plan') || '').toLowerCase();
   if (checkoutState === 'success') {
-    setPlacementFeePaid(true);
-    if (checkoutMessage) {
-      checkoutMessage.textContent = 'Payment confirmed. You can now run Teyo\'s Superpower below.';
+    if (checkoutPlan === 'growth' || checkoutPlan === 'performance' || checkoutPlan === 'scale') {
+      if (growthPlanMessage) {
+        growthPlanMessage.textContent = `Your ${checkoutPlan} subscription is now active.`;
+      }
+    } else {
+      setPlacementFeePaid(true);
+      if (checkoutMessage) {
+        checkoutMessage.textContent = 'Payment confirmed. You can now run Teyo\'s Superpower below.';
+      }
     }
-  } else if (checkoutState === 'cancelled' && checkoutMessage) {
-    checkoutMessage.textContent = 'Checkout was cancelled. Complete the one-time setup fee to unlock Teyo\'s Superpower.';
+  } else if (checkoutState === 'cancelled') {
+    if ((checkoutPlan === 'growth' || checkoutPlan === 'performance' || checkoutPlan === 'scale') && growthPlanMessage) {
+      growthPlanMessage.textContent = `Checkout was cancelled for the ${checkoutPlan} plan.`;
+    } else if (checkoutMessage) {
+      checkoutMessage.textContent = 'Checkout was cancelled. Complete the one-time setup fee to unlock Teyo\'s Superpower.';
+    }
   }
 }
 
@@ -2314,7 +2327,7 @@ function renderInterestAlertCenter() {
           ? `<div class="alert-watch-list">${watchlist.slice(0, 4).map((entry) => `
             <div class="alert-watch-item">
               <strong>${escapeHtml(entry.productName)}</strong>
-              <p>${escapeHtml(entry.companyName)}${entry.priceLabel ? ` • ${escapeHtml(entry.priceLabel)}` : ''}</p>
+              <p>${escapeHtml(entry.companyName)}${entry.priceLabel ? ` ï¿½ ${escapeHtml(entry.priceLabel)}` : ''}</p>
               <span>${entry.inStock ? 'Currently showing in stock' : 'Waiting for stock or price movement'}</span>
             </div>
           `).join('')}</div>`
@@ -2326,7 +2339,7 @@ function renderInterestAlertCenter() {
           ? `<div class="alert-watch-list">${suggestions.map(({ product, reason }) => `
             <div class="alert-watch-item">
               <strong><a class="alert-link" href="${escapeHtml(buildInterestAlertLink(product))}" target="_blank" rel="noopener">${escapeHtml(product.productName || product.name || 'Product')}</a></strong>
-              <p>${escapeHtml(product.companyName || product.company || '')}${product.price ? ` • ${escapeHtml(product.price)}` : ''}</p>
+              <p>${escapeHtml(product.companyName || product.company || '')}${product.price ? ` ï¿½ ${escapeHtml(product.price)}` : ''}</p>
               <span>${escapeHtml(reason)}</span>
             </div>
           `).join('')}</div>`
@@ -4903,9 +4916,14 @@ async function startCustomerCheckout(plan) {
   }
 }
 
+function isGrowthPlanCheckout(plan) {
+  return ['growth', 'performance', 'scale'].includes(String(plan || '').trim().toLowerCase());
+}
+
 async function startStripeCheckout(plan) {
   const placementCompanyName = document.querySelector('#partnerForm input[name="companyName"]')?.value || '';
   const placementOwnerEmail = document.querySelector('#partnerForm input[name="ownerEmail"]')?.value || '';
+  const placementWebsiteUrl = document.querySelector('#partnerForm input[name="websiteUrl"]')?.value || '';
   const adCompanyName = document.querySelector('#adForm input[name="companyName"]')?.value || '';
   const adOwnerEmail = document.querySelector('#adForm input[name="ownerEmail"]')?.value || '';
 
@@ -4919,9 +4937,18 @@ async function startStripeCheckout(plan) {
     return;
   }
 
+  if (isGrowthPlanCheckout(plan) && (!String(placementCompanyName).trim() || !String(placementOwnerEmail).trim())) {
+    if (growthPlanMessage) {
+      growthPlanMessage.textContent = 'Fill company name and owner email in the store form first, then start the monthly plan.';
+    }
+    return;
+  }
+
   const payload = plan === 'placement'
     ? attachOwnerAuth({ plan, companyName: placementCompanyName, ownerEmail: placementOwnerEmail })
-    : attachOwnerAuth({ plan, companyName: adCompanyName, ownerEmail: adOwnerEmail, adId: lastSubmittedAdId });
+    : (isGrowthPlanCheckout(plan)
+      ? attachOwnerAuth({ plan, companyName: placementCompanyName, ownerEmail: placementOwnerEmail, websiteUrl: placementWebsiteUrl })
+      : attachOwnerAuth({ plan, companyName: adCompanyName, ownerEmail: adOwnerEmail, adId: lastSubmittedAdId }));
 
   try {
     const response = await fetch('/api/create-checkout-session', {
@@ -4933,10 +4960,16 @@ async function startStripeCheckout(plan) {
     if (result.success && result.url) {
       window.location.href = result.url;
     } else {
-      checkoutMessage.textContent = result.message || 'Stripe checkout could not be started.';
+      const targetMessage = isGrowthPlanCheckout(plan) ? growthPlanMessage : checkoutMessage;
+      if (targetMessage) {
+        targetMessage.textContent = result.message || 'Stripe checkout could not be started.';
+      }
     }
   } catch (error) {
-    checkoutMessage.textContent = 'Unable to start checkout right now.';
+    const targetMessage = isGrowthPlanCheckout(plan) ? growthPlanMessage : checkoutMessage;
+    if (targetMessage) {
+      targetMessage.textContent = 'Unable to start checkout right now.';
+    }
   }
 }
 
@@ -4955,6 +4988,12 @@ if (placementCheckoutBtn) {
 if (monthlyCheckoutBtn) {
   monthlyCheckoutBtn.addEventListener('click', () => startStripeCheckout('monthly-ad'));
 }
+growthPlanButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const selectedPlan = String(button.dataset.growthPlanCheckout || '').trim().toLowerCase();
+    startStripeCheckout(selectedPlan);
+  });
+});
 if (customerOneTimeCheckoutBtn) {
   customerOneTimeCheckoutBtn.addEventListener('click', () => startCustomerCheckout('customer-one-time'));
 }
@@ -5328,7 +5367,5 @@ function initViewerBeacon() {
   setInterval(fetchStats, 15000);
 }
 initViewerBeacon();
-
-
 
 

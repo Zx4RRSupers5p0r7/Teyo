@@ -263,6 +263,149 @@ function normalizeWebsite(value) {
   return `https://${trimmed}`;
 }
 
+function normalizeHexColorToken(value) {
+  const token = String(value || '').trim();
+  const shortMatch = token.match(/^#([a-f0-9]{3})$/i);
+  if (shortMatch) {
+    const p = shortMatch[1].toLowerCase();
+    return `#${p[0]}${p[0]}${p[1]}${p[1]}${p[2]}${p[2]}`;
+  }
+
+  const fullMatch = token.match(/^#([a-f0-9]{6})$/i);
+  if (!fullMatch) {
+    return '';
+  }
+
+  return `#${fullMatch[1].toLowerCase()}`;
+}
+
+function rgbToHex(red, green, blue) {
+  const clampColor = (value) => Math.max(0, Math.min(255, Number.parseInt(value, 10) || 0));
+  const toHex = (value) => clampColor(value).toString(16).padStart(2, '0');
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+}
+
+function parseRgbColorToken(value) {
+  const token = String(value || '').trim();
+  const match = token.match(/^rgba?\(([^)]+)\)$/i);
+  if (!match) {
+    return '';
+  }
+
+  const parts = match[1].split(',').map((part) => part.trim());
+  if (parts.length < 3) {
+    return '';
+  }
+
+  const red = Number.parseFloat(parts[0]);
+  const green = Number.parseFloat(parts[1]);
+  const blue = Number.parseFloat(parts[2]);
+  if (!Number.isFinite(red) || !Number.isFinite(green) || !Number.isFinite(blue)) {
+    return '';
+  }
+
+  return rgbToHex(red, green, blue);
+}
+
+function hexToRgb(hexColor) {
+  const match = String(hexColor || '').trim().match(/^#([a-f0-9]{6})$/i);
+  if (!match) {
+    return [255, 255, 255];
+  }
+
+  const hex = match[1];
+  return [
+    Number.parseInt(hex.slice(0, 2), 16),
+    Number.parseInt(hex.slice(2, 4), 16),
+    Number.parseInt(hex.slice(4, 6), 16)
+  ];
+}
+
+function colorLuminanceScore(hexColor) {
+  const [red, green, blue] = hexToRgb(hexColor);
+  return ((red * 299) + (green * 587) + (blue * 114)) / 1000;
+}
+
+function shiftHexColor(hexColor, amount) {
+  const [red, green, blue] = hexToRgb(hexColor);
+  const clampColor = (value) => Math.max(0, Math.min(255, value));
+  return rgbToHex(clampColor(red + amount), clampColor(green + amount), clampColor(blue + amount));
+}
+
+function extractWebsiteColorCandidates(html) {
+  const content = String(html || '');
+  const hexMatches = content.match(/#[0-9a-fA-F]{3,6}\b/g) || [];
+  const rgbMatches = content.match(/rgba?\([^\)]+\)/gi) || [];
+
+  const counts = new Map();
+  hexMatches.forEach((match) => {
+    const normalized = normalizeHexColorToken(match);
+    if (!normalized) {
+      return;
+    }
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  });
+
+  rgbMatches.forEach((match) => {
+    const normalized = parseRgbColorToken(match);
+    if (!normalized) {
+      return;
+    }
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  });
+
+  return Array.from(counts.entries())
+    .map(([color, hits]) => ({ color, hits, luminance: colorLuminanceScore(color) }))
+    .filter((entry) => entry.luminance > 20 && entry.luminance < 245)
+    .sort((left, right) => right.hits - left.hits)
+    .slice(0, 12);
+}
+
+function buildWebsiteThemePalette(colorCandidates) {
+  if (!Array.isArray(colorCandidates) || colorCandidates.length === 0) {
+    return null;
+  }
+
+  const primary = colorCandidates[0].color;
+  const secondary = colorCandidates[1] ? colorCandidates[1].color : shiftHexColor(primary, -16);
+  const tertiary = colorCandidates[2] ? colorCandidates[2].color : shiftHexColor(primary, 26);
+  const brightest = colorCandidates
+    .slice()
+    .sort((left, right) => right.luminance - left.luminance)[0].color;
+  const darkest = colorCandidates
+    .slice()
+    .sort((left, right) => left.luminance - right.luminance)[0].color;
+
+  return {
+    auraColor: shiftHexColor(primary, 18),
+    ringColor: secondary,
+    starColor: shiftHexColor(brightest, 8),
+    coreColor: shiftHexColor(brightest, 20),
+    sparkleColor: tertiary,
+    fogColor: shiftHexColor(darkest, -8)
+  };
+}
+
+async function fetchTextWithTimeout(urlValue, timeoutMs = 9000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(urlValue, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/html, text/css;q=0.9, */*;q=0.8',
+        'User-Agent': 'TeyoColorAnalyzer/1.0'
+      },
+      signal: controller.signal
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    return await response.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 function stripHtml(value) {
   return String(value || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -1893,6 +2036,31 @@ app.get('/api/ready', (req, res) => {
   });
 });
 
+
+app.post('/api/theme/website-colors', express.json({ limit: '40kb' }), async (req, res) => {
+  const websiteUrl = normalizeWebsite(req.body?.websiteUrl || '');
+  if (!isSafeHttpUrl(websiteUrl)) {
+    return res.status(400).json({ success: false, message: 'Enter a valid website URL for automatic color analysis.' });
+  }
+
+  try {
+    const html = await fetchTextWithTimeout(websiteUrl, STORE_SYNC_TIMEOUT_MS);
+    const colors = extractWebsiteColorCandidates(html);
+    const palette = buildWebsiteThemePalette(colors);
+    if (!palette) {
+      return res.status(422).json({ success: false, message: 'No usable brand colors were found on that website.' });
+    }
+
+    return res.json({
+      success: true,
+      source: websiteUrl,
+      palette,
+      sampleColors: colors.slice(0, 6).map((entry) => entry.color)
+    });
+  } catch (error) {
+    return res.status(502).json({ success: false, message: `Website color analysis failed: ${error.message}` });
+  }
+});
 app.post('/api/admin/verify', adminLimiter, requireAdmin, (req, res) => {
   res.json({ success: true });
 });
@@ -3186,3 +3354,4 @@ async function startServer() {
 }
 
 startServer();
+

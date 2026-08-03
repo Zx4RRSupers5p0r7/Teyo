@@ -2051,6 +2051,35 @@ app.get('/api/live-count', (req, res) => {
   res.json({ count: _activeSessions.size });
 });
 
+app.get('/api/public-growth-proof', (req, res) => {
+  const cutoff = Date.now() - _SESSION_TTL;
+  for (const [id, ts] of _activeSessions) {
+    if (ts < cutoff) _activeSessions.delete(id);
+  }
+
+  const data = loadData();
+  const partners = Array.isArray(data.partners) ? data.partners : [];
+  const products = Array.isArray(data.products) ? data.products : [];
+  const analytics = Array.isArray(data.partnerAnalytics) ? data.partnerAnalytics : [];
+  const liveProducts = products.filter((entry) => entry && entry.approved && entry.visible).length;
+  const claimedProfiles = partners.filter((entry) => isClaimedPartnerProfile(entry)).length;
+  const foundingCap = 500;
+  const spotsLeft = Math.max(0, foundingCap - claimedProfiles);
+  const totalProfileViews = analytics.filter((event) => event.eventType === 'profile-view').length;
+  const totalClaimClicks = analytics.filter((event) => event.eventType === 'claim-click').length;
+
+  return res.json({
+    success: true,
+    liveViewers: _activeSessions.size,
+    totalPartners: partners.length,
+    claimedProfiles,
+    liveProducts,
+    totalProfileViews,
+    totalClaimClicks,
+    foundingCap,
+    spotsLeft
+  });
+});
 app.get('/api/owner/stats', (req, res) => {
   if (!hasOwnerHeader(req)) return res.status(403).json({ error: 'Forbidden' });
   const cutoff = Date.now() - _SESSION_TTL;
@@ -3586,5 +3615,6 @@ async function startServer() {
 }
 
 startServer();
+
 
 

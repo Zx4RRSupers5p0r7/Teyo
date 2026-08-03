@@ -23,6 +23,7 @@ const placementCheckoutBtn = document.getElementById('placementCheckoutBtn');
 const monthlyCheckoutBtn = document.getElementById('monthlyCheckoutBtn');
 const growthPlanButtons = document.querySelectorAll('[data-growth-plan-checkout]');
 const growthPlanMessage = document.getElementById('growthPlanMessage');
+const growthProofPanel = document.getElementById('growthProofPanel');
 const checkoutMessage = document.getElementById('checkoutMessage');
 const activeAdsList = document.getElementById('activeAdsList');
 const adminAdsList = document.getElementById('adminAdsList');
@@ -913,6 +914,56 @@ function initPlacementCheckoutState() {
       checkoutMessage.textContent = 'Checkout was cancelled. Complete the one-time setup fee to unlock Teyo\'s Superpower.';
     }
   }
+}
+
+function initGrowthProofPanel() {
+  if (!growthProofPanel) {
+    return;
+  }
+
+  const render = (proof) => {
+    const claimed = Number(proof.claimedProfiles || 0);
+    const liveProducts = Number(proof.liveProducts || 0);
+    const liveViewers = Number(proof.liveViewers || 0);
+    const views = Number(proof.totalProfileViews || 0);
+    const clicks = Number(proof.totalClaimClicks || 0);
+    const spotsLeft = Number(proof.spotsLeft || 0);
+    const conversion = views > 0 ? Math.round((clicks / views) * 100) : 0;
+
+    growthProofPanel.innerHTML = `
+      <div class="growth-proof-kicker">Live growth momentum</div>
+      <h3>${claimed.toLocaleString()} companies already claimed on Teyo</h3>
+      <p>${liveProducts.toLocaleString()} live products are searchable right now. ${liveViewers.toLocaleString()} shoppers are active now.</p>
+      <div class="growth-proof-stats">
+        <span><strong>${views.toLocaleString()}</strong> profile views tracked</span>
+        <span><strong>${conversion}%</strong> claim-click conversion signal</span>
+        <span><strong>${spotsLeft.toLocaleString()}</strong> founding profile spots left</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#partner-request">Claim your profile now</a>
+        <a class="btn btn-secondary" href="#partner-request">List products in under 2 minutes</a>
+      </div>
+    `;
+  };
+
+  fetch('/api/public-growth-proof')
+    .then((response) => response.json())
+    .then((result) => {
+      if (!result || !result.success) {
+        throw new Error('Growth proof unavailable');
+      }
+      render(result);
+    })
+    .catch(() => {
+      growthProofPanel.innerHTML = `
+        <div class="growth-proof-kicker">Live growth momentum</div>
+        <h3>Teyo is actively onboarding new company profiles</h3>
+        <p>Claim your profile now to secure early ranking before more competitors activate.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#partner-request">Claim your profile now</a>
+        </div>
+      `;
+    });
 }
 
 function clearCinematicOverlayModes() {
@@ -5248,6 +5299,7 @@ async function initializeMarketplace() {
 initializeMarketplace();
 initializeCustomerTheme();
 initPlacementCheckoutState();
+initGrowthProofPanel();
 syncPhysicalStoreLocationVisibility();
 syncOwnerOnlyVisibility();
 if (companyNameInput) {
@@ -5367,5 +5419,7 @@ function initViewerBeacon() {
   setInterval(fetchStats, 15000);
 }
 initViewerBeacon();
+
+
 
 

@@ -183,6 +183,7 @@ const customerCuteThemes = {
   ocean: { accent: '#40b8f8', style: 'ocean', plushie: 'frog' },
   sunset: { accent: '#ff5a1e', style: 'sunset', plushie: 'bear' }
 };
+const cinematicStarThemePresets = {};
 
 let marketplaceState = {
   partners: [],
@@ -198,6 +199,148 @@ let interestSearchDebounceTimer = 0;
 
 function wait(duration = 0) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(0, Number(duration) || 0)));
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function hashString(value) {
+  const source = String(value || '');
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) - hash + source.charCodeAt(index)) >>> 0;
+  }
+  return hash;
+}
+
+function hslToHex(hue, saturation, lightness) {
+  const h = ((hue % 360) + 360) % 360 / 360;
+  const s = clamp(saturation, 0, 100) / 100;
+  const l = clamp(lightness, 0, 100) / 100;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+
+  if (s === 0) {
+    const value = Math.round(l * 255);
+    return `#${value.toString(16).padStart(2, '0')}${value.toString(16).padStart(2, '0')}${value.toString(16).padStart(2, '0')}`;
+  }
+
+  const hueToRgb = (p, q, t) => {
+    let temp = t;
+    if (temp < 0) temp += 1;
+    if (temp > 1) temp -= 1;
+    if (temp < 1 / 6) return p + (q - p) * 6 * temp;
+    if (temp < 1 / 2) return q;
+    if (temp < 2 / 3) return p + (q - p) * (2 / 3 - temp) * 6;
+    return p;
+  };
+
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  r = hueToRgb(p, q, h + 1 / 3);
+  g = hueToRgb(p, q, h);
+  b = hueToRgb(p, q, h - 1 / 3);
+
+  const toHex = (value) => Math.round(value * 255).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function hexToRgbTriplet(hexColor, fallback = [255, 255, 255]) {
+  const source = String(hexColor || '').trim();
+  const match = source.match(/^#?([a-f0-9]{6})$/i);
+  if (!match) {
+    return fallback.slice();
+  }
+  const hex = match[1];
+  return [
+    Number.parseInt(hex.slice(0, 2), 16),
+    Number.parseInt(hex.slice(2, 4), 16),
+    Number.parseInt(hex.slice(4, 6), 16)
+  ];
+}
+
+function buildStoreThemeFromText(profile = {}) {
+  const source = [
+    profile.storeNiche,
+    profile.companyName,
+    profile.websiteUrl,
+    profile.storeCatalogUrl,
+    profile.details,
+    profile.description
+  ].filter(Boolean).join(' ').toLowerCase();
+  const seed = hashString(source || 'teyo');
+  const keywordHueMap = [
+    { words: ['fashion', 'style', 'clothes', 'clothing', 'boutique', 'wear', 'dress', 'shoe', 'shoes', 'jacket', 'hoodie', 'apparel', 'accessory', 'bag', 'outfit', 'couture'], hue: 332 },
+    { words: ['tech', 'technology', 'electronic', 'electronics', 'computer', 'phone', 'mobile', 'gadget', 'device', 'ai', 'software', 'digital', 'hardware', 'robot'], hue: 206 },
+    { words: ['beauty', 'cosmetic', 'cosmetics', 'skin', 'skincare', 'makeup', 'glow', 'spa', 'salon', 'fragrance', 'nails', 'wellness'], hue: 320 },
+    { words: ['home', 'house', 'decor', 'furniture', 'kitchen', 'garden', 'appliance', 'interior', 'office', 'light', 'living'], hue: 35 },
+    { words: ['game', 'gaming', 'console', 'esports', 'arcade', 'controller', 'play', 'nerd', 'retro'], hue: 280 },
+    { words: ['sport', 'sports', 'fitness', 'gym', 'athletic', 'running', 'run', 'outdoor', 'training', 'active', 'yoga', 'trail'], hue: 146 },
+    { words: ['food', 'drink', 'coffee', 'tea', 'bakery', 'restaurant', 'snack', 'dessert', 'grocery', 'cafe', 'brew', 'chef'], hue: 22 },
+    { words: ['luxury', 'premium', 'designer', 'jewelry', 'jewellery', 'watch', 'watches', 'gold', 'diamond', 'estate', 'highend'], hue: 44 },
+    { words: ['pet', 'animal', 'dog', 'cat', 'puppy', 'kitten', 'bird', 'fish', 'petcare'], hue: 292 },
+    { words: ['music', 'art', 'creative', 'studio', 'design', 'craft', 'handmade', 'print', 'gallery'], hue: 250 },
+    { words: ['travel', 'trip', 'adventure', 'beach', 'camp', 'holiday', 'explore', 'tour', 'luggage'], hue: 197 },
+    { words: ['eco', 'organic', 'natural', 'green', 'earth', 'sustainable', 'plant', 'vegan', 'renewable'], hue: 132 },
+    { words: ['sale', 'discount', 'market', 'retail', 'store', 'shop', 'bundle', 'offer', 'value'], hue: 191 }
+  ];
+
+  const tokens = source.split(/[^a-z0-9]+/).filter(Boolean);
+  const tokenSet = new Set(tokens);
+  let weightedHue = 0;
+  let weightTotal = 0;
+  keywordHueMap.forEach((entry) => {
+    const matchedTerms = entry.words.filter((word) => tokenSet.has(word));
+    if (matchedTerms.length) {
+      const weight = 1 + matchedTerms.length * 0.8;
+      weightedHue += entry.hue * weight;
+      weightTotal += weight;
+    }
+  });
+
+  const baseHue = weightTotal > 0 ? weightedHue / weightTotal : (seed % 360);
+  const accentHue = (baseHue + 24 + (seed % 29)) % 360;
+  const contrastHue = (baseHue + 190 + ((seed >> 3) % 32)) % 360;
+  const saturation = clamp(54 + (seed % 22), 46, 78);
+  const lightness = clamp(90 + ((seed >> 4) % 8), 84, 97);
+  const glowShift = ((seed >> 7) % 4) - 1;
+  const coolShift = ((seed >> 9) % 5) - 2;
+
+  return {
+    auraColor: hslToHex(baseHue + glowShift * 6, clamp(saturation + 8, 58, 84), clamp(lightness - 10, 72, 88)),
+    ringColor: hslToHex(baseHue + 18 + coolShift, clamp(saturation - 3, 44, 76), clamp(lightness - 18, 64, 84)),
+    starColor: hslToHex(baseHue + 8, clamp(saturation + 4, 50, 82), clamp(lightness + 2, 88, 98)),
+    coreColor: hslToHex(baseHue + 30, clamp(saturation + 2, 46, 80), clamp(lightness + 4, 92, 99)),
+    sparkleColor: hslToHex(accentHue + 12, clamp(saturation + 10, 58, 86), clamp(lightness - 2, 84, 94)),
+    fogColor: hslToHex(contrastHue, clamp(saturation - 26, 16, 35), clamp(22 + (seed % 14), 18, 34)),
+    hue: baseHue,
+    accentHue,
+    contrastHue
+  };
+}
+
+function hexToRgbTriplet(hexColor, fallback = [255, 255, 255]) {
+  const source = String(hexColor || '').trim();
+  const match = source.match(/^#?([a-f0-9]{6})$/i);
+  if (!match) {
+    return fallback.slice();
+  }
+  const hex = match[1];
+  return [
+    Number.parseInt(hex.slice(0, 2), 16),
+    Number.parseInt(hex.slice(2, 4), 16),
+    Number.parseInt(hex.slice(4, 6), 16)
+  ];
+}
+
+function getCinematicThemeForProfile(profile = {}) {
+  const theme = buildStoreThemeFromText(profile);
+  return {
+    ...theme,
+    sparkleRgb: hexToRgbTriplet(theme.sparkleColor, [255, 255, 255])
+  };
 }
 
 function getReferralBaseUrl() {
@@ -392,7 +535,7 @@ function easeInCubic(t) {
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Three.js 3D star Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
-function createThreeStarScene(mount) {
+function createThreeStarScene(mount, starTheme = null) {
   if (!mount || typeof THREE === 'undefined') return null;
   mount.innerHTML = '';
   const getViewportSize = () => {
@@ -423,9 +566,10 @@ function createThreeStarScene(mount) {
   mount.appendChild(renderer.domElement);
   renderer.domElement.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:1;display:block;';
 
+  const theme = starTheme || { auraColor: '#f0f0f0', ringColor: '#e8e8e8', starColor: '#ffffff', coreColor: '#ffffff', sparkleColor: '#ffffff', fogColor: '#8b909f' };
   const scene = new THREE.Scene();
   scene.background = null;
-  scene.fog = new THREE.FogExp2(0x8b909f, 0.016);
+  scene.fog = new THREE.FogExp2(new THREE.Color(theme.fogColor || '#8b909f').getHex(), 0.016);
 
   const camera = new THREE.PerspectiveCamera(55, initialWidth / initialHeight, 0.01, 200);
   camera.position.set(0, 0, 5); camera.lookAt(0, 0, 0);
@@ -440,7 +584,8 @@ function createThreeStarScene(mount) {
   };
 
   const createHaloTexture = (size = 640) => {
-    const canvas = document.createElement('canvas');
+    const theme = starTheme || { sparkleColor: '#ffffff' };
+  const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -458,7 +603,8 @@ function createThreeStarScene(mount) {
   };
 
   const createCoreTexture = (size = 640) => {
-    const canvas = document.createElement('canvas');
+    const theme = starTheme || { sparkleColor: '#ffffff' };
+  const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -476,7 +622,8 @@ function createThreeStarScene(mount) {
   };
 
   const createHaloRingTexture = (size = 768) => {
-    const canvas = document.createElement('canvas');
+    const theme = starTheme || { sparkleColor: '#ffffff' };
+  const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -501,7 +648,8 @@ function createThreeStarScene(mount) {
   };
 
   const createDustTexture = (size = 96) => {
-    const canvas = document.createElement('canvas');
+    const theme = starTheme || { sparkleColor: '#ffffff' };
+  const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -516,7 +664,8 @@ function createThreeStarScene(mount) {
   };
 
   const createCelestialStarTexture = (size = 1024) => {
-    const canvas = document.createElement('canvas');
+    const theme = starTheme || { sparkleColor: '#ffffff' };
+  const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -578,7 +727,7 @@ function createThreeStarScene(mount) {
 
   const auraSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: haloTexture,
-    color: 0xf0f0f0,
+    color: new THREE.Color(theme.auraColor || '#f0f0f0'),
     transparent: true,
     opacity: 0.56,
     blending: THREE.AdditiveBlending,
@@ -589,7 +738,7 @@ function createThreeStarScene(mount) {
 
   const ringSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: ringTexture,
-    color: 0xe8e8e8,
+    color: new THREE.Color(theme.ringColor || '#e8e8e8'),
     transparent: true,
     opacity: 0.34,
     blending: THREE.AdditiveBlending,
@@ -600,7 +749,7 @@ function createThreeStarScene(mount) {
 
   const starSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: starTexture,
-    color: 0xffffff,
+    color: new THREE.Color(theme.starColor || '#ffffff'),
     transparent: true,
     opacity: 0.98,
     blending: THREE.AdditiveBlending,
@@ -610,7 +759,7 @@ function createThreeStarScene(mount) {
 
   const coreSprite = new THREE.Sprite(new THREE.SpriteMaterial({
     map: coreTexture,
-    color: 0xffffff,
+    color: new THREE.Color(theme.coreColor || '#ffffff'),
     transparent: true,
     opacity: 0.72,
     blending: THREE.AdditiveBlending,
@@ -625,7 +774,7 @@ function createThreeStarScene(mount) {
   for (let i = 0; i < 20; i++) {
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
       map: dustTexture,
-      color: 0xffffff,
+      color: new THREE.Color(theme.sparkleColor || '#ffffff'),
       transparent: true,
       opacity: 0.22,
       blending: THREE.AdditiveBlending,
@@ -690,8 +839,9 @@ function disposeThreeStarScene(ts) {
 }
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Canvas particle engine Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
-function createParticleCanvas(mount) {
+function createParticleCanvas(mount, starTheme = null) {
   if (!mount) return null;
+  const theme = starTheme || { sparkleColor: '#ffffff' };
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;';
   mount.appendChild(canvas);
@@ -734,7 +884,16 @@ function createParticleCanvas(mount) {
     tone: 138 + Math.floor(Math.random() * 100)
   }));
 
-  return { canvas, ctx, dpr, particles, dust, clouds, resize };
+  return {
+    canvas,
+    ctx,
+    dpr,
+    particles,
+    dust,
+    clouds,
+    resize,
+    starThemeSparkleRgb: hexToRgbTriplet(theme.sparkleColor, [255, 255, 255])
+  };
 }
 
 function drawStarAtmosphere(pState, elapsed) {
@@ -790,6 +949,7 @@ function drawStarDust(pState, elapsed) {
   if (!pState) return;
   const { ctx, dust } = pState;
   const W = window.innerWidth, H = window.innerHeight;
+  const sparkleRgb = Array.isArray(pState.starThemeSparkleRgb) ? pState.starThemeSparkleRgb : [255, 255, 255];
 
   drawStarAtmosphere(pState, elapsed);
 
@@ -802,10 +962,10 @@ function drawStarDust(pState, elapsed) {
 
     const tw = p.alpha * (0.82 + Math.sin(elapsed * 1.05 + p.phase) * 0.28);
     ctx.shadowBlur = 18;
-    ctx.shadowColor = `rgba(255,255,255,${Math.min(0.92, tw + 0.18)})`;
+    ctx.shadowColor = `rgba(${sparkleRgb[0]},${sparkleRgb[1]},${sparkleRgb[2]},${Math.min(0.92, tw + 0.18)})`;
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${tw})`;
+    ctx.fillStyle = `rgba(${sparkleRgb[0]},${sparkleRgb[1]},${sparkleRgb[2]},${tw})`;
     ctx.fill();
   });
   ctx.restore();
@@ -938,7 +1098,7 @@ async function fadeOutLogoReveal() {
 /* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
    MAIN CINEMATIC SEQUENCE
 Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
-async function runCinematicOnboarding(task) {
+async function runCinematicOnboarding(task, options = {}) {
   if (!cinematicOnboardingOverlay) return task();
   if (cinematicOnboardingOverlay.parentElement !== document.body) {
     document.body.appendChild(cinematicOnboardingOverlay);
@@ -990,11 +1150,12 @@ async function runCinematicOnboarding(task) {
 
   const mount = cinematicThreeMount;
   if (mount) mount.innerHTML = '';
+  const starTheme = getCinematicThemeForProfile(options.storeProfile || {});
 
   /* Boot Three.js star renderer */
-  const threeState = createThreeStarScene(mount);
+  const threeState = createThreeStarScene(mount, starTheme);
   /* Boot particle canvas (sits on top of Three canvas) */
-  const pState = createParticleCanvas(mount);
+  const pState = createParticleCanvas(mount, starTheme);
 
   let rafId = null;
   let stopped = false;
@@ -1186,8 +1347,8 @@ async function runCinematicOnboarding(task) {
   }
 }
 
-async function runTeyoSuperpowerAnimation(task) {
-  return runCinematicOnboarding(task);
+async function runTeyoSuperpowerAnimation(task, options = {}) {
+  return runCinematicOnboarding(task, options);
 }
 
 function isAdminPage() {
@@ -4150,7 +4311,7 @@ if (partnerForm) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attachOwnerAuth(payload))
-      }));
+      }), { storeProfile: payload });
 
       const result = await response.json();
       if (result.success) {

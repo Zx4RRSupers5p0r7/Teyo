@@ -3060,8 +3060,148 @@ function prettifySlug(value) {
     .join(' ');
 }
 
+const SEO_LANDING_PAGE_CATALOG = [
+  { city: 'toronto', service: 'clothes' },
+  { city: 'toronto', service: 'shoes' },
+  { city: 'toronto', service: 'tech' },
+  { city: 'toronto', service: 'beauty' },
+  { city: 'toronto', service: 'home-decor' },
+  { city: 'toronto', service: 'kids' },
+  { city: 'vancouver', service: 'clothes' },
+  { city: 'vancouver', service: 'shoes' },
+  { city: 'vancouver', service: 'beauty' },
+  { city: 'vancouver', service: 'tech' },
+  { city: 'vancouver', service: 'outdoor-gear' },
+  { city: 'vancouver', service: 'skincare' },
+  { city: 'montreal', service: 'fashion' },
+  { city: 'montreal', service: 'beauty' },
+  { city: 'montreal', service: 'home-decor' },
+  { city: 'montreal', service: 'tech' },
+  { city: 'montreal', service: 'furniture' },
+  { city: 'montreal', service: 'kids' },
+  { city: 'calgary', service: 'clothes' },
+  { city: 'calgary', service: 'shoes' },
+  { city: 'calgary', service: 'beauty' },
+  { city: 'calgary', service: 'fitness' },
+  { city: 'calgary', service: 'home-decor' },
+  { city: 'calgary', service: 'outdoor-gear' },
+  { city: 'halifax', service: 'clothes' },
+  { city: 'halifax', service: 'beauty' },
+  { city: 'halifax', service: 'home-decor' },
+  { city: 'halifax', service: 'tech' },
+  { city: 'halifax', service: 'books' },
+  { city: 'halifax', service: 'gifts' },
+  { city: 'ottawa', service: 'clothes' },
+  { city: 'ottawa', service: 'tech' },
+  { city: 'ottawa', service: 'furniture' },
+  { city: 'ottawa', service: 'beauty' },
+  { city: 'ottawa', service: 'gifts' },
+  { city: 'ottawa', service: 'wellness' },
+  { city: 'edmonton', service: 'clothes' },
+  { city: 'edmonton', service: 'beauty' },
+  { city: 'edmonton', service: 'sports' },
+  { city: 'edmonton', service: 'tech' },
+  { city: 'edmonton', service: 'home-decor' },
+  { city: 'edmonton', service: 'kids' },
+  { city: 'winnipeg', service: 'clothes' },
+  { city: 'winnipeg', service: 'beauty' },
+  { city: 'winnipeg', service: 'home-decor' },
+  { city: 'winnipeg', service: 'tech' },
+  { city: 'winnipeg', service: 'jewelry' },
+  { city: 'winnipeg', service: 'books' },
+  { city: 'regina', service: 'clothes' },
+  { city: 'regina', service: 'beauty' },
+  { city: 'regina', service: 'home-decor' },
+  { city: 'regina', service: 'kids' },
+  { city: 'regina', service: 'gifts' },
+  { city: 'saskatoon', service: 'clothes' },
+  { city: 'saskatoon', service: 'beauty' },
+  { city: 'saskatoon', service: 'sports' },
+  { city: 'saskatoon', service: 'home-decor' },
+  { city: 'saskatoon', service: 'tech' },
+  { city: 'victoria', service: 'clothes' },
+  { city: 'victoria', service: 'beauty' },
+  { city: 'victoria', service: 'home-decor' },
+  { city: 'victoria', service: 'wellness' },
+  { city: 'victoria', service: 'books' },
+  { city: 'kelowna', service: 'clothes' },
+  { city: 'kelowna', service: 'beauty' },
+  { city: 'kelowna', service: 'outdoor-gear' },
+  { city: 'kelowna', service: 'home-decor' },
+  { city: 'kelowna', service: 'gifts' },
+  { city: 'quebec-city', service: 'clothes' },
+  { city: 'quebec-city', service: 'beauty' },
+  { city: 'quebec-city', service: 'home-decor' },
+  { city: 'quebec-city', service: 'tech' },
+  { city: 'quebec-city', service: 'jewelry' },
+  { city: 'st-johns', service: 'clothes' },
+  { city: 'st-johns', service: 'beauty' },
+  { city: 'st-johns', service: 'home-decor' },
+  { city: 'st-johns', service: 'gifts' },
+  { city: 'st-johns', service: 'books' },
+  { city: 'charlottetown', service: 'clothes' },
+  { city: 'charlottetown', service: 'beauty' },
+  { city: 'charlottetown', service: 'home-decor' },
+  { city: 'charlottetown', service: 'gifts' },
+  { city: 'charlottetown', service: 'jewelry' },
+  { city: 'moncton', service: 'clothes' },
+  { city: 'moncton', service: 'beauty' },
+  { city: 'moncton', service: 'home-decor' },
+  { city: 'moncton', service: 'tech' },
+  { city: 'moncton', service: 'books' }
+];
+
 function buildProductSlug(product) {
   return slugify(`${product.productName}-${product.companyName}-${product.id}`);
+}
+
+function buildLandingPagesIndexHtml(baseUrl) {
+  const cards = SEO_LANDING_PAGE_CATALOG.map((entry) => {
+    const href = `/city/${entry.city}/${entry.service}`;
+    const label = `${prettifySlug(entry.city)} • ${prettifySlug(entry.service)}`;
+    return `<a class="landing-page-chip" href="${href}">${escapeHtml(label)}</a>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SEO landing pages | Teyo</title>
+  <meta name="description" content="Browse a large catalog of searchable city and product landing pages built for Teyo to attract shoppers and convert local business interest." />
+  <link rel="canonical" href="${baseUrl}/landing-pages.html" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .lp-wrap{max-width:1120px;margin:0 auto;padding:32px 20px 72px;}
+    .lp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:18px;}
+    .landing-page-chip{display:block;padding:12px 14px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text);background:rgba(255,255,255,.03);font-size:0.95rem;}
+    .landing-page-chip:hover{border-color:var(--accent);color:var(--accent);}
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a href="/" class="brand" aria-label="Teyo home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+            <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+            <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+            <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+          </svg>
+        </span>
+        <span class="brand-text">Teyo</span>
+      </a>
+    </header>
+    <main class="lp-wrap">
+      <p class="eyebrow">Search-ready discovery pages</p>
+      <h1>Browse Teyo’s growing landing page catalog</h1>
+      <p class="section-heading">These pages target high-intent city and product searches so shoppers can find live products, nearby inventory, and partner stores faster.</p>
+      <div class="lp-grid">${cards}</div>
+    </main>
+  </div>
+</body>
+</html>`;
 }
 
 function buildLocalSeoLandingPageHtml(citySlug, serviceSlug, baseUrl, data) {
@@ -3326,6 +3466,13 @@ app.get('/products/:slug', (req, res) => {
   res.send(buildProductPageHtml(product, baseUrl));
 });
 
+app.get('/landing-pages.html', (req, res) => {
+  const baseUrl = appBaseUrl || `${req.protocol}://${req.get('host')}`;
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(buildLandingPagesIndexHtml(baseUrl));
+});
+
 app.get('/:city/:service', (req, res, next) => {
   const city = slugify(String(req.params.city || ''));
   const service = slugify(String(req.params.service || ''));
@@ -3376,13 +3523,11 @@ app.get('/sitemap.xml', (req, res) => {
       priority: '0.8',
       lastmod: p.createdAt ? new Date(p.createdAt).toISOString().slice(0, 10) : undefined
     }));
-  const seoLandingUrls = [
-    { loc: `${baseUrl}/city/toronto/clothes`, changefreq: 'weekly', priority: '0.75' },
-    { loc: `${baseUrl}/city/vancouver/tech`, changefreq: 'weekly', priority: '0.75' },
-    { loc: `${baseUrl}/city/calgary/beauty`, changefreq: 'weekly', priority: '0.72' },
-    { loc: `${baseUrl}/city/montreal/fashion`, changefreq: 'weekly', priority: '0.72' },
-    { loc: `${baseUrl}/city/halifax/home-decor`, changefreq: 'weekly', priority: '0.7' }
-  ];
+  const seoLandingUrls = SEO_LANDING_PAGE_CATALOG.map((entry) => ({
+    loc: `${baseUrl}/city/${entry.city}/${entry.service}`,
+    changefreq: 'weekly',
+    priority: entry.service === 'tech' || entry.service === 'beauty' ? '0.78' : (entry.service === 'clothes' || entry.service === 'shoes' ? '0.76' : '0.72')
+  }));
   const all = [...staticPages, ...productUrls, ...seoLandingUrls];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${
     all.map(u =>

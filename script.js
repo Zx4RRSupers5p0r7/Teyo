@@ -447,11 +447,11 @@ async function typewriteText(el, text, charDelayMs) {
 
 
 function hasPlacementFeePaid() {
-  return sessionStorage.getItem(placementFeePaidStorageKey) === 'true';
+  return localStorage.getItem(placementFeePaidStorageKey) === 'true';
 }
 
 function setPlacementFeePaid(value) {
-  sessionStorage.setItem(placementFeePaidStorageKey, value ? 'true' : 'false');
+  localStorage.setItem(placementFeePaidStorageKey, value ? 'true' : 'false');
 }
 
 function setCinematicOnboardingStep({ title, subtext, progress }) {
@@ -1836,15 +1836,15 @@ function hasOwnerSession() {
 }
 
 function getCompanySessionName() {
-  return sessionStorage.getItem(companyNameStorageKey) || '';
+  return localStorage.getItem(companyNameStorageKey) || '';
 }
 
 function getCompanySessionEmail() {
-  return sessionStorage.getItem(companyEmailStorageKey) || '';
+  return localStorage.getItem(companyEmailStorageKey) || '';
 }
 
 function getCompanySessionKey() {
-  return sessionStorage.getItem(companyKeyStorageKey) || '';
+  return localStorage.getItem(companyKeyStorageKey) || '';
 }
 
 function hasCompanySession() {
@@ -4793,10 +4793,10 @@ if (partnerForm) {
 
       const result = await response.json();
       if (result.success) {
-        sessionStorage.setItem(companyNameStorageKey, String(payload.companyName || '').trim());
-        sessionStorage.setItem(companyEmailStorageKey, String(payload.ownerEmail || '').trim());
+        localStorage.setItem(companyNameStorageKey, String(payload.companyName || '').trim());
+        localStorage.setItem(companyEmailStorageKey, String(payload.ownerEmail || '').trim());
         if (result.companyAccessKey) {
-          sessionStorage.setItem(companyKeyStorageKey, String(result.companyAccessKey).trim());
+          localStorage.setItem(companyKeyStorageKey, String(result.companyAccessKey).trim());
           if (companyAccessKeyInput) {
             companyAccessKeyInput.value = String(result.companyAccessKey).trim();
           }
@@ -4816,6 +4816,9 @@ if (partnerForm) {
         await loadMarketplaceData();
         await loadCompanyStoreSyncConfig();
         renderPartnerPreview(companyName);
+      } else {
+        formMessage.textContent = result.message || 'Store setup failed. Please check your information and try again.';
+        formMessage.style.color = '#d32f2f';
       }
     } catch (error) {
       formMessage.textContent = 'Unable to submit right now. Please try again shortly.';

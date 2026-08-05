@@ -2580,10 +2580,73 @@ app.post('/api/partner', async (req, res) => {
   }
 
   let syncResult = null;
+  let syncError = null;
   if (entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
     syncResult = await runPartnerStoreSync(entry, data, { reason: hasOwnerKeyAccess(ownerEmail, ownerKey) ? 'owner-override' : 'auto-setup' });
+    if (syncResult && !syncResult.success) {
+      syncError = syncResult.message || 'Catalog sync failed. Please check your catalog URL and try again.';
+      // If sync was required (catalog URL provided) and it failed, remove the partner
+      entry.activeListing = false;
+      entry.requestStatus = 'pending';
+      entry.claimStatus = 'unclaimed';
+    }
   }
+  
   saveData(data);
+
+  // If sync failed and was required, return error response
+  if (syncError) {
+    return res.status(400).json({
+      success: false,
+      message: syncError
+    });
+  }
+
+  // Send welcome email to company owner
+  try {
+    const transporter = getReminderTransporter();
+    if (transporter) {
+      const isNewPartner = !claimableMatch;
+      const subject = isNewPartner 
+        ? '🎉 Welcome to Teyo! Your Store is Now Live'
+        : '✅ Profile Claimed - Your Teyo Store is Active';
+      
+      const products = syncResult?.importedCount || 0;
+      const productLine = products > 0 
+        ? `We've imported ${products} products from your catalog and they're now live on Teyo.` 
+        : 'Your store profile is now active on Teyo and ready for products.';
+
+      const htmlBody = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #7c7cff;">${isNewPartner ? 'Welcome to Teyo!' : 'Profile Claimed Successfully'}</h2>
+          <p>Hi ${sanitizePlainText(companyName, 100)},</p>
+          <p>${productLine}</p>
+          <p>Your company access key is: <code style="background: #f0f0f0; padding: 10px; font-family: monospace; font-weight: bold;">${entry.companyAccessKey}</code></p>
+          <p style="margin-top: 20px; color: #666;">
+            <strong>Next steps:</strong><br>
+            1. Visit your company dashboard at ${process.env.APP_URL || 'https://teyo.ca'}/admin.html<br>
+            2. Use your access key to log in<br>
+            3. Manage your products and monitor stock insights<br>
+            4. Watch your sales grow as customers discover you on Teyo
+          </p>
+          <p style="margin-top: 20px; font-size: 12px; color: #999;">
+            This is your official Teyo welcome email. Keep this access key safe—you'll need it to manage your store.
+          </p>
+        </div>
+      `;
+
+      await transporter.sendMail({
+        from: process.env.SMTP_USER || 'noreply@teyo.ca',
+        to: ownerEmail,
+        subject,
+        html: htmlBody
+      }).catch((err) => {
+        console.error(`Failed to send welcome email to ${ownerEmail}:`, err.message);
+      });
+    }
+  } catch (emailError) {
+    console.error('Error sending welcome email:', emailError.message);
+  }
 
   res.json({
     success: true,

@@ -3480,7 +3480,16 @@ function renderResults() {
 
   if (!items.length) {
     const sizeText = getSelectedSizeFilter() === 'ALL' ? '' : ` for size ${escapeHtml(getSelectedSizeFilter())}`;
-    resultsList.innerHTML = `<p>No approved brand listings match your current filters${sizeText}. New company listings stay hidden until the company is approved and the product is reviewed.</p>`;
+    resultsList.innerHTML = `
+      <div class="results-empty-state">
+        <strong>No approved brand listings match your current filters${sizeText}.</strong>
+        <p>New company listings stay hidden until the company is approved and the product is reviewed.</p>
+        <div class="results-empty-stack" aria-hidden="true">
+          <div class="results-empty-card"></div>
+          <div class="results-empty-card"></div>
+          <div class="results-empty-card"></div>
+        </div>
+      </div>`;
     if (selectedProduct) {
       selectedProduct.innerHTML = '<p>Select a verified product to view pricing, store availability, and safety guidance.</p>';
     }
@@ -3506,6 +3515,7 @@ function renderResults() {
       <div class="result-item-main">
         ${thumbnailMarkup}
         <div class="result-item-copy">
+          <p class="result-item-kicker">Scroll feed</p>
           <h4>${safeProductName}</h4>
           <p>${safeCompanyName} â€¢ ${safeDescription}</p>
         </div>

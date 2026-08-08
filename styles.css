@@ -64,6 +64,78 @@ body.home-page {
   background: linear-gradient(160deg, #0d0d0d 0%, #161616 46%, #060606 100%);
 }
 
+body.marketplace-page {
+  --bg: #050505;
+  --surface: #101010;
+  --surface-2: #161616;
+  --text: #f5f5f0;
+  --muted: #b5b5b5;
+  --line: rgba(255,255,255,0.16);
+  --accent: #f5f5f0;
+  --accent-soft: #d7d7d2;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+  background: linear-gradient(160deg, #101010 0%, #050505 48%, #181818 100%);
+}
+
+body.marketplace-page::before,
+body.marketplace-page::after {
+  opacity: 0.12;
+  filter: grayscale(1) contrast(1.05);
+}
+
+body.marketplace-page .hero-card,
+body.marketplace-page .detail-card,
+body.marketplace-page .plan-card,
+body.marketplace-page .partner-form-card,
+body.marketplace-page .map-card,
+body.marketplace-page .info-card,
+body.marketplace-page article,
+body.marketplace-page .feature-card,
+body.marketplace-page .referral-card,
+body.marketplace-page .access-shell,
+body.marketplace-page .contact-card,
+body.marketplace-page .alert-center-card,
+body.marketplace-page .customer-theme-panel {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+  border-color: var(--line);
+  color: var(--text);
+}
+
+body.marketplace-page .hero-highlights li,
+body.marketplace-page .pill,
+body.marketplace-page .detail-meta span,
+body.marketplace-page .alert-pill,
+body.marketplace-page .store-card,
+body.marketplace-page .size-chip,
+body.marketplace-page .feature-badge {
+  background: rgba(255,255,255,0.03);
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+body.marketplace-page #mapLeaflet {
+  filter: grayscale(1) contrast(1.05) brightness(0.88);
+}
+
+body.marketplace-page .hero-card strong,
+body.marketplace-page .section-heading h2,
+body.marketplace-page .hero h1,
+body.marketplace-page .section h3,
+body.marketplace-page .detail-card h3,
+body.marketplace-page .plan-card h3,
+body.marketplace-page .customer-theme-copy h3 {
+  color: var(--text);
+}
+
+body.marketplace-page .btn-primary {
+  background: var(--accent);
+  color: #050505;
+}
+
+body.marketplace-page .btn-secondary {
+  color: var(--text);
+}
+
 body.home-page .page-shell {
   max-width: 1280px;
   margin: 0 auto;
@@ -1313,19 +1385,20 @@ article { padding: 24px; }
 .map-card { padding: 18px; }
 .map-surface {
   position: relative;
-  height: 280px;
+  height: clamp(260px, 34vw, 340px);
   border-radius: 18px;
   background: linear-gradient(135deg, #0f0f0f 0%, #242424 100%);
-  overflow: visible;
+  overflow: hidden;
   border: 1px solid var(--line);
 }
 .map-embed {
   width: 100%;
-  height: 340px;
+  height: 100%;
+  min-height: 260px;
   border: 0;
-  border-radius: 16px;
+  border-radius: inherit;
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
 #mapLeaflet { z-index: 0; background: #1a1a1a; filter: grayscale(1) contrast(1.1) brightness(0.85); }
 .leaflet-control-attribution { font-size: 10px !important; }
@@ -2633,6 +2706,80 @@ article { padding: 24px; }
   .alert-center-grid {
     grid-template-columns: 1fr;
   }
+
+  body.marketplace-page .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  body.marketplace-page .nav-links {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  body.marketplace-page .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.marketplace-page .nav-links a {
+    white-space: nowrap;
+  }
+
+  body.marketplace-page .hero,
+  body.marketplace-page .map-grid,
+  body.marketplace-page .customer-theme-panel,
+  body.marketplace-page .partner-form-card {
+    grid-template-columns: 1fr;
+  }
+
+  body.marketplace-page .hero-card {
+    order: -1;
+  }
+
+  body.marketplace-page .card-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.marketplace-page .hero-actions,
+  body.marketplace-page .detail-actions {
+    flex-direction: column;
+  }
+
+  body.marketplace-page .hero-actions .btn,
+  body.marketplace-page .detail-actions .btn {
+    width: 100%;
+  }
+
+  body.marketplace-page .preset-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.marketplace-page .customer-corner-options {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.marketplace-page .customer-cute-preview {
+    min-height: 160px;
+  }
+
+  body.marketplace-page .customer-cute-preview .mini-caption {
+    right: 16px;
+    bottom: 100px;
+  }
+
+  body.marketplace-page .plushie-preview {
+    position: static;
+    margin-left: auto;
+    min-width: 76px;
+    min-height: 76px;
+    font-size: 1.6rem;
+  }
 }
 
 @media (max-width: 640px) {
@@ -2649,6 +2796,50 @@ article { padding: 24px; }
   .detail-actions { flex-direction: column; }
   .access-tabs { flex-direction: column; }
   .tab-panel { flex-direction: column; align-items: flex-start; }
+
+  body.marketplace-page .page-shell {
+    padding: 14px 12px 28px;
+  }
+
+  body.marketplace-page .hero {
+    gap: 18px;
+    padding-top: 24px;
+  }
+
+  body.marketplace-page .hero h1,
+  body.marketplace-page .section-heading h2 {
+    font-size: clamp(1.7rem, 7vw, 2.25rem);
+  }
+
+  body.marketplace-page .hero-text,
+  body.marketplace-page .section p,
+  body.marketplace-page .store-list p,
+  body.marketplace-page .detail-card p {
+    font-size: 0.96rem;
+  }
+
+  body.marketplace-page .hero-highlights li,
+  body.marketplace-page .pill,
+  body.marketplace-page .detail-meta span,
+  body.marketplace-page .alert-pill,
+  body.marketplace-page .branding-pill,
+  body.marketplace-page .size-chip {
+    font-size: 0.8rem;
+  }
+
+  body.marketplace-page .customer-theme-panel {
+    padding: 16px;
+  }
+
+  body.marketplace-page .customer-corner-options,
+  body.marketplace-page .preset-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.marketplace-page .map-surface,
+  body.marketplace-page .map-embed {
+    height: 240px;
+  }
 }
 
 

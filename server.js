@@ -38,7 +38,7 @@ function getRecommendedPrice(total) {
   return { label: 'Free', cents: 0, advice: 'One-time activation is currently free to help more companies join early.' };
 }
 const databaseUrl = String(process.env.DATABASE_URL || '').trim();
-const validStripeKey = /^sk_(live|test)_[A-Za-z0-9]+$/.test(stripeSecretKey);
+const validStripeKey = /^sk_(live|test)_[A-Za-z0-9_]+$/.test(stripeSecretKey);
 const stripe = validStripeKey ? new Stripe(stripeSecretKey) : null;
 const PRICING = {
   placement: { amount: 0, description: 'Teyo one-time company setup fee is $0 with AI catalog onboarding.' },
@@ -46,8 +46,9 @@ const PRICING = {
   growth: { amount: 2900, description: 'Teyo Growth plan for verified visibility and analytics.' },
   performance: { amount: 5900, description: 'Teyo Performance plan for featured growth tools and source analytics.' },
   scale: { amount: 9900, description: 'Teyo Scale plan for advanced automation and premium ranking.' },
-  customerOneTime: { amount: 499, description: 'Teyo customer smart checkout pass (one-time).' },
-  customerPlus: { trialAmount: 199, recurringAmount: 999, description: 'Teyo Plus customer plan with launch pricing.' },
+  customerStandard: { amount: 500, description: 'Teyo Standard customer membership.' },
+  customerTrial: { recurringAmount: 1000, description: 'Teyo Plus customer membership with a 30-day free trial.' },
+  customerPlus: { amount: 1000, description: 'Teyo Plus customer membership.' },
   guard: { amount: 2500000, description: 'TEYO Guard annual protection for compliance monitoring, resilience alerts, and portfolio stress testing.' }
 };
 const STORE_SYNC_INTERVAL_MS = Math.max(60 * 1000, Number.parseInt(process.env.STORE_SYNC_INTERVAL_MS || '300000', 10) || (5 * 60 * 1000));
@@ -2601,7 +2602,7 @@ function grantCustomerEntitlement(customerEmail, sourcePlan, subscriptionId = ''
     customerEmail: email,
     status: 'active',
     sourcePlan: sanitizePlainText(sourcePlan, 80),
-    expiresAt: sourcePlan === 'customer-plus' ? null : expiresAt.toISOString(),
+    expiresAt: ['customer-plus', 'customer-trial'].includes(sourcePlan) ? null : expiresAt.toISOString(),
     subscriptionId: subscriptionId ? sanitizePlainText(subscriptionId, 120) : '',
     updatedAt: now.toISOString()
   };
@@ -2669,7 +2670,7 @@ function hasActiveCustomerThemeAccess(customerEmail) {
   }
 
   // Theme customisation is a Teyo Plus exclusive feature
-  if (entitlement.sourcePlan !== 'customer-plus') {
+  if (!['customer-plus', 'customer-trial'].includes(entitlement.sourcePlan)) {
     return false;
   }
 
@@ -2705,7 +2706,13 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
           ? PRICING.monthlyAd.amount
           : ((plan === 'growth' || plan === 'performance' || plan === 'scale')
             ? PRICING[plan].amount
-            : (plan === 'customer-one-time' ? PRICING.customerOneTime.amount : (plan === 'guard' ? PRICING.guard.amount : null))));
+            : (plan === 'customer-standard'
+              ? PRICING.customerStandard.amount
+              : (plan === 'customer-trial'
+                ? 0
+                : (plan === 'customer-plus'
+                  ? PRICING.customerPlus.amount
+                  : (plan === 'guard' ? PRICING.guard.amount : null))))));
       const paid = session.payment_status === 'paid' || session.status === 'complete';
       const amountMatches = expectedAmount === null || Number(session.amount_total || 0) === expectedAmount;
 
@@ -2725,8 +2732,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
           subscriptionId: session.subscription || '',
           customerId: session.customer || ''
         });
-      } else if (plan === 'customer-one-time') {
-        grantCustomerEntitlement(metadata.customerEmail || '', 'customer-one-time');
+      } else if (plan === 'customer-standard') {
+        grantCustomerEntitlement(metadata.customerEmail || '', 'customer-standard', session.subscription || '');
+      } else if (plan === 'customer-trial') {
+        grantCustomerEntitlement(metadata.customerEmail || '', 'customer-trial', session.subscription || '');
       } else if (plan === 'customer-plus') {
         grantCustomerEntitlement(metadata.customerEmail || '', 'customer-plus', session.subscription || '');
       } else if (plan === 'guard') {
@@ -3492,26 +3501,25 @@ app.post('/api/partner', async (req, res) => {
   let syncResult = null;
   let syncError = null;
   const skipStoreSync = process.env.NODE_ENV === 'test';
-  if (!skipStoreSync && entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
+  if (skipStoreSync) {
+    syncResult = { success: true, importedCount: 0, changedCount: 0, skipped: true };
+  } else if (entry.storeSync?.enabled && entry.storeSync?.sourceUrl) {
     syncResult = await runPartnerStoreSync(entry, data, { reason: hasOwnerKeyAccess(ownerEmail, ownerKey) ? 'owner-override' : 'auto-setup' });
     if (syncResult && !syncResult.success) {
       syncError = syncResult.message || 'Catalog sync failed. Please check your catalog URL and try again.';
-      // If sync was required (catalog URL provided) and it failed, remove the partner
-      entry.activeListing = false;
-      entry.requestStatus = 'pending';
-      entry.claimStatus = 'unclaimed';
+      entry.storeSync = getPartnerStoreSyncConfig(entry);
+      entry.syncStatus = 'warning';
     }
   }
   
   saveData(data);
 
-  // If sync failed and was required, return error response
-  if (syncError) {
-    return res.status(400).json({
-      success: false,
-      message: syncError
-    });
-  }
+  // Keep the listing live even if catalog sync had issues so the one-click setup still launches the marketplace experience.
+  entry.activeListing = true;
+  entry.requestStatus = 'approved';
+  entry.claimStatus = 'claimed';
+  entry.paymentConfirmed = true;
+  entry.paid = true;
 
   // Send welcome email to company owner
   try {
@@ -3569,7 +3577,9 @@ app.post('/api/partner', async (req, res) => {
     companyAccessKey: entry.companyAccessKey,
     importedCount: syncResult?.importedCount || 0,
     changedCount: syncResult?.changedCount || 0,
-    syncWarning: syncResult && !syncResult.success ? syncResult.message : ''
+    syncWarning: syncError || (syncResult && !syncResult.success ? syncResult.message : ''),
+    partner: serializePublicPartner(entry),
+    storeSync: getPartnerStoreSyncConfig(entry)
   });
 });
 
@@ -4080,49 +4090,42 @@ app.post('/api/create-customer-checkout-session', async (req, res) => {
   try {
     const customerEmail = sanitizeEmail(req.body.customerEmail);
     const plan = String(req.body.plan || '').trim();
-    const normalizedPlan = plan === 'customer-one-time' ? 'customer-one-time' : (plan === 'customer-plus' ? 'customer-plus' : '');
+    const normalizedPlan = plan === 'customer-one-time'
+      ? 'customer-standard'
+      : (plan === 'customer-standard' || plan === 'customer-plus' || plan === 'customer-trial' ? plan : '');
 
     if (!normalizedPlan || !customerEmail) {
       return res.status(400).json({ success: false, message: 'Valid email and plan are required.' });
     }
 
     const successBase = appBaseUrl || `${req.protocol}://${req.get('host')}`;
-    const isSubscription = normalizedPlan === 'customer-plus';
+    const isTrialPlan = normalizedPlan === 'customer-trial';
+    const isSubscription = normalizedPlan === 'customer-standard' || normalizedPlan === 'customer-plus' || isTrialPlan;
     const metadata = { plan: normalizedPlan, customerEmail };
-    const lineItems = isSubscription
-      ? [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Teyo Plus Launch Access',
-              description: 'Launch offer charge for your first 30 days of member access.'
-            },
-            unit_amount: PRICING.customerPlus.trialAmount
+    const lineItems = normalizedPlan === 'customer-standard'
+      ? [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'Teyo Standard Membership',
+            description: PRICING.customerStandard.description
           },
-          quantity: 1
+          unit_amount: PRICING.customerStandard.amount,
+          recurring: { interval: 'month' }
         },
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Teyo Plus Membership',
-              description: PRICING.customerPlus.description
-            },
-            unit_amount: PRICING.customerPlus.recurringAmount,
-            recurring: { interval: 'month' }
-          },
-          quantity: 1
-        }
-      ]
+        quantity: 1
+      }]
       : [{
         price_data: {
           currency: 'usd',
           product_data: {
-            name: 'Teyo Smart Checkout Pass',
-            description: PRICING.customerOneTime.description
+            name: isTrialPlan ? 'Teyo Plus Trial Membership' : 'Teyo Plus Membership',
+            description: isTrialPlan
+              ? PRICING.customerTrial.description
+              : PRICING.customerPlus.description
           },
-          unit_amount: PRICING.customerOneTime.amount
+          unit_amount: PRICING.customerPlus.amount,
+          recurring: { interval: 'month' }
         },
         quantity: 1
       }];
@@ -4132,7 +4135,7 @@ app.post('/api/create-customer-checkout-session', async (req, res) => {
       payment_method_types: ['card'],
       customer_email: customerEmail,
       metadata,
-      subscription_data: isSubscription ? { metadata, trial_period_days: 30 } : undefined,
+      subscription_data: isTrialPlan ? { metadata, trial_period_days: 30 } : undefined,
       line_items: lineItems,
       success_url: `${successBase}/marketplace.html?customer_checkout=success&plan=${normalizedPlan}`,
       cancel_url: `${successBase}/marketplace.html?customer_checkout=cancelled`
@@ -4156,7 +4159,7 @@ app.post('/api/customer/theme-access', (req, res) => {
   }
 
   if (!hasActiveCustomerThemeAccess(customerEmail)) {
-    return res.status(403).json({ success: false, message: 'Private personalization requires an active Teyo Plus subscription. The one-time pass does not include this feature.' });
+    return res.status(403).json({ success: false, message: 'Private personalization requires an active Teyo Plus subscription or trial. Standard membership does not include this feature.' });
   }
 
   res.json({ success: true, message: 'Paid access verified. Private theme controls are now unlocked.' });

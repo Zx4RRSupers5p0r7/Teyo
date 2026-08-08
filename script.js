@@ -81,8 +81,13 @@ const customerResetThemeBtn = document.getElementById('customerResetThemeBtn');
 const customerPaymentMessage = document.getElementById('customerPaymentMessage');
 const customerCheckoutMessage = document.getElementById('customerCheckoutMessage');
 const customerEmailInput = document.getElementById('customerEmailInput');
+const customerStandardCheckoutBtn = document.getElementById('customerStandardCheckoutBtn');
+const customerTrialCheckoutBtn = document.getElementById('customerTrialCheckoutBtn');
+const customerPlusCheckoutBtn = document.getElementById('customerPlusCheckoutBtn');
 const customerOneTimeCheckoutBtn = document.getElementById('customerOneTimeCheckoutBtn');
 const customerMonthlyCheckoutBtn = document.getElementById('customerMonthlyCheckoutBtn');
+const customerStandardPlanBtn = document.getElementById('customerStandardPlanBtn');
+const customerTrialPlanBtn = document.getElementById('customerTrialPlanBtn');
 const customerOneTimePlanBtn = document.getElementById('customerOneTimePlanBtn');
 const customerPlusPlanBtn = document.getElementById('customerPlusPlanBtn');
 const customerPresetButtons = document.querySelectorAll('.customer-preset-btn');
@@ -5331,6 +5336,21 @@ if (customerOneTimeCheckoutBtn) {
 }
 if (customerMonthlyCheckoutBtn) {
   customerMonthlyCheckoutBtn.addEventListener('click', () => startCustomerCheckout('customer-plus'));
+}
+if (customerStandardCheckoutBtn) {
+  customerStandardCheckoutBtn.addEventListener('click', () => startCustomerCheckout('customer-standard'));
+}
+if (customerTrialCheckoutBtn) {
+  customerTrialCheckoutBtn.addEventListener('click', () => startCustomerCheckout('customer-trial'));
+}
+if (customerPlusCheckoutBtn) {
+  customerPlusCheckoutBtn.addEventListener('click', () => startCustomerCheckout('customer-plus'));
+}
+if (customerStandardPlanBtn) {
+  customerStandardPlanBtn.addEventListener('click', () => startCustomerCheckout('customer-standard'));
+}
+if (customerTrialPlanBtn) {
+  customerTrialPlanBtn.addEventListener('click', () => startCustomerCheckout('customer-trial'));
 }
 if (customerOneTimePlanBtn) {
   customerOneTimePlanBtn.addEventListener('click', () => startCustomerCheckout('customer-one-time'));

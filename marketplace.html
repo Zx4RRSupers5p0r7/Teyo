@@ -1,201 +1,385 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TEYO Guard | Marketplace Search</title>
-    <meta name="description" content="Search products, compare sizes, and see nearby store stock availability across TEYO with protection-minded company visibility." />
-    <meta property="og:title" content="TEYO Guard | Marketplace Search" />
-    <meta property="og:description" content="Search products, compare sizes, and see nearby store stock availability across TEYO with protection-minded company visibility." />
+    <title>TEYO Guard | Marketplace</title>
+    <meta
+      name="description"
+      content="Black-and-white TEYO marketplace with live search, size-aware inventory, store maps, alerts, and member plans."
+    />
+    <meta property="og:title" content="TEYO Guard | Marketplace" />
+    <meta
+      property="og:description"
+      content="Black-and-white TEYO marketplace with live search, size-aware inventory, store maps, alerts, and member plans."
+    />
     <meta property="og:image" content="/teyo-logo-1024.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TEYO Guard | Marketplace" />
+    <meta name="twitter:description" content="Search products, track restocks, and see company stores on a black-and-white TEYO marketplace." />
+    <meta name="twitter:image" content="/teyo-logo-1024.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="icon" href="/teyo-logo.png" type="image/png" />
     <link rel="shortcut icon" href="/teyo-logo.png" />
-    <style>
-      :root {
-        color-scheme: dark;
-        --bg: #0f172a;
-        --surface: #111827;
-        --surface-2: #1f2937;
-        --text: #f8fafc;
-        --muted: #93a4b8;
-        --accent: #7c7cff;
-        --accent-2: #47b0ff;
-        --border: rgba(255,255,255,0.12);
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        background: linear-gradient(135deg, #09101f, #101d32 55%, #121b2c);
-        color: var(--text);
-        min-height: 100vh;
-      }
-      a { color: inherit; text-decoration: none; }
-      .shell { max-width: 1160px; margin: 0 auto; padding: 24px 20px 60px; }
-      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
-      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.02em; }
-      .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
-      .nav-links { display: flex; flex-wrap: wrap; gap: 8px; }
-      .nav-links a { padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); }
-      .nav-links a.primary { background: rgba(124,124,255,0.16); color: #fff; border-color: rgba(124,124,255,0.35); }
-      .hero { background: rgba(17,24,39,0.92); border: 1px solid var(--border); border-radius: 24px; padding: 24px; box-shadow: 0 30px 70px rgba(0,0,0,0.24); }
-      .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 3vw, 2.4rem); }
-      .hero p { margin: 0 0 20px; color: var(--muted); max-width: 720px; line-height: 1.6; }
-      .search-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-      .search-row input, .search-row select { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: #0b1220; color: var(--text); min-width: 220px; }
-      .search-row button { padding: 12px 16px; border-radius: 12px; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 600; cursor: pointer; }
-      .summary { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
-      .summary span { background: rgba(124,124,255,0.12); border: 1px solid rgba(124,124,255,0.2); padding: 6px 10px; border-radius: 999px; }
-      .grid { display: grid; gap: 16px; }
-      .card { background: rgba(17,24,39,0.95); border: 1px solid var(--border); border-radius: 20px; padding: 18px; }
-      .card h3 { margin: 0 0 8px; font-size: 1.06rem; }
-      .card p { margin: 0 0 8px; color: var(--muted); line-height: 1.55; }
-      .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
-      .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(71,176,255,0.12); border: 1px solid rgba(71,176,255,0.18); color: #bfe4ff; font-size: 0.9rem; }
-      .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; background: rgba(255,255,255,0.06); }
-      .status-in-stock { color: #8cf5aa; }
-      .status-limited { color: #ffda7a; }
-      .status-restock { color: #ffc7a6; }
-      .inventory-list { margin-top: 12px; display: grid; gap: 8px; }
-      .inventory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: 12px; }
-      .inventory-row strong { font-size: 0.95rem; }
-      .inventory-row span { color: var(--muted); font-size: 0.9rem; }
-      .empty-state { padding: 24px; text-align: center; color: var(--muted); }
-      @media (max-width: 720px) { .topbar { flex-direction: column; align-items: flex-start; } .search-row { flex-direction: column; } .search-row input, .search-row select { width: 100%; min-width: unset; } }
-    </style>
+    <link rel="apple-touch-icon" href="/teyo-logo-1024.png" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="styles.css" />
   </head>
-  <body>
-    <div class="shell">
-      <div class="topbar">
-        <a class="brand" href="/">
-          <span class="brand-mark">T</span>
-          <span>TEYO Marketplace</span>
+  <body class="home-page marketplace-page">
+    <div class="page-shell">
+      <header class="topbar">
+        <a href="index.html" class="brand" aria-label="Teyo home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span class="brand-text">Teyo</span>
         </a>
-        <div class="nav-links">
-          <a href="/">TEYO Guard</a>
-          <a href="/inventory.html">Stock insights</a>
-          <a class="primary" href="/admin.html">Company admin</a>
-        </div>
-      </div>
+        <nav class="nav-links" aria-label="Marketplace navigation">
+          <a class="active" href="marketplace.html">Marketplace</a>
+          <a href="partners.html">Partners</a>
+          <a href="inventory.html">Stock insights</a>
+          <a href="admin.html">Company admin</a>
+          <a href="guard-landing.html">TEYO Guard</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
 
-      <section class="hero">
-        <h1>Search products, sizes, and stock availability in one place.</h1>
-        <p>Customers can find the right size, see which stores carry it, and understand whether the item is in stock, limited, or due for a restock. Companies can monitor the same data from their private stock-insights view.</p>
-        <div class="search-row">
-          <input id="searchInput" type="text" placeholder="Search by product or category" />
-          <select id="sizeFilter">
-            <option value="">Any size</option>
-          </select>
-          <button id="searchBtn" type="button">Search</button>
-        </div>
-        <div class="summary">
-          <span id="resultCount">0 results</span>
-          <span>Size-aware availability</span>
-          <span>Restock visibility</span>
-          <span>Store + online visibility</span>
-        </div>
-        <div id="results" class="grid"></div>
-      </section>
-    </div>
-
-    <script>
-      const searchInput = document.getElementById('searchInput');
-      const sizeFilter = document.getElementById('sizeFilter');
-      const resultCount = document.getElementById('resultCount');
-      const results = document.getElementById('results');
-
-      function parseInventory(product) {
-        return Array.isArray(product.sizeInventory) ? product.sizeInventory : [];
-      }
-
-      function getStatusClass(status) {
-        const normalized = String(status || '').toLowerCase();
-        if (normalized.includes('in stock')) return 'status-in-stock';
-        if (normalized.includes('limited')) return 'status-limited';
-        return 'status-restock';
-      }
-
-      function formatInventory(product, selectedSize) {
-        const entries = parseInventory(product).filter((entry) => {
-          if (!selectedSize) return true;
-          return String(entry.size || '').toUpperCase() === String(selectedSize).toUpperCase();
-        });
-
-        if (!entries.length) {
-          return [{ storeName: 'Store map', size: selectedSize || 'Any size', stockStatus: 'Available soon', restockDate: '' }];
-        }
-
-        return entries;
-      }
-
-      function renderProducts(products) {
-        const sizeOptions = [...new Set(products.flatMap((product) => Array.isArray(product.sizeOptions) ? product.sizeOptions : []))].sort();
-        sizeFilter.innerHTML = '<option value="">Any size</option>' + sizeOptions.map((size) => `<option value="${size}">${size}</option>`).join('');
-
-        const query = searchInput.value.trim().toLowerCase();
-        const size = sizeFilter.value;
-        const filtered = products.filter((product) => {
-          const haystack = `${product.productName || ''} ${product.category || ''} ${product.description || ''}`.toLowerCase();
-          const matchesQuery = !query || haystack.includes(query);
-          const matchesSize = !size || (Array.isArray(product.sizeOptions) && product.sizeOptions.some((entry) => String(entry).toUpperCase() === String(size).toUpperCase()));
-          return matchesQuery && matchesSize;
-        });
-
-        resultCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'result' : 'results'}`;
-        if (!filtered.length) {
-          results.innerHTML = '<div class="empty-state">No products match that search yet. Try another category or size.</div>';
-          return;
-        }
-
-        results.innerHTML = filtered.map((product) => {
-          const inventory = formatInventory(product, size);
-          const inventoryRows = inventory.map((entry) => `
-            <div class="inventory-row">
-              <div>
-                <strong>${entry.storeName}</strong><br />
-                <span>${entry.size || 'Any size'}</span>
-              </div>
-              <span class="${getStatusClass(entry.stockStatus)}">${entry.stockStatus || 'Check availability'}</span>
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">Original marketplace, restored</p>
+            <h1>Black-and-white TEYO marketplace with live products, maps, alerts, and member plans.</h1>
+            <p class="hero-text">
+              Search size-aware stock, inspect nearby store locations, and keep the marketplace feel you built while we
+              add membership tiers, theme controls, and the map view for company store locations.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="#marketplace-search">Browse listings</a>
+              <a class="btn btn-secondary" href="#membership-plans">View memberships</a>
+              <a class="btn btn-secondary" href="#map">Open store map</a>
             </div>
-          `).join('');
-          return `
-            <article class="card">
-              <div class="status-pill ${getStatusClass(product.stockStatus)}">${product.stockStatus || 'Pending'}</div>
-              <h3>${product.productName}</h3>
-              <p>${product.description || 'Live stock visibility for online and nearby stores.'}</p>
-              <div class="tags">
-                <span class="tag">${product.companyName}</span>
-                <span class="tag">${product.category || 'Product'}</span>
-                <span class="tag">${product.price || 'Price pending'}</span>
+            <ul class="hero-highlights">
+              <li>Live product search and restock visibility</li>
+              <li>Company store locations plotted on the map</li>
+              <li>Teyo Standard for marketplace members</li>
+              <li>Teyo Plus for custom themes and the 3D pet</li>
+            </ul>
+          </div>
+
+          <div class="hero-card">
+            <div class="hero-card-head">
+              <span class="pill">Black + white</span>
+              <span class="pill muted">Map + themes</span>
+            </div>
+            <h2>One clean surface for shopping, membership, and company visibility.</h2>
+            <p>
+              This version keeps the marketplace features working while restoring the monochrome look and adding the
+              memberships you requested.
+            </p>
+            <div class="hero-metrics">
+              <div>
+                <strong>$5</strong>
+                <span>Standard monthly membership</span>
               </div>
-              <div class="inventory-list">
-                ${inventoryRows}
+              <div>
+                <strong>$10</strong>
+                <span>Teyo Plus monthly membership</span>
+              </div>
+              <div>
+                <strong>30 days</strong>
+                <span>Free trial to test everything</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="marketplace-search">
+          <div class="section-heading">
+            <p class="eyebrow">Marketplace search</p>
+            <h2>Find approved products, sizes, and store stock.</h2>
+          </div>
+
+          <div class="card-grid">
+            <article class="card">
+              <div class="form-grid">
+                <div class="field full">
+                  <label for="searchInput">Search products or brands</label>
+                  <input id="searchInput" type="text" placeholder="Search by product, brand, category, or size" />
+                </div>
+                <div class="field">
+                  <label for="categorySelect">Category</label>
+                  <select id="categorySelect">
+                    <option value="all">All categories</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="sizeFilterSelect">Size</label>
+                  <select id="sizeFilterSelect">
+                    <option value="ALL">All sizes</option>
+                  </select>
+                </div>
+                <div class="field full">
+                  <label class="checkbox-field" for="sizeInStockOnly">
+                    <input id="sizeInStockOnly" type="checkbox" />
+                    <span>Only show in-stock matches</span>
+                  </label>
+                </div>
+              </div>
+              <p id="stockReminderMessage" class="form-message" aria-live="polite"></p>
+            </article>
+          </div>
+
+          <div id="interestAlertCenter" class="alert-center-card"></div>
+
+          <div class="card-grid" style="margin-top: 18px; align-items: start;">
+            <article class="card">
+              <h3>Results</h3>
+              <div id="resultsList"></div>
+            </article>
+
+            <article id="selectedProduct" class="card detail-card">
+              <p>Select a verified product to view pricing, store availability, safety guidance, and restock reminders.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="membership-plans">
+          <div class="section-heading">
+            <p class="eyebrow">Memberships</p>
+            <h2>Three simple ways to access the marketplace.</h2>
+          </div>
+
+          <div class="card-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+            <article class="card plan-card">
+              <p class="eyebrow">Standard</p>
+              <h3>$5/month</h3>
+              <p>For shoppers who want the working marketplace basics.</p>
+              <ul>
+                <li>Saved searches and recent search memory</li>
+                <li>Store map and stock visibility</li>
+                <li>Restock reminders and alerts</li>
+                <li>Access to the marketplace experience</li>
+              </ul>
+              <button id="customerStandardCheckoutBtn" class="btn btn-secondary" type="button">Start Standard</button>
+            </article>
+
+            <article class="card plan-card">
+              <p class="eyebrow">Trial</p>
+              <h3>30-day free trial</h3>
+              <p>Test the full Plus experience before you pay anything.</p>
+              <ul>
+                <li>Everything in Plus for 30 days</li>
+                <li>Theme colors and custom marketplace styling</li>
+                <li>3D pet customization</li>
+                <li>Then continues at Plus pricing if you keep it</li>
+              </ul>
+              <button id="customerTrialCheckoutBtn" class="btn btn-primary" type="button">Start free trial</button>
+            </article>
+
+            <article class="card plan-card">
+              <p class="eyebrow">Plus</p>
+              <h3>$10/month</h3>
+              <p>For people who want the custom marketplace look and pet.</p>
+              <ul>
+                <li>Custom marketplace theme colors</li>
+                <li>3D pet customization</li>
+                <li>Private style access for your browser</li>
+                <li>Everything in Standard</li>
+              </ul>
+              <button id="customerPlusCheckoutBtn" class="btn btn-primary" type="button">Start Plus</button>
+            </article>
+          </div>
+        </section>
+
+        <section id="customerThemePanel" class="section customer-theme-panel is-locked" aria-label="Customer personalization">
+          <div class="customer-theme-copy">
+            <h3>
+              Private Plus theme controls
+              <span class="plus-badge">Teyo Plus</span>
+            </h3>
+            <p>
+              Keep the marketplace black and white by default, then unlock color controls and the 3D pet only for Plus or
+              an active free trial.
+            </p>
+
+            <div class="detail-actions" style="margin: 12px 0 10px;">
+              <button id="customerStandardPlanBtn" class="btn btn-secondary" type="button">Standard</button>
+              <button id="customerTrialPlanBtn" class="btn btn-secondary" type="button">30-day trial</button>
+              <button id="customerPlusPlanBtn" class="btn btn-primary" type="button">Plus</button>
+            </div>
+
+            <label>
+              Verification email
+              <input id="customerEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+            </label>
+
+            <div class="detail-actions" style="margin-top: 10px;">
+              <button id="customerVerifyAccessBtn" class="btn btn-primary" type="button">Verify access</button>
+              <button id="customerResetThemeBtn" class="btn btn-secondary" type="button">Reset private style</button>
+            </div>
+
+            <p id="customerCheckoutMessage" class="form-message" aria-live="polite"></p>
+            <p id="customerPaymentMessage" class="form-message" aria-live="polite"></p>
+          </div>
+
+          <div id="customerThemeControls" class="customer-theme-controls" hidden>
+            <div class="customer-cute-presets">
+              <p class="mini-label">Preset themes</p>
+              <div class="preset-grid">
+                <button class="preset-chip customer-preset-btn" type="button" data-preset="kawaii">Kawaii</button>
+                <button class="preset-chip customer-preset-btn" type="button" data-preset="cloud">Cloud</button>
+                <button class="preset-chip customer-preset-btn" type="button" data-preset="mint">Mint</button>
+                <button class="preset-chip customer-preset-btn" type="button" data-preset="night">Night</button>
+              </div>
+            </div>
+
+            <label>
+              Accent color
+              <input id="customerAccentColor" type="color" value="#ffffff" />
+            </label>
+
+            <label>
+              Interface style
+              <select id="customerStyleSelect">
+                <option value="midnight">Midnight</option>
+                <option value="graphite">Graphite</option>
+                <option value="carbon">Carbon</option>
+                <option value="night">Night</option>
+                <option value="cloud">Cloud</option>
+                <option value="mint">Mint</option>
+              </select>
+            </label>
+
+            <label>
+              Plushie
+              <select id="customerPlushieSelect">
+                <option value="bear">Bear</option>
+                <option value="bunny">Bunny</option>
+                <option value="cat">Cat</option>
+                <option value="frog">Frog</option>
+                <option value="dog">Dog</option>
+                <option value="star">Star</option>
+              </select>
+            </label>
+
+            <label>
+              Plushie name
+              <input id="customerPetNameInput" type="text" maxlength="16" placeholder="Name your plushie" />
+            </label>
+
+            <div class="customer-corner-options">
+              <label>
+                Primary color
+                <input id="customerPetColorInput" type="color" value="#ffffff" />
+              </label>
+              <label>
+                Secondary color
+                <input id="customerPetColor2Input" type="color" value="#d9d9d9" />
+              </label>
+              <label>
+                Ear style
+                <select id="customerPetEarSelect">
+                  <option value="default">Default</option>
+                  <option value="perky">Perky</option>
+                  <option value="floppy">Floppy</option>
+                  <option value="round">Round</option>
+                  <option value="tall">Tall</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+              <label>
+                Tail style
+                <select id="customerPetTailSelect">
+                  <option value="default">Default</option>
+                  <option value="long">Long</option>
+                  <option value="fluffy">Fluffy</option>
+                  <option value="wag">Wag</option>
+                  <option value="puff">Puff</option>
+                  <option value="curly">Curly</option>
+                  <option value="short">Short</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+              <label>
+                Nose style
+                <select id="customerPetNoseSelect">
+                  <option value="default">Default</option>
+                  <option value="button">Button</option>
+                  <option value="heart">Heart</option>
+                  <option value="round">Round</option>
+                  <option value="snout">Snout</option>
+                  <option value="wide">Wide</option>
+                  <option value="bill">Bill</option>
+                </select>
+              </label>
+              <label>
+                Leg style
+                <select id="customerPetLegSelect">
+                  <option value="default">Default</option>
+                  <option value="stubby">Stubby</option>
+                  <option value="long">Long</option>
+                  <option value="waddle">Waddle</option>
+                  <option value="none">None</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="customer-cute-preview">
+              <span id="customerPlushiePreview" class="plushie-preview" aria-hidden="true">P</span>
+              <p id="customerPlushieCaption" class="mini-caption">Your plushie appears after access is verified.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="map">
+          <div class="section-heading">
+            <p class="eyebrow">Company store map</p>
+            <h2>Where company stores show up across the world.</h2>
+          </div>
+
+          <div class="map-grid">
+            <article class="card map-card">
+              <div class="map-surface">
+                <div id="mapLeaflet" class="map-embed" aria-label="Nearby stores map"></div>
               </div>
             </article>
-          `;
-        }).join('');
-      }
 
-      async function loadProducts() {
-        try {
-          const response = await fetch('/api/products');
-          const payload = await response.json();
-          const products = Array.isArray(payload) ? payload : [];
-          renderProducts(products);
-        } catch (error) {
-          results.innerHTML = '<div class="empty-state">Unable to load marketplace data right now.</div>';
-        }
-      }
+            <article class="card map-card">
+              <h3>Store visibility</h3>
+              <p class="form-message">Approved companies can publish store locations from their request and synced catalog data so shoppers see them on the map.</p>
+              <div id="storeList" class="store-list">
+                <p>Choose a product to see nearby stores.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
 
-      searchInput.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          loadProducts();
-        }
-      });
-      document.getElementById('searchBtn').addEventListener('click', loadProducts);
-      sizeFilter.addEventListener('change', loadProducts);
-      loadProducts();
-    </script>
+      <nav class="nav-links bottom-nav" aria-label="Site navigation">
+        <a class="active" href="marketplace.html">Marketplace</a>
+        <a href="partners.html">Partners</a>
+        <a href="inventory.html">Stock insights</a>
+        <a href="admin.html">Company admin</a>
+      </nav>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="script.js"></script>
   </body>
 </html>

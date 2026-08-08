@@ -92,7 +92,7 @@ async function run() {
       ADMIN_API_KEY: 'smoke_test_admin_key_1234567890_abcdef',
       OWNER_EMAIL,
       OWNER_ACCESS_KEY: OWNER_KEY,
-      STRIPE_SECRET_KEY: 'sk_test_replace_with_real_key',
+      STRIPE_SECRET_KEY: 'sk_test_smoke_key_123456',
       STRIPE_WEBHOOK_SECRET: 'whsec_smoke_guard',
       DATABASE_URL: ''
     },
@@ -119,6 +119,19 @@ async function run() {
       }
     });
     assert(partnerCreate.status === 200 && partnerCreate.body && partnerCreate.body.success, 'Partner creation should succeed');
+
+    const adminPartners = await request('/api/partners', {
+      headers: {
+        'x-owner-email': OWNER_EMAIL,
+        'x-owner-key': OWNER_KEY
+      }
+    });
+    assert(adminPartners.status === 200 && Array.isArray(adminPartners.body), 'Admin partners should return an array');
+    const createdPartner = adminPartners.body.find((entry) => entry.companyName === 'Smoke Test Co');
+    assert(createdPartner, 'Created partner should be present in admin partner data');
+    assert(createdPartner.activeListing === true, 'Created partner should be marked active after setup');
+    assert(createdPartner.storeSync && createdPartner.storeSync.enabled === true, 'Created partner should auto-enable website-based marketplace sync');
+    assert(createdPartner.storeSync && String(createdPartner.storeSync.sourceUrl || '').includes('smoketestco.com'), 'Created partner should use the company website as its sync source');
 
     const publicPartners = await request('/api/partners');
     assert(publicPartners.status === 200 && Array.isArray(publicPartners.body), 'Public partners should return an array');
@@ -150,13 +163,6 @@ async function run() {
     });
     assert(adminVerifyAuthorized.status === 200 && adminVerifyAuthorized.body && adminVerifyAuthorized.body.success, 'Admin verify should pass with valid owner credentials');
 
-    const adminPartners = await request('/api/partners', {
-      headers: {
-        'x-owner-email': OWNER_EMAIL,
-        'x-owner-key': OWNER_KEY
-      }
-    });
-    assert(adminPartners.status === 200 && Array.isArray(adminPartners.body), 'Admin partners should return an array');
     assert(adminPartners.body.length >= 1, 'Admin partners should include created partner');
     assert(Object.prototype.hasOwnProperty.call(adminPartners.body[0], 'ownerEmail'), 'Admin partners should include ownerEmail');
 

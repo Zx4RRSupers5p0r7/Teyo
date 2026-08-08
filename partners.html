@@ -1,0 +1,193 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEYO Guard | Partner Onboarding</title>
+    <meta name="description" content="Partner onboarding for TEYO companies, stores, and brands with access to marketplace visibility and TEYO Guard protection." />
+    <meta property="og:title" content="TEYO Guard | Partner Onboarding" />
+    <meta property="og:description" content="Partner onboarding for TEYO companies, stores, and brands with access to marketplace visibility and TEYO Guard protection." />
+    <meta property="og:image" content="/teyo-logo-1024.png" />
+    <link rel="icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --surface: #111111;
+        --surface-2: #1a1a1a;
+        --text: #f2f2f2;
+        --muted: #9e9e9e;
+        --line: #2d2d2d;
+        --accent: #ffffff;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(160deg, var(--surface) 0%, var(--bg) 48%, var(--surface-2) 100%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .shell { max-width: 1100px; margin: 0 auto; padding: 24px 24px 56px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 8px 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+      .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--text); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+      .nav { display: flex; gap: 10px; flex-wrap: wrap; }
+      .nav a { color: var(--muted); padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; }
+      .hero { background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid var(--line); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); }
+      .hero h1 { margin: 0 0 10px; font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; }
+      .hero p { color: var(--muted); line-height: 1.7; max-width: 760px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+      .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 18px; text-decoration: none; font-weight: 700; border: 1px solid var(--line); }
+      .btn-primary { background: var(--accent); color: #050505; }
+      .btn-secondary { color: var(--text); background: rgba(255,255,255,0.04); }
+      .cards { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-top: 20px; }
+      .card { background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
+      .card h2 { margin: 0 0 8px; font-size: 1.06rem; }
+      .card p { margin: 0; color: var(--muted); line-height: 1.6; }
+      .partner-form { margin-top: 20px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); border-radius: 24px; padding: 20px; }
+      .partner-form h2 { margin: 0 0 8px; }
+      .partner-form p { margin: 0 0 14px; color: var(--muted); line-height: 1.6; }
+      .form-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .field { display: flex; flex-direction: column; gap: 6px; }
+      .field.full { grid-column: 1 / -1; }
+      .field label { color: var(--muted); font-size: 0.95rem; }
+      .field input, .field textarea, .field select { padding: 12px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.05); color: var(--text); }
+      .field textarea { min-height: 100px; resize: vertical; }
+      .field-inline { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+      .radio-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+      .radio-row label { display: inline-flex; align-items: center; gap: 6px; color: var(--text); font-size: 0.95rem; }
+      .helper-text { color: var(--muted); font-size: 0.9rem; margin-top: 6px; }
+      .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+      .status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: var(--muted); }
+      .status.success { border-color: rgba(76, 175, 80, 0.32); color: #dff7e6; background: rgba(76, 175, 80, 0.12); }
+      .status.error { border-color: rgba(255, 99, 99, 0.3); color: #ffd8d8; background: rgba(255, 99, 99, 0.12); }
+      .preview-panel { margin-top: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: rgba(255,255,255,0.04); }
+      .preview-panel h3 { margin: 0 0 8px; font-size: 1rem; }
+      .preview-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+      .preview-card { padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.04); border: 1px solid var(--line); }
+      .preview-card h4 { margin: 0 0 6px; font-size: 0.95rem; }
+      .preview-card p { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+      .theme-demo-card { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); }
+      .theme-demo-card h3 { margin: 0 0 8px; font-size: 1rem; }
+      .theme-demo-row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+      .theme-demo-chip { border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; background: rgba(255,255,255,0.04); color: var(--text); cursor: pointer; font-size: 0.92rem; }
+      .theme-demo-chip.active { border-color: var(--accent); box-shadow: 0 0 0 1px rgba(255,255,255,0.12); }
+      .theme-demo-preview { margin-top: 12px; padding: 16px; border-radius: 18px; min-height: 120px; border: 1px solid rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; }
+      @media (max-width: 720px) { .form-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 720px) { .shell { padding: 20px 20px 56px; } .topbar { flex-direction: column; align-items: flex-start; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <a class="brand" href="/">TEYO Partners</a>
+        <div class="nav">
+          <a href="/marketplace.html">Marketplace</a>
+          <a href="/inventory.html">Stock insights</a>
+          <a href="/guard-landing.html">TEYO Guard</a>
+        </div>
+      </div>
+      <section class="hero">
+        <h1>Bring your store, products, and stock visibility into TEYO without losing the original experience.</h1>
+        <p>Companies can list products, keep size-aware inventory current, monitor restock windows, and expose the same experience to shoppers from the TEYO marketplace.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="/admin.html">Open company setup</a>
+          <a class="btn btn-secondary" href="/marketplace.html">Open marketplace</a>
+          <a class="btn btn-secondary" href="/guard-landing.html">Explore TEYO Guard</a>
+        </div>
+      </section>
+      <section class="partner-form" id="partner-request">
+        <h2>Request early partner access</h2>
+        <p>Use this form if you run a store, brand, or company and want to be part of the TEYO network. One click can launch the animated setup experience, match your store colors, and gather the few details we need to start.</p>
+        <form id="partnerForm">
+          <div class="form-grid">
+            <div class="field">
+              <label for="companyName">Company name</label>
+              <input id="companyName" name="companyName" required />
+            </div>
+            <div class="field">
+              <label for="ownerEmail">Owner email</label>
+              <input id="ownerEmail" name="ownerEmail" type="email" required />
+            </div>
+            <div class="field">
+              <label for="websiteUrl">Company website</label>
+              <input id="websiteUrl" name="websiteUrl" type="url" required />
+            </div>
+            <div class="field">
+              <label for="storeCatalogUrl">Catalog or product URL</label>
+              <input id="storeCatalogUrl" name="storeCatalogUrl" type="url" />
+            </div>
+            <div class="field">
+              <label for="storeNiche">Store or brand niche</label>
+              <input id="storeNiche" name="storeNiche" placeholder="Luxury retail, apparel, premium goods, etc." />
+            </div>
+            <div class="field">
+              <label for="partnerStoreLocationInput">Where is your store located?</label>
+              <input id="partnerStoreLocationInput" name="storeLocation" placeholder="City, region, or country" />
+            </div>
+            <div class="field full">
+              <label for="details">What do you want to bring to TEYO?</label>
+              <textarea id="details" name="details" placeholder="Tell us about your store, products, inventory, or why you want to be part of TEYO."></textarea>
+            </div>
+            <div class="field full">
+              <label>Do you have a physical store?</label>
+              <div class="radio-row">
+                <label><input id="partnerHasStoreYes" type="radio" name="hasPhysicalStore" value="yes" checked /> Yes</label>
+                <label><input id="partnerHasStoreNo" type="radio" name="hasPhysicalStore" value="no" /> No, this is online-only</label>
+              </div>
+              <p class="helper-text">If you have a physical store, we’ll use your location to make the setup feel more tailored.</p>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">One-click setup</button>
+            <a class="btn btn-secondary" id="themeDemoBtn" href="#themeDemoPanel">Preview store theme</a>
+            <a class="btn btn-secondary" href="/contact.html">Talk to TEYO</a>
+          </div>
+          <div id="formMessage" class="status" role="status">One click will launch the animated setup experience and confirm the few details we need.</div>
+          <div class="theme-demo-card" id="themeDemoPanel" hidden>
+            <h3>Store theme preview</h3>
+            <p>See how TEYO can match the star and background colors to different store identities.</p>
+            <div class="theme-demo-row" id="themeDemoRow"></div>
+            <div class="theme-demo-preview" id="themeDemoPreview">Theme preview</div>
+          </div>
+          <div id="partnerPreviewPanel" class="preview-panel" hidden></div>
+        </form>
+      </section>
+
+      <div class="cards">
+        <article class="card">
+          <h2>For stores</h2>
+          <p>Keep your store listing live and let shoppers discover size-aware stock availability across online and nearby locations.</p>
+        </article>
+        <article class="card">
+          <h2>For brands</h2>
+          <p>Monitor product availability, restock windows, and inventory health from one company control room.</p>
+        </article>
+        <article class="card">
+          <h2>For TEYO Guard</h2>
+          <p>Layer compliance and protection insight onto the same company workflow so operations stay secure and visible.</p>
+        </article>
+      </div>
+    </div>
+    <div id="cinematicOnboardingOverlay" class="cinematic-onboarding-overlay" hidden aria-hidden="true">
+      <div class="cinematic-three-mount" id="cinematicThreeMount"></div>
+      <div class="cinematic-vignette" aria-hidden="true"></div>
+      <div class="cinematic-flash-layer" id="cinematicFlashLayer" aria-hidden="true"></div>
+      <div class="cinematic-onboarding-content">
+        <div class="cinematic-logo-reveal" id="cinematicLogoReveal" aria-hidden="true">
+          <span class="cinematic-logo-mark" aria-hidden="true">T</span>
+          <span class="cinematic-logo-name" aria-hidden="true">TEYO</span>
+        </div>
+        <p class="cinematic-thank-you" id="cinematicThankYou" aria-hidden="true">Thank you for choosing Teyo.</p>
+        <p class="cinematic-future-line" id="cinematicFutureLine" aria-hidden="true">The future of discovery</p>
+        <p class="cinematic-install-line" id="cinematicInstallLine" aria-hidden="true">Your store is being listed.</p>
+        <div class="cinematic-fire-sweep" id="cinematicFireSweep" aria-hidden="true"></div>
+        <div class="cinematic-flash-word" id="cinematicFlashWord" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <script src="/script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEYO Guard | Marketplace, Company Stock & Protection</title>
+    <meta
+      name="description"
+      content="TEYO Guard brings marketplace discovery, company stock visibility, and protection-minded operations into one powerful experience for shoppers, companies, and partners."
+    />
+    <meta property="og:title" content="TEYO Guard | Marketplace, Company Stock & Protection" />
+    <meta property="og:description" content="TEYO Guard brings marketplace discovery, company stock visibility, and protection-minded operations into one powerful experience for shoppers, companies, and partners." />
+    <meta property="og:image" content="/teyo-logo-1024.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="TEYO Guard | Marketplace, Company Stock & Protection" />
+    <meta name="twitter:description" content="TEYO Guard brings marketplace discovery, company stock visibility, and protection-minded operations into one powerful experience." />
+    <meta name="twitter:image" content="/teyo-logo-1024.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <link rel="apple-touch-icon" href="/teyo-logo-1024.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="home-page">
+    <div class="page-shell">
+      <header class="topbar">
+        <a href="index.html" class="brand" aria-label="Teyo home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span class="brand-text">Teyo</span>
+        </a>
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="marketplace.html">Marketplace</a>
+          <a href="partners.html">Partners</a>
+          <a href="inventory.html">Stock insights</a>
+          <a href="admin.html">Company admin</a>
+          <a href="guard-landing.html">TEYO Guard</a>
+          <a href="contact.html">Contact</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero" id="discover">
+          <div class="hero-copy">
+            <p class="eyebrow">TEYO does Guard</p>
+            <h1>Built for hardworking companies, shoppers, and protection-minded operators.</h1>
+            <p class="hero-text">
+              TEYO keeps the original black-and-white experience intact, and now TEYO Guard adds a protection and compliance layer for companies that want stronger oversight, clearer stock visibility, and smarter risk awareness.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="partners.html#partner-request">Request partner access</a>
+              <a class="btn btn-secondary" href="marketplace.html">Open marketplace</a>
+              <a class="btn btn-secondary" href="guard-landing.html">Explore TEYO Guard</a>
+            </div>
+            <ul class="hero-highlights">
+              <li>Company stock monitoring and admin access</li>
+              <li>Universal product search with size-aware availability</li>
+              <li>Restock and back-soon visibility for shoppers</li>
+              <li>TEYO Guard for protection and compliance</li>
+            </ul>
+          </div>
+ 
+          <div class="hero-card">
+            <div class="hero-card-head">
+              <span class="pill">Live</span>
+              <span class="pill muted">Stripe-ready</span>
+            </div>
+            <h2>TEYO does Guard — protection that fits the original TEYO experience.</h2>
+            <p>Companies can list, monitor, and update inventory. Customers can scan products, compare sizes, and see store and online availability. TEYO Guard adds stronger risk visibility, continuity, and oversight without changing the old TEYO feel.</p>
+            <div class="hero-metrics">
+              <div>
+                <strong>1 click</strong>
+                <span>Store onboarding</span>
+              </div>
+              <div>
+                <strong>24/7</strong>
+                <span>Live stock visibility</span>
+              </div>
+              <div>
+                <strong>Guard</strong>
+                <span>Protection + compliance</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section referral-section" id="referral-program">
+          <div class="referral-card">
+            <div class="referral-copy">
+              <p class="eyebrow">Referral program</p>
+              <h2>Invite a brand, a store, or a shopper and keep the Teyo network growing.</h2>
+              <p>Share a personalized invite link with a company that should be on TEYO or a shopper who should discover the marketplace.</p>
+            </div>
+            <div class="referral-form">
+              <label class="visually-hidden" for="referralNameInput">Your name or company</label>
+              <input id="referralNameInput" class="referral-input" type="text" placeholder="Your name or company" autocomplete="name" />
+              <div class="referral-link-row">
+                <input id="referralLinkInput" class="referral-link" type="text" readonly value="https://teyo.ca/?ref=friend" />
+                <button id="referralCopyBtn" class="btn btn-primary" type="button">Copy invite</button>
+              </div>
+              <p id="referralStatus" class="referral-status" role="status">Your invite link will appear here.</p>
+              <div class="lead-capture-grid">
+                <input id="leadNameInput" class="referral-input" type="text" placeholder="Your name" autocomplete="name" />
+                <input id="leadEmailInput" class="referral-input" type="email" placeholder="Work email" autocomplete="email" />
+                <input id="leadCompanyInput" class="referral-input" type="text" placeholder="Company" autocomplete="organization" />
+                <div class="referral-field">
+                  <label class="referral-field-label" for="leadInterestSelect">How you want to get involved</label>
+                  <select id="leadInterestSelect" class="referral-input" aria-label="How you want to get involved">
+                    <option value="partner access">Partner access</option>
+                    <option value="company access">Company access</option>
+                    <option value="TEYO Guard">TEYO Guard</option>
+                    <option value="general interest">General interest</option>
+                  </select>
+                </div>
+                <button id="leadSubmitBtn" class="btn btn-secondary" type="button">Send interest</button>
+              </div>
+              <p id="leadStatus" class="referral-status" role="status">We’ll capture your interest and follow up with the next step.</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section feature-callout" id="new-features">
+          <div class="section-heading">
+            <p class="eyebrow">Now live on TEYO</p>
+            <h2>The old TEYO atmosphere, with marketplace, company stock flow, and our TEYO Guard service all layered in.</h2>
+          </div>
+          <div class="hero-pitch-card">
+            <div class="hero-pitch-copy">
+              <p class="eyebrow">Why this matters</p>
+              <h3>TEYO helps companies become easier to discover, easier to trust, and easier to operate.</h3>
+              <p>Shoppers see clearer availability. Companies get stronger visibility. Partners can launch faster with a premium onboarding flow that feels built for real growth.</p>
+            </div>
+            <div class="hero-pitch-points">
+              <div>
+                <strong>For brands</strong>
+                <span>Turn stock visibility into a stronger customer experience.</span>
+              </div>
+              <div>
+                <strong>For shoppers</strong>
+                <span>Find what is in stock, where it is available, and what is back soon.</span>
+              </div>
+              <div>
+                <strong>For operators</strong>
+                <span>Use TEYO Guard to bring protection and compliance awareness into daily operations.</span>
+              </div>
+            </div>
+          </div>
+          <div class="feature-grid">
+            <article class="feature-card">
+              <span class="feature-badge">Marketplace</span>
+              <h3>Search products by name, category, and size</h3>
+              <p>Customers can browse a live search experience that surfaces size-aware stock and restock visibility across stores and online fulfillment.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-badge">Company access</span>
+              <h3>Companies get a stock-insights dashboard</h3>
+              <p>Companies can monitor what is in stock, limited, or back soon and update inventory from the same control room.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-badge">TEYO Guard</span>
+              <h3>Protect operations with compliance-facing visibility</h3>
+              <p>TEYO Guard is our protection and compliance service for companies that want asset protection, residency-aware monitoring, and a more secure operating view.</p>
+            </article>
+            <article class="feature-card">
+              <span class="feature-badge">AI setup</span>
+              <h3>One-click company onboarding for products and growth</h3>
+              <p>Partners can bring their products, stock visibility, and onboarding flow into TEYO in a streamlined, premium experience.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section intro-grid">
+          <article>
+            <h3>For companies</h3>
+            <p>List your whole store, keep your own site, and give your team a private stock-insights control room without losing the old TEYO feel.</p>
+          </article>
+          <article>
+            <h3>For shoppers</h3>
+            <p>Search once, compare better options, check size availability, and discover what is in stock or back soon in a refined, monochrome experience.</p>
+          </article>
+        </section>
+
+        <section class="section offer-section" id="early-partner-offer">
+          <div class="offer-card">
+            <div class="offer-copy">
+              <p class="eyebrow">Early partner offer</p>
+              <h3>Launch your company, inventory, and protection layer with TEYO in one move.</h3>
+              <p>For the first wave of partners, TEYO is offering a streamlined onboarding path for companies that want stronger discovery, live stock visibility, and a more serious operating layer from day one.</p>
+            </div>
+            <div class="offer-actions">
+              <a class="btn btn-primary" href="partners.html#partner-request">Apply for early access</a>
+              <a class="btn btn-secondary" href="guard-landing.html">See TEYO Guard</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="section access-section" id="company-tab">
+          <div class="access-shell">
+            <div class="access-tabs" role="tablist" aria-label="Teyo user paths">
+              <button class="tab-btn active" type="button" data-tab="company">For companies</button>
+              <button class="tab-btn" type="button" data-tab="customer">For customers</button>
+            </div>
+
+            <div class="tab-panels">
+              <article class="tab-panel active" data-panel="company">
+                <div class="tab-copy">
+                  <p class="eyebrow">For companies</p>
+                  <h3>Add your whole store and keep inventory current.</h3>
+                  <p>Connect once and let TEYO keep product and stock visibility fresh. Your listings remain on-brand while your team watches stock from a dedicated company dashboard.</p>
+                  <div class="tab-actions">
+                    <a class="btn btn-primary" href="admin.html">Open company stock access</a>
+                  </div>
+                </div>
+                <div class="tab-highlight">
+                  <strong>Why brands choose TEYO</strong>
+                  <ul>
+                    <li>✅ Live product discovery</li>
+                    <li>✅ Size-aware stock visibility</li>
+                    <li>✅ Private company stock-insights access</li>
+                    <li>✅ TEYO Guard protection service</li>
+                    <li>✅ Stripe-ready growth checkout</li>
+                    <li>✅ Stronger brand trust with built-in protection</li>
+                  </ul>
+                </div>
+              </article>
+
+              <article class="tab-panel" data-panel="customer">
+                <div class="tab-copy">
+                  <p class="eyebrow">For customers</p>
+                  <h3>Discover better options without losing the old TEYO feel.</h3>
+                  <p>Browse trusted results, compare products, and find what is in stock, where it is available, and which size fits the need.</p>
+                  <div class="tab-actions">
+                    <a class="btn btn-secondary" href="marketplace.html">Start shopping</a>
+                  </div>
+                </div>
+                <div class="tab-highlight">
+                  <strong>Customer benefits</strong>
+                  <ul>
+                    <li>Faster discovery of products that match your needs</li>
+                    <li>Size-aware and store-aware availability</li>
+                    <li>Clear path from research to confident purchase</li>
+                  </ul>
+                </div>
+              </article>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <nav class="nav-links bottom-nav" aria-label="Site navigation">
+        <a href="marketplace.html">Marketplace</a>
+        <a href="partners.html">Partners</a>
+        <a href="inventory.html">Stock insights</a>
+        <a href="guard-landing.html">TEYO Guard</a>
+        <a href="contact.html">Contact</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+
+      <footer class="footer" id="contact">
+        <p>© 2026 Teyo.ca — Designed to connect buyers, brands, local stock, and private company monitoring in one refined experience.</p>
+      </footer>
+    </div>
+
+    <div id="cinematicOnboardingOverlay" class="cinematic-onboarding-overlay" hidden aria-hidden="true">
+      <div class="cinematic-three-mount" id="cinematicThreeMount"></div>
+      <div class="cinematic-vignette" aria-hidden="true"></div>
+      <div class="cinematic-flash-layer" id="cinematicFlashLayer" aria-hidden="true"></div>
+      <div class="cinematic-onboarding-content">
+        <div class="cinematic-logo-reveal" id="cinematicLogoReveal" aria-hidden="true">
+          <span class="cinematic-logo-mark" aria-hidden="true">T</span>
+          <span class="cinematic-logo-name" aria-hidden="true">TEYO</span>
+        </div>
+        <p class="cinematic-thank-you" id="cinematicThankYou" aria-hidden="true">Thank you for choosing Teyo.</p>
+        <p class="cinematic-future-line" id="cinematicFutureLine" aria-hidden="true">The future of discovery</p>
+        <p class="cinematic-install-line" id="cinematicInstallLine" aria-hidden="true">Your store is being listed.</p>
+        <div class="cinematic-fire-sweep" id="cinematicFireSweep" aria-hidden="true"></div>
+        <div class="cinematic-flash-word" id="cinematicFlashWord" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

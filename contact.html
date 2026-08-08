@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEYO Guard | Contact TEYO</title>
+    <meta name="description" content="Contact TEYO for marketplace access, company stock visibility, or TEYO Guard support." />
+    <meta property="og:title" content="TEYO Guard | Contact TEYO" />
+    <meta property="og:description" content="Contact TEYO for marketplace access, company stock visibility, or TEYO Guard support." />
+    <meta property="og:image" content="/teyo-logo-1024.png" />
+    <link rel="icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --surface: #111111;
+        --surface-2: #1a1a1a;
+        --text: #f2f2f2;
+        --muted: #9e9e9e;
+        --line: #2d2d2d;
+        --accent: #ffffff;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(160deg, var(--surface) 0%, var(--bg) 48%, var(--surface-2) 100%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      .shell { max-width: 900px; margin: 0 auto; padding: 24px 24px 56px; }
+      .card { background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid var(--line); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); }
+      .assistant { margin-top: 18px; border: 1px solid var(--line); border-radius: 20px; padding: 18px; background: rgba(255,255,255,0.04); }
+      .assistant h2 { margin: 0 0 8px; font-size: 1.1rem; }
+      .assistant p { margin: 0 0 12px; }
+      .assistant-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+      .assistant-actions button, .assistant input, .assistant select { border-radius: 999px; border: 1px solid var(--line); padding: 10px 12px; background: rgba(255,255,255,0.05); color: var(--text); }
+      .assistant-actions button { cursor: pointer; }
+      .assistant-input { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+      .assistant-input input { flex: 1 1 240px; }
+      .assistant-output { border: 1px solid var(--line); border-radius: 16px; padding: 12px; background: rgba(255,255,255,0.03); color: var(--text); line-height: 1.7; }
+      .assistant-output strong { color: var(--accent); }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px; }
+      .brand { color: var(--text); text-decoration: none; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+      .nav { display: flex; gap: 10px; flex-wrap: wrap; }
+      .nav a { color: var(--muted); text-decoration: none; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; }
+      h1 { margin: 0 0 10px; font-size: clamp(1.7rem, 3vw, 2.2rem); line-height: 1.08; }
+      p { color: var(--muted); line-height: 1.7; }
+      .link-list { display: grid; gap: 8px; margin-top: 16px; }
+      .link-list a { color: var(--text); text-decoration: none; padding: 10px 0; border-bottom: 1px solid var(--line); }
+      @media (max-width: 720px) { .shell { padding: 20px 20px 56px; } .topbar { flex-direction: column; align-items: flex-start; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <a class="brand" href="/">Contact TEYO</a>
+        <div class="nav">
+          <a href="/marketplace.html">Marketplace</a>
+          <a href="/admin.html">Company admin</a>
+          <a href="/guard-landing.html">TEYO Guard</a>
+        </div>
+      </div>
+      <div class="card">
+        <h1>Reach the TEYO team for marketplace, company stock access, or TEYO Guard questions.</h1>
+        <p>Use the links below to jump into the experience you need. The TEYO experience remains the same at heart: black-and-white, cinematic, and built around products, stores, company monitoring, and protection.</p>
+        <div class="assistant">
+          <h2>Consultation Copilot</h2>
+          <p>Use this helper to decide whether you need a self-serve path, a guided setup, or a partnership conversation.</p>
+          <div class="assistant-actions">
+            <button type="button" onclick="askConsultant('I want help getting started')">Get started</button>
+            <button type="button" onclick="askConsultant('I want to ask about partnerships')">Partnerships</button>
+            <button type="button" onclick="askConsultant('I want to avoid a call')">Avoid a call</button>
+          </div>
+          <div class="assistant-input">
+            <input id="consultationPrompt" type="text" placeholder="Try: I want help with Guard and I do not want a sales call" />
+            <button type="button" onclick="runConsultationPrompt()">Ask</button>
+          </div>
+          <div id="consultationOutput" class="assistant-output">Start here if you want a smoother path. The assistant can help you decide whether to explore the platform first, use the self-serve pages, or request a partnership conversation.</div>
+        </div>
+
+        <div class="link-list">
+          <a href="/marketplace.html">Open the marketplace</a>
+          <a href="/admin.html">Open company admin and stock access</a>
+          <a href="/guard-landing.html">Explore TEYO Guard</a>
+        </div>
+      </div>
+    </div>
+    <script>
+      function buildConsultationResponse(prompt) {
+        const normalized = String(prompt || '').toLowerCase();
+        if (normalized.includes('partnership') || normalized.includes('partner')) {
+          return {
+            title: 'Partnership path',
+            body: 'If your goal is a partnership, use the partnership route and keep the conversation focused on collaboration, product fit, and operating scope. This is the right path for business-to-business introductions.'
+          };
+        }
+        if (normalized.includes('avoid') || normalized.includes('call') || normalized.includes('sales') || normalized.includes('dont want')) {
+          return {
+            title: 'Low-touch path',
+            body: 'If you want to avoid a call, start with the self-serve pages and use the guided dashboard tools first. You can review the experience, understand the setup, and only reach out later if you need deeper support.'
+          };
+        }
+        if (normalized.includes('guard') || normalized.includes('protection') || normalized.includes('compliance')) {
+          return {
+            title: 'Guard-first path',
+            body: 'If you are looking at Guard or protection-related setup, begin in the Guard dashboard first. It is designed to walk you through the key steps without forcing an immediate conversation with a high-touch firm.'
+          };
+        }
+        return {
+          title: 'Best next step',
+          body: 'Start with the self-serve experience first. If you still need help after reviewing the site, then request a consultation. That keeps the process efficient and helps you avoid unnecessary calls.'
+        };
+      }
+
+      function renderConsultationResponse(prompt) {
+        const response = buildConsultationResponse(prompt);
+        document.getElementById('consultationOutput').innerHTML = `<strong>${response.title}</strong><div>${response.body}</div>`;
+      }
+
+      function askConsultant(prompt) {
+        renderConsultationResponse(prompt);
+      }
+
+      function runConsultationPrompt() {
+        const input = document.getElementById('consultationPrompt');
+        const value = input.value.trim();
+        if (!value) {
+          renderConsultationResponse('I want help getting started');
+        } else {
+          renderConsultationResponse(value);
+          input.value = '';
+        }
+      }
+    </script>
+  </body>
+</html>

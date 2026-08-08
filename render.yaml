@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: Teyo
+    env: node
+    branch: main
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: APP_BASE_URL
+        value: https://teyo.ca
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_API_KEY
+        sync: false
+      - key: OWNER_EMAIL
+        value: chazmiller872@gmail.com
+      - key: OWNER_ACCESS_KEY
+        value: "^ty8e(%uI98dYhfgjeHDg0adj$#$"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false

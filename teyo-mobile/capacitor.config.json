@@ -1,0 +1,17 @@
+{
+  "appId": "ca.teyo.app",
+  "appName": "Teyo",
+  "webDir": "www",
+  "server": {
+    "url": "https://teyo.ca",
+    "cleartext": false,
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#050505",
+      "showSpinner": false
+    }
+  }
+}

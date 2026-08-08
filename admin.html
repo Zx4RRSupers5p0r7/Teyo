@@ -1,0 +1,214 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEYO Guard | Company Admin</title>
+    <meta name="description" content="Company admin access for stock insights, inventory monitoring, and TEYO Guard protection on TEYO." />
+    <meta property="og:title" content="TEYO Guard | Company Admin" />
+    <meta property="og:description" content="Company admin access for stock insights, inventory monitoring, and TEYO Guard protection on TEYO." />
+    <meta property="og:image" content="/teyo-logo-1024.png" />
+    <link rel="icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --surface: #111111;
+        --surface-2: #1a1a1a;
+        --text: #f2f2f2;
+        --muted: #9e9e9e;
+        --line: #2d2d2d;
+        --accent: #ffffff;
+        --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(160deg, var(--surface) 0%, var(--bg) 48%, var(--surface-2) 100%);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+        position: relative;
+      }
+      body::before, body::after {
+        content: '';
+        position: fixed;
+        inset: -20%;
+        pointer-events: none;
+        z-index: -2;
+      }
+      body::before {
+        background-color: var(--accent);
+        -webkit-mask-image: url("teyo-watermark.svg");
+        mask-image: url("teyo-watermark.svg");
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center 44%;
+        mask-position: center 44%;
+        -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
+        mask-size: min(58vw, 620px) min(58vw, 620px);
+        opacity: 0.22;
+      }
+      body::after {
+        background-color: var(--accent);
+        -webkit-mask-image: url("teyo-watermark-secondary.svg");
+        mask-image: url("teyo-watermark-secondary.svg");
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center 44%;
+        mask-position: center 44%;
+        -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
+        mask-size: min(58vw, 620px) min(58vw, 620px);
+        opacity: 0.18;
+      }
+      .shell { max-width: 980px; margin: 0 auto; padding: 24px 24px 56px; position: relative; z-index: 1; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+      .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--text); font-size: 1.1rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+      .brand-mark {
+        width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); border: 1px solid var(--line); box-shadow: 0 0 0 3px rgba(255,255,255,0.08); transform: rotate(-30deg);
+      }
+      .nav { display: flex; gap: 10px; flex-wrap: wrap; }
+      .nav a { color: var(--muted); padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; }
+      .nav a.active, .nav a:hover { color: var(--text); border-color: var(--accent); }
+      .panel { background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02)); border: 1px solid var(--line); border-radius: 24px; padding: 24px; box-shadow: var(--shadow); }
+      h1 { margin: 0 0 10px; font-size: clamp(1.6rem, 3vw, 2.2rem); line-height: 1.08; }
+      p { color: var(--muted); line-height: 1.6; }
+      form { display: grid; gap: 12px; margin-top: 16px; }
+      label { display: grid; gap: 6px; color: var(--muted); font-size: 0.95rem; }
+      input { padding: 12px 12px; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); color: #fff; }
+      button { padding: 11px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--accent); color: #050505; font-weight: 700; cursor: pointer; }
+      .small { color: var(--muted); font-size: 0.9rem; }
+      .list { display: grid; gap: 10px; margin-top: 14px; }
+      .list-item { padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.04); }
+      .lead-section { margin-top: 18px; }
+      .lead-list { display: grid; gap: 10px; margin-top: 12px; }
+      .lead-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,0.05); }
+      .lead-meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; color: var(--muted); font-size: 0.92rem; margin-bottom: 4px; }
+      .lead-card strong { color: var(--text); }
+      .status-pill { display: inline-flex; padding: 4px 8px; border-radius: 999px; background: rgba(255,255,255,0.08); color: var(--text); font-size: 0.8rem; }
+      .contact-btn { margin-top: 8px; padding: 8px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--text); cursor: pointer; }
+      @media (max-width: 720px) { .shell { padding: 20px 20px 56px; } .topbar { flex-direction: column; align-items: flex-start; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo"><path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path><path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path><path class="brand-t" d="M60 36 V84 M40 36 H80"></path></svg></span><span>TEYO Company Admin</span></a>
+        <div class="nav">
+          <a href="/guard-landing.html">TEYO Guard</a>
+          <a href="/marketplace.html">Marketplace</a>
+          <a class="active" href="/inventory.html">Stock insights</a>
+        </div>
+      </div>
+      <div class="panel">
+        <h1>Company access and stock monitoring</h1>
+        <p>When a company signs in, TEYO now gives them access to their own stock-insights view so they can monitor product availability, sizes, and restock signals without needing a separate tool.</p>
+        <form id="adminForm">
+          <label>Company name<input id="companyName" value="Northstar Outfitters" /></label>
+          <label>Owner email<input id="ownerEmail" value="demo@teyo.ca" /></label>
+          <label>Company access key<input id="companyKey" value="teyo-demo-access-key-001" /></label>
+          <button type="submit">Open company dashboard</button>
+        </form>
+        <div class="list">
+          <div class="list-item">Monitor restock windows for each size</div>
+          <div class="list-item">See what is in stock, limited, or back soon</div>
+          <div class="list-item">Update inventory from the same company dashboard</div>
+        </div>
+
+        <div class="lead-section">
+          <h2>Incoming leads</h2>
+          <p>Track the companies and partners who are showing interest in TEYO so you can follow up quickly.</p>
+          <div id="leadList" class="lead-list">
+            <div class="list-item">Loading incoming leads…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function loadLeads() {
+        try {
+          const response = await fetch('/api/leads', {
+            headers: {
+              'x-owner-email': 'chazmiller872@gmail.com',
+              'x-owner-key': '^ty8e(%uI98dYhfgjeHDg0adj$#$'
+            }
+          });
+          const data = await response.json();
+          const leadList = document.getElementById('leadList');
+          if (!response.ok || !data.success || !Array.isArray(data.leads)) {
+            leadList.innerHTML = '<div class="list-item">Unable to load leads right now.</div>';
+            return;
+          }
+
+          if (data.leads.length === 0) {
+            leadList.innerHTML = '<div class="list-item">No leads captured yet.</div>';
+            return;
+          }
+
+          leadList.innerHTML = data.leads.slice(0, 8).map((lead) => `
+            <div class="lead-card">
+              <div class="lead-meta">
+                <strong>${(lead.name || 'Anonymous').replace(/</g, '&lt;')}</strong>
+                <span class="status-pill">${(lead.interest || 'general interest').replace(/</g, '&lt;')}</span>
+              </div>
+              <div class="lead-meta">
+                <span>${(lead.email || '').replace(/</g, '&lt;')}</span>
+                <span>${(lead.company || '—').replace(/</g, '&lt;')}</span>
+              </div>
+              <div class="lead-meta">
+                <span>${new Date(lead.createdAt || Date.now()).toLocaleString()}</span>
+                <span>${(lead.referralCode || 'direct').replace(/</g, '&lt;')}</span>
+              </div>
+              <button class="contact-btn" type="button" data-lead-id="${lead.id}">${lead.status === 'contacted' ? 'Contacted' : 'Mark contacted'}</button>
+            </div>
+          `).join('');
+
+          leadList.querySelectorAll('.contact-btn').forEach((button) => {
+            button.addEventListener('click', async () => {
+              const leadId = button.getAttribute('data-lead-id');
+              if (!leadId) {
+                return;
+              }
+              button.disabled = true;
+              button.textContent = 'Updating...';
+              try {
+                const response = await fetch(`/api/leads/${leadId}/contacted`, {
+                  method: 'POST',
+                  headers: {
+                    'x-owner-email': 'chazmiller872@gmail.com',
+                    'x-owner-key': '^ty8e(%uI98dYhfgjeHDg0adj$#$'
+                  }
+                });
+                if (response.ok) {
+                  await loadLeads();
+                } else {
+                  button.disabled = false;
+                  button.textContent = 'Try again';
+                }
+              } catch (error) {
+                button.disabled = false;
+                button.textContent = 'Try again';
+              }
+            });
+          });
+        } catch (error) {
+          document.getElementById('leadList').innerHTML = '<div class="list-item">Unable to load leads right now.</div>';
+        }
+      }
+
+      document.getElementById('adminForm').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const companyName = document.getElementById('companyName').value.trim();
+        const ownerEmail = document.getElementById('ownerEmail').value.trim();
+        const companyKey = document.getElementById('companyKey').value.trim();
+        const params = new URLSearchParams({ companyName, ownerEmail, companyKey });
+        window.location.href = `/inventory.html?${params.toString()}`;
+      });
+
+      loadLeads();
+    </script>
+  </body>
+</html>

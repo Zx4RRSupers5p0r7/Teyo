@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TEYO Guard is TEYO's protection and compliance layer for companies, with monitoring, risk visibility, and stronger oversight built into the TEYO experience.">
+  <meta property="og:title" content="TEYO Guard - TEYO's Protection and Compliance Layer">
+  <meta property="og:description" content="TEYO Guard is TEYO's protection and compliance layer for companies, with monitoring, risk visibility, and stronger oversight built into the TEYO experience.">
+  <meta property="og:image" content="/teyo-logo-1024.png">
+  <meta name="keywords" content="wealth management, tax compliance, HNWI, family office, cross-border, asset protection">
+  <link rel="icon" href="/teyo-logo.png" type="image/png" />
+  <link rel="shortcut icon" href="/teyo-logo.png" />
+  <link rel="apple-touch-icon" href="/teyo-logo-1024.png" />
+  <title>TEYO Guard | TEYO does Guard</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --surface: #111111;
+      --surface-2: #171717;
+      --text: #f5f5f0;
+      --muted: #b7b4aa;
+      --line: rgba(255,255,255,0.18);
+      --accent: #f5f5f0;
+      --accent-soft: #d8d8d2;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+      background: linear-gradient(160deg, #0d0d0d 0%, #161616 46%, #060606 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      inset: -20%;
+      pointer-events: none;
+      z-index: -2;
+    }
+    body::before {
+      background-color: var(--accent);
+      -webkit-mask-image: url("teyo-watermark.svg");
+      mask-image: url("teyo-watermark.svg");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center 44%;
+      mask-position: center 44%;
+      -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
+      mask-size: min(58vw, 620px) min(58vw, 620px);
+      opacity: 0.16;
+    }
+    body::after {
+      background-color: var(--accent);
+      -webkit-mask-image: url("teyo-watermark-secondary.svg");
+      mask-image: url("teyo-watermark-secondary.svg");
+      -webkit-mask-repeat: no-repeat;
+      mask-repeat: no-repeat;
+      -webkit-mask-position: center 44%;
+      mask-position: center 44%;
+      -webkit-mask-size: min(58vw, 620px) min(58vw, 620px);
+      mask-size: min(58vw, 620px) min(58vw, 620px);
+      opacity: 0.12;
+    }
+    .page-shell { max-width: 1280px; margin: 0 auto; padding: 24px 24px 56px; }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0 24px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+    .brand-mark { width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05)); border: 1px solid var(--line); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); transform: rotate(-30deg); }
+    .brand-mark svg { width: 30px; height: 30px; transform: rotate(30deg); }
+    .hex-outline, .hex-core, .brand-t { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+    .hex-core { opacity: 0.34; }
+    .brand-t { stroke-width: 8; }
+    .navbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 24px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+    .navbar-content { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 20px; }
+    .navbar-logo { display: inline-flex; align-items: center; gap: 12px; color: var(--text); text-decoration: none; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; }
+    .navbar-links { display: flex; gap: 16px; flex-wrap: wrap; }
+    .navbar-links a { color: var(--muted); text-decoration: none; transition: color 0.2s ease; }
+    .navbar-links a:hover, .navbar-links a.active { color: var(--accent); }
+    .btn-login { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 10px 16px; text-decoration: none; background: var(--accent); color: #050505; font-weight: 700; }
+    .cta-group { display: flex; gap: 12px; flex-wrap: wrap; margin: 22px 0; }
+    .btn-primary, .btn-secondary { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 18px; border: 1px solid var(--line); cursor: pointer; font-weight: 700; transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+    .btn-primary { background: var(--accent); color: #050505; }
+    .btn-secondary { color: var(--text); background: transparent; }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0,0,0,0.22); }
+    .hero { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; align-items: center; padding: 16px 0 28px; position: relative; isolation: isolate; }
+    .hero::after { content: ''; position: absolute; inset: auto -8% -10% auto; width: min(32vw, 330px); aspect-ratio: 1; border-radius: 50%; border: 1px solid rgba(255,255,255,0.16); filter: blur(0.3px); animation: guardPulse 8s ease-in-out infinite alternate; z-index: -1; }
+    .hero-chip { display: inline-flex; align-items: center; margin-bottom: 14px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); color: var(--accent-soft); font-size: 0.78rem; letter-spacing: 0.16em; text-transform: uppercase; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.28em; color: var(--muted); font-size: 0.8rem; margin-bottom: 10px; }
+    .hero h1, .section-heading h2 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; margin: 0 0 14px; }
+    .hero p, .feature-card p, .card p { color: var(--muted); line-height: 1.7; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin: 22px 0; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 12px 18px; text-decoration: none; border: 1px solid var(--line); transition: transform 0.2s ease, background 0.2s ease; cursor: pointer; }
+    .btn:hover { transform: translateY(-1px); }
+    .hero-card, .feature-card, .panel-card, .pricing-card { background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); backdrop-filter: blur(16px); }
+    .hero-card { padding: 24px; animation: guardFloat 8s ease-in-out infinite alternate; }
+    .hero-card h2 { font-size: 1.35rem; margin-bottom: 10px; }
+    .hero-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+    .hero-metrics div { padding: 12px 10px; border: 1px solid var(--line); border-radius: 14px; }
+    .hero-metrics strong { display: block; margin-bottom: 4px; font-size: 1.05rem; }
+    .hero-metrics span { color: var(--muted); font-size: 0.9rem; }
+    .features { max-width: 1200px; margin: 24px auto 0; padding: 0; }
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .feature-card { padding: 22px; }
+    .feature-card h3 { margin: 12px 0 8px; font-size: 1.15rem; }
+    .feature-badge { display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(255,255,255,0.06); color: var(--accent-soft); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .pricing { margin-top: 30px; }
+    .pricing-content { max-width: 1200px; margin: 0 auto; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .pricing-card { padding: 22px; }
+    .pricing-card h3 { margin-bottom: 8px; }
+    .pricing-card .price { font-size: 2rem; font-weight: 700; margin: 10px 0; }
+    .pricing-card.featured { transform: translateY(-2px); border-color: rgba(255,255,255,0.34); }
+    .pricing-features { padding-left: 18px; color: var(--muted); }
+    .pricing-features li { margin-bottom: 8px; }
+    .testimonials { max-width: 1200px; margin: 64px auto 0; padding: 0; }
+    .testimonials h2 { font-size: clamp(1.7rem, 2.3vw, 2.2rem); text-align: center; margin-bottom: 24px; color: var(--text); }
+    .testimonials-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .testimonial { background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)); padding: 22px; border-radius: 20px; border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .testimonial p { color: var(--muted); margin-bottom: 14px; font-style: italic; line-height: 1.7; }
+    .testimonial-author { font-weight: 700; color: var(--text); }
+    .testimonial-role { color: var(--muted); font-size: 0.9em; }
+    .contact-card { margin-top: 40px; padding: 28px; border: 1px solid var(--line); border-radius: 24px; background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03)); box-shadow: var(--shadow); text-align: center; }
+    .contact-card h2 { margin-bottom: 8px; font-size: 1.7rem; }
+    .contact-card p { color: var(--muted); margin-bottom: 16px; }
+    .contact-card a { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; color: #050505; background: var(--accent); border-radius: 999px; padding: 12px 18px; font-weight: 700; }
+    .contact-meta { margin-top: 12px; font-size: 0.95rem; }
+    footer { padding: 40px 0 0; text-align: center; color: var(--muted); font-size: 0.95rem; }
+    footer p { margin: 6px 0; }
+    @keyframes guardFloat { 0% { transform: translateY(0px); } 100% { transform: translateY(-6px); } }
+    @keyframes guardPulse { 0% { transform: translate3d(0,0,0) scale(0.98); opacity: 0.7; } 100% { transform: translate3d(-12px,-10px,0) scale(1.04); opacity: 0.95; } }
+    @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } .hero-metrics { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .hero h1 { font-size: 2.2rem; } .navbar-content { flex-wrap: wrap; } .navbar-links { display: none; } .pricing-card.featured { transform: none; } }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <nav class="navbar">
+      <div class="navbar-content">
+        <a href="/" class="navbar-logo" aria-label="TEYO home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
+              <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
+              <path class="hex-core" d="M60 24 L90 40 L90 80 L60 96 L30 80 L30 40 Z"></path>
+              <path class="brand-t" d="M60 36 V84 M40 36 H80"></path>
+            </svg>
+          </span>
+          <span>TEYO Guard</span>
+        </a>
+        <div class="navbar-links">
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#contact">Contact</a>
+        </div>
+        <a href="/guard-dashboard" class="btn-login">Open dashboard</a>
+      </div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">TEYO does Guard</p>
+        <div class="hero-chip">Protection that lives inside TEYO</div>
+        <h1>The protection layer built into TEYO.</h1>
+        <p>
+          TEYO Guard brings a polished protection and compliance layer to the original TEYO experience. Companies can activate it, monitor risk, and keep their operations visible while shoppers continue to browse the marketplace and stock flow.
+        </p>
+        <div class="cta-group">
+          <a class="btn btn-primary" href="/guard-dashboard">Open Guard dashboard</a>
+          <a class="btn btn-secondary" href="#contact">Schedule demo</a>
+        </div>
+      </div>
+      <div class="hero-card">
+        <h2>Why TEYO does Guard</h2>
+        <p>TEYO Guard adds an operational protection layer for companies and high-value operators that need stronger visibility over compliance, continuity, and risk.</p>
+        <div class="hero-metrics">
+          <div>
+            <strong>Residency</strong>
+            <span>Track cross-border exposure</span>
+          </div>
+          <div>
+            <strong>Alerts</strong>
+            <span>Stay ahead of risk windows</span>
+          </div>
+          <div>
+            <strong>Protection</strong>
+            <span>Support continuity and oversight</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features" id="features">
+      <h2>Why companies choose TEYO Guard</h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">📍</div>
+          <h3>Real-time residency</h3>
+          <p>Automated monitoring of the US Substantial Presence Test and multi-jurisdiction exposure windows.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">💰</div>
+          <h3>Portfolio stress testing</h3>
+          <p>Model mild, severe, and crisis scenarios to understand drawdown risk and liquidity pressure.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Cross-border compliance</h3>
+          <p>Aggregate holdings and surface exposure signals for complex international structures.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <h3>Privacy-first control</h3>
+          <p>Zero-knowledge protection keeps sensitive wealth data secure while still enabling visibility.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📊</div>
+          <h3>Estate readiness</h3>
+          <p>Encrypted structural maps and continuity data are ready when trusted operators need them.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🤖</div>
+          <h3>Autonomous monitoring</h3>
+          <p>Set it once and let TEYO Guard alert you only when critical decisions are needed.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+      <div class="pricing-content">
+        <h2>Enterprise protection plans</h2>
+        <div class="pricing-grid">
+          <div class="pricing-card">
+            <h3>Guardian</h3>
+            <div class="price">$25K</div>
+            <div class="period">/year</div>
+            <ul class="pricing-features">
+              <li>Single family office license</li>
+              <li>$50M+ AUM</li>
+              <li>Tax residency tracking</li>
+              <li>US SPT monitoring</li>
+              <li>Stress scenarios</li>
+              <li>Quarterly reports</li>
+            </ul>
+            <a class="btn btn-primary" href="/guard-dashboard">Open trial</a>
+          </div>
+
+          <div class="pricing-card featured">
+            <h3>Sentinel</h3>
+            <div class="price">$75K</div>
+            <div class="period">/year</div>
+            <ul class="pricing-features">
+              <li>Everything in Guardian</li>
+              <li>Unlimited location tracking</li>
+              <li>Multi-custody views</li>
+              <li>Crypto monitoring</li>
+              <li>Priority support</li>
+              <li>Monthly reviews</li>
+            </ul>
+            <a class="btn btn-primary" href="/guard-dashboard">Open trial</a>
+          </div>
+
+          <div class="pricing-card">
+            <h3>Fortress</h3>
+            <div class="price">Custom</div>
+            <div class="period">Enterprise</div>
+            <ul class="pricing-features">
+              <li>Everything in Sentinel</li>
+              <li>Multi-family office access</li>
+              <li>Estate vault workflows</li>
+              <li>Plaid/Open Banking integrations</li>
+              <li>API access & webhooks</li>
+              <li>White-label deployment</li>
+            </ul>
+            <a class="btn btn-secondary" href="#contact">Contact sales</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="testimonials">
+      <h2>Trusted by elite operators</h2>
+      <div class="testimonials-grid">
+        <div class="testimonial">
+          <p>“TEYO Guard caught a compliance issue that would have cost us $280K in penalties.”</p>
+          <div class="testimonial-author">Michael S.</div>
+          <div class="testimonial-role">Family Office CEO</div>
+        </div>
+        <div class="testimonial">
+          <p>“We manage wealth across three countries. TEYO Guard consolidated our tax exposure into one dashboard.”</p>
+          <div class="testimonial-author">Sarah Chen</div>
+          <div class="testimonial-role">Founder & Investor</div>
+        </div>
+        <div class="testimonial">
+          <p>“The privacy-first design gives us peace of mind while keeping the TEYO experience polished.”</p>
+          <div class="testimonial-author">James T.</div>
+          <div class="testimonial-role">CIO, Multi-Family Office</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="contact-card">
+      <h2>Ready to protect your wealth?</h2>
+      <p>Schedule a private consultation and we'll show you how TEYO Guard fits into your operating model.</p>
+      <a href="mailto:chazmiller872@gmail.com?subject=TEYO Guard Demo Request">Schedule consultation</a>
+      <p class="contact-meta">Email: <strong>chazmiller872@gmail.com</strong> | Phone: <strong>782-641-1954</strong></p>
+    </section>
+
+    <footer>
+      <p>© 2026 TEYO Guard. Enterprise wealth protection platform.</p>
+      <p>🔒 All data encrypted at rest. Zero-knowledge architecture.</p>
+    </footer>
+  </div>
+</body>
+</html>

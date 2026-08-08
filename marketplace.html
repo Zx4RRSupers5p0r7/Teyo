@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TEYO Guard | Marketplace Search</title>
+    <meta name="description" content="Search products, compare sizes, and see nearby store stock availability across TEYO with protection-minded company visibility." />
+    <meta property="og:title" content="TEYO Guard | Marketplace Search" />
+    <meta property="og:description" content="Search products, compare sizes, and see nearby store stock availability across TEYO with protection-minded company visibility." />
+    <meta property="og:image" content="/teyo-logo-1024.png" />
+    <link rel="icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f172a;
+        --surface: #111827;
+        --surface-2: #1f2937;
+        --text: #f8fafc;
+        --muted: #93a4b8;
+        --accent: #7c7cff;
+        --accent-2: #47b0ff;
+        --border: rgba(255,255,255,0.12);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #09101f, #101d32 55%, #121b2c);
+        color: var(--text);
+        min-height: 100vh;
+      }
+      a { color: inherit; text-decoration: none; }
+      .shell { max-width: 1160px; margin: 0 auto; padding: 24px 20px 60px; }
+      .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+      .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.02em; }
+      .brand-mark { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: inline-flex; align-items: center; justify-content: center; font-weight: 800; }
+      .nav-links { display: flex; flex-wrap: wrap; gap: 8px; }
+      .nav-links a { padding: 8px 12px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); }
+      .nav-links a.primary { background: rgba(124,124,255,0.16); color: #fff; border-color: rgba(124,124,255,0.35); }
+      .hero { background: rgba(17,24,39,0.92); border: 1px solid var(--border); border-radius: 24px; padding: 24px; box-shadow: 0 30px 70px rgba(0,0,0,0.24); }
+      .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 3vw, 2.4rem); }
+      .hero p { margin: 0 0 20px; color: var(--muted); max-width: 720px; line-height: 1.6; }
+      .search-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+      .search-row input, .search-row select { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); background: #0b1220; color: var(--text); min-width: 220px; }
+      .search-row button { padding: 12px 16px; border-radius: 12px; border: 0; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 600; cursor: pointer; }
+      .summary { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; }
+      .summary span { background: rgba(124,124,255,0.12); border: 1px solid rgba(124,124,255,0.2); padding: 6px 10px; border-radius: 999px; }
+      .grid { display: grid; gap: 16px; }
+      .card { background: rgba(17,24,39,0.95); border: 1px solid var(--border); border-radius: 20px; padding: 18px; }
+      .card h3 { margin: 0 0 8px; font-size: 1.06rem; }
+      .card p { margin: 0 0 8px; color: var(--muted); line-height: 1.55; }
+      .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 12px; }
+      .tag { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(71,176,255,0.12); border: 1px solid rgba(71,176,255,0.18); color: #bfe4ff; font-size: 0.9rem; }
+      .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; background: rgba(255,255,255,0.06); }
+      .status-in-stock { color: #8cf5aa; }
+      .status-limited { color: #ffda7a; }
+      .status-restock { color: #ffc7a6; }
+      .inventory-list { margin-top: 12px; display: grid; gap: 8px; }
+      .inventory-row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: 12px; }
+      .inventory-row strong { font-size: 0.95rem; }
+      .inventory-row span { color: var(--muted); font-size: 0.9rem; }
+      .empty-state { padding: 24px; text-align: center; color: var(--muted); }
+      @media (max-width: 720px) { .topbar { flex-direction: column; align-items: flex-start; } .search-row { flex-direction: column; } .search-row input, .search-row select { width: 100%; min-width: unset; } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <div class="topbar">
+        <a class="brand" href="/">
+          <span class="brand-mark">T</span>
+          <span>TEYO Marketplace</span>
+        </a>
+        <div class="nav-links">
+          <a href="/">TEYO Guard</a>
+          <a href="/inventory.html">Stock insights</a>
+          <a class="primary" href="/admin.html">Company admin</a>
+        </div>
+      </div>
+
+      <section class="hero">
+        <h1>Search products, sizes, and stock availability in one place.</h1>
+        <p>Customers can find the right size, see which stores carry it, and understand whether the item is in stock, limited, or due for a restock. Companies can monitor the same data from their private stock-insights view.</p>
+        <div class="search-row">
+          <input id="searchInput" type="text" placeholder="Search by product or category" />
+          <select id="sizeFilter">
+            <option value="">Any size</option>
+          </select>
+          <button id="searchBtn" type="button">Search</button>
+        </div>
+        <div class="summary">
+          <span id="resultCount">0 results</span>
+          <span>Size-aware availability</span>
+          <span>Restock visibility</span>
+          <span>Store + online visibility</span>
+        </div>
+        <div id="results" class="grid"></div>
+      </section>
+    </div>
+
+    <script>
+      const searchInput = document.getElementById('searchInput');
+      const sizeFilter = document.getElementById('sizeFilter');
+      const resultCount = document.getElementById('resultCount');
+      const results = document.getElementById('results');
+
+      function parseInventory(product) {
+        return Array.isArray(product.sizeInventory) ? product.sizeInventory : [];
+      }
+
+      function getStatusClass(status) {
+        const normalized = String(status || '').toLowerCase();
+        if (normalized.includes('in stock')) return 'status-in-stock';
+        if (normalized.includes('limited')) return 'status-limited';
+        return 'status-restock';
+      }
+
+      function formatInventory(product, selectedSize) {
+        const entries = parseInventory(product).filter((entry) => {
+          if (!selectedSize) return true;
+          return String(entry.size || '').toUpperCase() === String(selectedSize).toUpperCase();
+        });
+
+        if (!entries.length) {
+          return [{ storeName: 'Store map', size: selectedSize || 'Any size', stockStatus: 'Available soon', restockDate: '' }];
+        }
+
+        return entries;
+      }
+
+      function renderProducts(products) {
+        const sizeOptions = [...new Set(products.flatMap((product) => Array.isArray(product.sizeOptions) ? product.sizeOptions : []))].sort();
+        sizeFilter.innerHTML = '<option value="">Any size</option>' + sizeOptions.map((size) => `<option value="${size}">${size}</option>`).join('');
+
+        const query = searchInput.value.trim().toLowerCase();
+        const size = sizeFilter.value;
+        const filtered = products.filter((product) => {
+          const haystack = `${product.productName || ''} ${product.category || ''} ${product.description || ''}`.toLowerCase();
+          const matchesQuery = !query || haystack.includes(query);
+          const matchesSize = !size || (Array.isArray(product.sizeOptions) && product.sizeOptions.some((entry) => String(entry).toUpperCase() === String(size).toUpperCase()));
+          return matchesQuery && matchesSize;
+        });
+
+        resultCount.textContent = `${filtered.length} ${filtered.length === 1 ? 'result' : 'results'}`;
+        if (!filtered.length) {
+          results.innerHTML = '<div class="empty-state">No products match that search yet. Try another category or size.</div>';
+          return;
+        }
+
+        results.innerHTML = filtered.map((product) => {
+          const inventory = formatInventory(product, size);
+          const inventoryRows = inventory.map((entry) => `
+            <div class="inventory-row">
+              <div>
+                <strong>${entry.storeName}</strong><br />
+                <span>${entry.size || 'Any size'}</span>
+              </div>
+              <span class="${getStatusClass(entry.stockStatus)}">${entry.stockStatus || 'Check availability'}</span>
+            </div>
+          `).join('');
+          return `
+            <article class="card">
+              <div class="status-pill ${getStatusClass(product.stockStatus)}">${product.stockStatus || 'Pending'}</div>
+              <h3>${product.productName}</h3>
+              <p>${product.description || 'Live stock visibility for online and nearby stores.'}</p>
+              <div class="tags">
+                <span class="tag">${product.companyName}</span>
+                <span class="tag">${product.category || 'Product'}</span>
+                <span class="tag">${product.price || 'Price pending'}</span>
+              </div>
+              <div class="inventory-list">
+                ${inventoryRows}
+              </div>
+            </article>
+          `;
+        }).join('');
+      }
+
+      async function loadProducts() {
+        try {
+          const response = await fetch('/api/products');
+          const payload = await response.json();
+          const products = Array.isArray(payload) ? payload : [];
+          renderProducts(products);
+        } catch (error) {
+          results.innerHTML = '<div class="empty-state">Unable to load marketplace data right now.</div>';
+        }
+      }
+
+      searchInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          loadProducts();
+        }
+      });
+      document.getElementById('searchBtn').addEventListener('click', loadProducts);
+      sizeFilter.addEventListener('change', loadProducts);
+      loadProducts();
+    </script>
+  </body>
+</html>

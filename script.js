@@ -3484,10 +3484,11 @@ function renderResults() {
       <div class="results-empty-state">
         <strong>No approved brand listings match your current filters${sizeText}.</strong>
         <p>New company listings stay hidden until the company is approved and the product is reviewed.</p>
-        <div class="results-empty-stack" aria-hidden="true">
-          <div class="results-empty-card"></div>
-          <div class="results-empty-card"></div>
-          <div class="results-empty-card"></div>
+        <div class="results-empty-grid" aria-hidden="true">
+          <div class="results-empty-card"><span>Curate</span></div>
+          <div class="results-empty-card"><span>Wear</span></div>
+          <div class="results-empty-card"><span>Collect</span></div>
+          <div class="results-empty-card"><span>Map</span></div>
         </div>
       </div>`;
     if (selectedProduct) {

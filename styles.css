@@ -136,6 +136,59 @@ body.marketplace-page .btn-secondary {
   color: var(--text);
 }
 
+body.marketplace-page .feature-dock {
+  padding-top: 10px;
+}
+
+body.marketplace-page .feature-dock-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+body.marketplace-page .feature-dock-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  text-decoration: none;
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+  box-shadow: var(--shadow);
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+body.marketplace-page .feature-dock-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+
+body.marketplace-page .feature-dock-card strong {
+  font-size: 1.02rem;
+}
+
+body.marketplace-page .feature-dock-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+body.marketplace-page .feature-dock-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: rgba(255,255,255,0.04);
+}
+
 body.home-page .page-shell {
   max-width: 1280px;
   margin: 0 auto;
@@ -2746,6 +2799,10 @@ article { padding: 24px; }
     grid-template-columns: 1fr !important;
   }
 
+  body.marketplace-page .feature-dock-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   body.marketplace-page .hero-actions,
   body.marketplace-page .detail-actions {
     flex-direction: column;
@@ -2799,6 +2856,10 @@ article { padding: 24px; }
 
   body.marketplace-page .page-shell {
     padding: 14px 12px 28px;
+  }
+
+  body.marketplace-page .feature-dock-grid {
+    grid-template-columns: 1fr;
   }
 
   body.marketplace-page .hero {

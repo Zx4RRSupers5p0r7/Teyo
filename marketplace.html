@@ -135,6 +135,145 @@
             </div>
           </div>
 
+          <section id="customerThemePanel" class="customer-theme-panel is-locked" aria-label="Customer personalization">
+            <div class="customer-theme-copy">
+              <h3>
+                Customer style controls
+                <span class="plus-badge">Private</span>
+              </h3>
+              <p>Keep the black-and-white marketplace base, then personalize accents, style presets, and plushie behavior for your own browser after checkout verification.</p>
+
+              <div class="detail-actions" style="margin: 12px 0 10px;">
+                <button id="customerOneTimePlanBtn" class="btn btn-secondary" type="button">Unlock one-time</button>
+                <button id="customerPlusPlanBtn" class="btn btn-primary" type="button">Unlock monthly</button>
+              </div>
+
+              <label>
+                Verification email
+                <input id="customerEmailInput" type="email" placeholder="you@example.com" autocomplete="email" />
+              </label>
+
+              <div class="detail-actions" style="margin-top: 10px;">
+                <button id="customerOneTimeCheckoutBtn" class="btn btn-secondary" type="button">Start one-time checkout</button>
+                <button id="customerMonthlyCheckoutBtn" class="btn btn-secondary" type="button">Start monthly checkout</button>
+                <button id="customerVerifyAccessBtn" class="btn btn-primary" type="button">Verify access</button>
+              </div>
+
+              <p id="customerCheckoutMessage" class="form-message" aria-live="polite"></p>
+              <p id="customerPaymentMessage" class="form-message" aria-live="polite"></p>
+            </div>
+
+            <div id="customerThemeControls" class="customer-theme-controls" hidden>
+              <div class="customer-cute-presets">
+                <p class="mini-label">Preset themes</p>
+                <div class="preset-grid">
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="kawaii">Kawaii</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="cloud">Cloud</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="mint">Mint</button>
+                  <button class="preset-chip customer-preset-btn" type="button" data-preset="night">Night</button>
+                </div>
+              </div>
+
+              <label>
+                Accent color
+                <input id="customerAccentColor" type="color" value="#ffffff" />
+              </label>
+
+              <label>
+                Interface style
+                <select id="customerStyleSelect">
+                  <option value="midnight">Midnight</option>
+                  <option value="graphite">Graphite</option>
+                  <option value="carbon">Carbon</option>
+                  <option value="night">Night</option>
+                  <option value="cloud">Cloud</option>
+                  <option value="mint">Mint</option>
+                </select>
+              </label>
+
+              <label>
+                Plushie
+                <select id="customerPlushieSelect">
+                  <option value="bear">Bear</option>
+                  <option value="bunny">Bunny</option>
+                  <option value="cat">Cat</option>
+                  <option value="frog">Frog</option>
+                  <option value="dog">Dog</option>
+                  <option value="star">Star</option>
+                </select>
+              </label>
+
+              <label>
+                Plushie name
+                <input id="customerPetNameInput" type="text" maxlength="16" placeholder="Name your plushie" />
+              </label>
+
+              <div class="customer-corner-options">
+                <label>
+                  Primary color
+                  <input id="customerPetColorInput" type="color" value="#ff9ad5" />
+                </label>
+                <label>
+                  Secondary color
+                  <input id="customerPetColor2Input" type="color" value="#ffd4ea" />
+                </label>
+                <label>
+                  Ear style
+                  <select id="customerPetEarSelect">
+                    <option value="default">Default</option>
+                    <option value="perky">Perky</option>
+                    <option value="floppy">Floppy</option>
+                    <option value="round">Round</option>
+                    <option value="tall">Tall</option>
+                    <option value="none">None</option>
+                  </select>
+                </label>
+                <label>
+                  Tail style
+                  <select id="customerPetTailSelect">
+                    <option value="default">Default</option>
+                    <option value="long">Long</option>
+                    <option value="fluffy">Fluffy</option>
+                    <option value="wag">Wag</option>
+                    <option value="puff">Puff</option>
+                    <option value="curly">Curly</option>
+                    <option value="short">Short</option>
+                    <option value="none">None</option>
+                  </select>
+                </label>
+                <label>
+                  Nose style
+                  <select id="customerPetNoseSelect">
+                    <option value="default">Default</option>
+                    <option value="button">Button</option>
+                    <option value="heart">Heart</option>
+                    <option value="round">Round</option>
+                    <option value="snout">Snout</option>
+                    <option value="wide">Wide</option>
+                    <option value="bill">Bill</option>
+                  </select>
+                </label>
+                <label>
+                  Leg style
+                  <select id="customerPetLegSelect">
+                    <option value="default">Default</option>
+                    <option value="stubby">Stubby</option>
+                    <option value="long">Long</option>
+                    <option value="waddle">Waddle</option>
+                    <option value="none">None</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="customer-cute-preview">
+                <span id="customerPlushiePreview" class="plushie-preview" aria-hidden="true">P</span>
+                <p id="customerPlushieCaption" class="mini-caption">Your plushie appears after access is verified.</p>
+              </div>
+
+              <button id="customerResetThemeBtn" class="btn btn-secondary" type="button">Reset private style</button>
+            </div>
+          </section>
+
           <div id="interestAlertCenter" class="alert-center-card"></div>
 
           <div class="card-grid" style="margin-top: 18px; align-items: start;">

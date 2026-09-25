@@ -916,6 +916,7 @@
       let verifiedOwnerEmail = '';
 
       async function verifyGoogleCredential(credentialResponse) {
+        ownerGoogleSignIn.hidden = true;
         try {
           const response = await fetch(`${apiBaseUrl}/api/admin/google-verify`, {
             method: 'POST',

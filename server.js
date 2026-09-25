@@ -2678,8 +2678,12 @@ async function runPartnerStoreSync(partner, data, options = {}) {
       }
     }
 
+    if (!importedProducts.length && pageHtml && !openAiApiKey) {
+      lastError = 'This store page needs OPENAI_API_KEY on the Render service or an official JSON product feed.';
+    }
+
     if (!importedProducts.length) {
-      partner.storeSync.lastError = 'No supported products were found in the provided feed.';
+      partner.storeSync.lastError = lastError || 'No supported products were found in the provided feed.';
       partner.storeSync.lastImportedCount = 0;
       partner.storeSync.lastChangedCount = 0;
       return { success: false, message: partner.storeSync.lastError, importedCount: 0, changedCount: 0 };

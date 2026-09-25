@@ -318,6 +318,14 @@ body {
   place-items: center;
 }
 
+.owner-google-signin {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  min-height: 40px;
+}
+
 .owner-tools-button.owner-tools-visible {
   display: grid;
 }

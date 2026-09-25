@@ -6,6 +6,8 @@
     <title>Teyo | Find Anything. Buy Smarter</title>
     <meta name="description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
     <meta name="theme-color" content="#050505" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://teyo.ca/" />
     <meta property="og:title" content="Teyo | Find Anything. Buy Smarter" />
     <meta property="og:description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
     <meta property="og:type" content="website" />
@@ -28,38 +30,38 @@
   </head>
   <body class="blank-page">
     <!-- ==========================================================
-         HOME PAGE STRUCTURE
-         Edit these sections to change hero text, logo area, search box,
-         popular searches box, filters, and result area.
+         SECTION 01: PAGE STRUCTURE / LANDING PAGE LAYOUT
+         Edit this area to change the logo, search bar, tagline,
+         filters, results panel, and owner tools panel.
          ========================================================== -->
     <div class="blank-stage" aria-label="Luxury Teyo landing page">
       <div class="ambient ambient-one"></div>
       <div class="ambient ambient-two"></div>
       <div class="ambient ambient-three"></div>
 
-      <!-- LOGO / TOP BRAND AREA -->
+      <!-- SECTION 02: BRANDING / LOGO AREA -->
       <a href="/index.html" class="logo-link" aria-label="Teyo home">
         <img class="logo-mark" src="/teyo-custom-logo.svg" alt="Teyo logo" />
       </a>
 
-      <!-- MAIN SEARCH BAR / INPUT TEXT -->
+      <!-- SECTION 03: MAIN SEARCH BAR -->
       <div class="search-shell" aria-label="Search products">
         <input type="text" class="search-bar" placeholder="What are you looking for..." aria-label="What are you looking for..." />
       </div>
 
-      <!-- TAGLINE TEXT SHOWN ABOVE SEARCH RESULTS -->
+      <!-- SECTION 04: HERO TAGLINE -->
       <div class="tagline-wrap">
         <p class="tagline">Making your life</p>
         <p class="tagline tagline">easier.</p>
       </div>
 
-      <!-- POPULAR SEARCHES BOX -->
+      <!-- SECTION 05: POPULAR SEARCHES -->
       <aside class="popular-searches hidden" aria-live="polite" aria-label="Popular searches">
         <div class="popular-searches-header">Popular searches</div>
         <ol class="popular-searches-list"></ol>
       </aside>
 
-      <!-- FILTER SIDE PANEL + RESULTS PANEL -->
+      <!-- SECTION 06: FILTERS + SEARCH RESULTS -->
       <section class="search-results hidden" aria-live="polite">
         <aside class="filter-panel" aria-label="Product preferences">
           <div class="filter-panel-header">
@@ -75,7 +77,7 @@
           <div id="moreFilterGroups" class="filter-groups more-filter-groups hidden"></div>
         </aside>
 
-        <!-- RESULTS AREA -->
+        <!-- SECTION 07: PRODUCT RESULTS GRID -->
         <div class="results-panel">
           <div class="results-header">
             <span class="results-label"></span>
@@ -85,8 +87,9 @@
         </div>
       </section>
 
-      <!-- OWNER CATALOG TOOLS -->
-      <!-- Hidden by default. Only revealed after Google Sign-In confirms the owner email server-side. -->
+      <!-- SECTION 08: OWNER ACCESS TOOLS -->
+      <!-- Hidden until the server confirms the verified owner account. -->
+      <div id="ownerGoogleSignIn" class="owner-google-signin" aria-label="Owner sign in"></div>
       <button id="ownerToolsButton" class="owner-tools-button" type="button" aria-expanded="false" aria-controls="ownerToolsPanel" aria-label="Owner catalog tools">
         <img class="owner-tools-logo" src="/teyo-custom-logo.svg" alt="" />
       </button>

@@ -907,6 +907,7 @@
     // =========================================
     const ownerToolsButton = document.getElementById('ownerToolsButton');
     const ownerToolsPanel = document.getElementById('ownerToolsPanel');
+    const ownerGoogleSignIn = document.getElementById('ownerGoogleSignIn');
     const ownerCatalogSyncForm = document.getElementById('ownerCatalogSyncForm');
     const ownerCatalogMessage = document.getElementById('ownerCatalogMessage');
 
@@ -925,6 +926,7 @@
             const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
             verifiedOwnerEmail = String(payload.email || '').toLowerCase();
             ownerToolsButton.classList.add('owner-tools-visible');
+            ownerGoogleSignIn.hidden = true;
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
             ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {
@@ -984,6 +986,12 @@
           callback: verifyGoogleCredential
         });
         window.google.accounts.id.prompt();
+        window.google.accounts.id.renderButton(ownerGoogleSignIn, {
+          type: 'standard',
+          theme: 'outline',
+          size: 'medium',
+          text: 'signin_with'
+        });
         googleSignInInitialized = true;
         return true;
       }

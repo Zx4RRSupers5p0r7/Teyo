@@ -927,6 +927,7 @@
           if (response.ok && result.success && verifiedEmail === configuredOwnerEmail) {
             verifiedOwnerEmail = verifiedEmail;
             ownerToolsButton.classList.add('owner-tools-visible');
+            ownerGoogleSignIn.hidden = true;
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
             ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {

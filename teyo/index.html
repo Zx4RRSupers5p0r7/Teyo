@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teyo — The Future of Shopping</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-grid"></div>
+    <div class="background-glow glow-one"></div>
+    <div class="background-glow glow-two"></div>
+
+    <aside id="popularSearches" class="popular-searches hidden">
+        <div class="panel-title">POPULAR SEARCHES</div>
+        <div id="popularSearchList"></div>
+    </aside>
+
+    <aside id="preferencesPanel" class="preferences-panel hidden">
+        <div class="panel-title">CUSTOMIZE SEARCH</div>
+        <div id="preferencesContent"></div>
+    </aside>
+
+    <main id="main">
+        <div id="searchExperience" class="search-experience">
+            <div id="logo" class="logo">
+                <div class="logo-symbol">T</div>
+                <div class="logo-word">TEYO</div>
+            </div>
+
+            <div id="searchBox" class="search-box">
+                <span class="search-icon" aria-hidden="true">⌕</span>
+                <input id="searchInput" type="text" placeholder="What are you looking for...." autocomplete="off" spellcheck="false">
+                <button id="searchButton" aria-label="Search">→</button>
+            </div>
+
+            <div id="tagline" class="tagline">
+                <div class="tagline-caption">making your life easier</div>
+            </div>
+        </div>
+
+        <section id="resultsPage" class="results-page">
+            <div class="results-header">
+                <div>
+                    <span>RESULTS FOR</span>
+                    <strong id="resultTitle">—</strong>
+                    <small id="resultCount"></small>
+                </div>
+            </div>
+            <div id="productGrid" class="product-grid"></div>
+        </section>
+    </main>
+
+    <div id="productModal" class="modal hidden">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal" aria-label="Close product details">×</button>
+            <div id="modalProduct"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

@@ -3,27 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TEYO Guard | Marketplace</title>
+    <title>Teyo | Find Anything. Buy Smarter</title>
     <meta
       name="description"
-      content="Black-and-white TEYO marketplace with live search, size-aware inventory, store maps, and member plans."
+      content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience."
     />
-    <meta property="og:title" content="TEYO Guard | Marketplace" />
+    <meta property="og:title" content="Teyo | Find Anything. Buy Smarter" />
     <meta
       property="og:description"
-      content="Black-and-white TEYO marketplace with live search, size-aware inventory, store maps, and member plans."
+      content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience."
     />
     <meta property="og:image" content="/teyo-logo-1024.png" />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="TEYO Guard | Marketplace" />
-    <meta name="twitter:description" content="Search products, track restocks, and see company stores on a black-and-white TEYO marketplace." />
+    <meta name="twitter:title" content="Teyo | Find Anything. Buy Smarter" />
+    <meta name="twitter:description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
     <meta name="twitter:image" content="/teyo-logo-1024.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="icon" href="/teyo-logo.png" type="image/png" />
-    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#f5f5f0" />
     <link rel="apple-touch-icon" href="/teyo-logo-1024.png" />
     <link
       rel="stylesheet"
@@ -36,7 +37,7 @@
   <body class="home-page marketplace-page">
     <div class="page-shell">
       <header class="topbar">
-        <a href="index.html" class="brand" aria-label="Teyo home">
+        <a href="/index.html" class="brand" aria-label="Teyo home">
           <span class="brand-mark" aria-hidden="true">
             <svg viewBox="0 0 120 120" role="img" aria-label="Teyo logo">
               <path class="hex-outline" d="M60 8 L108 36 L108 84 L60 112 L12 84 L12 36 Z"></path>
@@ -175,7 +176,7 @@
             <article class="card results-feed-card">
               <div class="section-heading" style="margin-bottom: 14px;">
                 <p class="eyebrow">Shopper feed</p>
-                <h2>Scroll through every matched product.</h2>
+                <h2>Scroll through the catalog in a 4-across grid.</h2>
               </div>
               <h3>Results</h3>
               <div id="resultsList" class="results-feed"></div>
@@ -399,6 +400,21 @@
         </section>
       </main>
 
+      <!-- OWNER CATALOG TOOLS -->
+      <button id="ownerToolsButton" class="owner-tools-button" type="button" aria-expanded="false" aria-controls="ownerToolsPanel">Owner</button>
+      <aside id="ownerToolsPanel" class="owner-tools-panel" hidden>
+        <h2>Owner catalog import</h2>
+        <p>Paste a feed link from a store you own or have permission to represent.</p>
+        <form id="marketplaceCatalogSyncForm">
+          <label>Your company name<input id="marketplaceCatalogCompanyName" required /></label>
+          <label>Owner email<input id="marketplaceCatalogOwnerEmail" type="email" required /></label>
+          <label>Owner key<input id="marketplaceCatalogOwnerKey" type="password" required autocomplete="off" /></label>
+          <label>Store catalog link<input id="marketplaceCatalogSourceUrl" type="url" placeholder="https://store.example/products.json" required /></label>
+          <button type="submit">Import products</button>
+          <p id="marketplaceCatalogMessage" class="form-message" role="status"></p>
+        </form>
+      </aside>
+
       <nav class="nav-links bottom-nav" aria-label="Site navigation">
         <a class="active" href="marketplace.html">Marketplace</a>
         <a href="partners.html">Partners</a>
@@ -413,5 +429,85 @@
       crossorigin=""
     ></script>
     <script src="script.js"></script>
+    <script>
+      (() => {
+        const ownerButton = document.getElementById('ownerToolsButton');
+        const ownerPanel = document.getElementById('ownerToolsPanel');
+        const syncForm = document.getElementById('marketplaceCatalogSyncForm');
+        const searchInput = document.getElementById('searchInput');
+        const resultsList = document.getElementById('resultsList');
+        const syncMessage = document.getElementById('marketplaceCatalogMessage');
+        let products = [];
+
+        const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (character) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        }[character]));
+
+        const renderProducts = () => {
+          const query = searchInput.value.trim().toLowerCase();
+          const matches = products.filter((product) => {
+            const text = `${product.productName} ${product.companyName} ${product.category} ${product.description} ${product.price}`.toLowerCase();
+            return !query || text.includes(query);
+          });
+
+          resultsList.innerHTML = matches.length
+            ? matches.map((product) => `
+              <article class="product-card">
+                <h3>${escapeHtml(product.productName)}</h3>
+                <p>${escapeHtml(product.companyName)} · ${escapeHtml(product.category || 'Product')}</p>
+                <strong>${escapeHtml(product.price || 'Price pending')}</strong>
+                <p>${escapeHtml(product.stockStatus || 'Check availability')}</p>
+              </article>
+            `).join('')
+            : '<p class="form-message">No imported products match this search.</p>';
+        };
+
+        const loadProducts = async () => {
+          const response = await fetch('/api/products');
+          products = response.ok ? await response.json() : [];
+          renderProducts();
+        };
+
+        ownerButton.addEventListener('click', () => {
+          ownerPanel.hidden = !ownerPanel.hidden;
+          ownerButton.setAttribute('aria-expanded', String(!ownerPanel.hidden));
+        });
+
+        searchInput.addEventListener('input', renderProducts);
+        syncForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const ownerEmail = document.getElementById('marketplaceCatalogOwnerEmail').value.trim();
+          const ownerKey = document.getElementById('marketplaceCatalogOwnerKey').value;
+          syncMessage.textContent = 'Importing products...';
+
+          try {
+            const response = await fetch('/api/admin/store-sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-owner-email': ownerEmail,
+                'x-owner-key': ownerKey
+              },
+              body: JSON.stringify({
+                companyName: document.getElementById('marketplaceCatalogCompanyName').value.trim(),
+                ownerEmail,
+                sourceUrl: document.getElementById('marketplaceCatalogSourceUrl').value.trim()
+              })
+            });
+            const result = await response.json();
+            syncMessage.textContent = response.ok
+              ? `${result.message} Imported ${result.importedCount} products.`
+              : (result.message || 'Import failed.');
+            if (response.ok) await loadProducts();
+          } catch (error) {
+            syncMessage.textContent = 'Import failed. Check the server and store link.';
+          }
+        });
+
+        loadProducts().catch(() => {
+          resultsList.innerHTML = '<p class="form-message">Products could not be loaded right now.</p>';
+        });
+      })();
+    </script>
   </body>
 </html>

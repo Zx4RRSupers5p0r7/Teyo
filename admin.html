@@ -3,13 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TEYO Guard | Company Admin</title>
-    <meta name="description" content="Company admin access for stock insights, inventory monitoring, and TEYO Guard protection on TEYO." />
-    <meta property="og:title" content="TEYO Guard | Company Admin" />
-    <meta property="og:description" content="Company admin access for stock insights, inventory monitoring, and TEYO Guard protection on TEYO." />
+    <title>Teyo | Find Anything. Buy Smarter</title>
+    <meta name="description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
+    <meta property="og:title" content="Teyo | Find Anything. Buy Smarter" />
+    <meta property="og:description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
     <meta property="og:image" content="/teyo-logo-1024.png" />
-    <link rel="icon" href="/teyo-logo.png" type="image/png" />
-    <link rel="shortcut icon" href="/teyo-logo.png" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate icon" href="/teyo-logo.png" type="image/png" />
+    <link rel="mask-icon" href="/favicon.svg" color="#f5f5f0" />
     <style>
       :root {
         color-scheme: dark;
@@ -118,6 +119,20 @@
           <div class="list-item">Update inventory from the same company dashboard</div>
         </div>
 
+        <!-- OWNER CATALOG IMPORT -->
+        <div class="lead-section">
+          <h2>Import an authorized catalog</h2>
+          <p>Paste a product-feed URL from a store you own or have permission to represent. The imported products will appear in the marketplace search.</p>
+          <form id="catalogSyncForm">
+            <label>Your company name<input id="catalogCompanyName" required /></label>
+            <label>Your owner email<input id="catalogOwnerEmail" type="email" required /></label>
+            <label>Owner key<input id="catalogOwnerKey" type="password" required autocomplete="off" /></label>
+            <label>Catalog or feed URL<input id="catalogSourceUrl" type="url" placeholder="https://store.example/products.json" required /></label>
+            <button type="submit">Sync catalog</button>
+          </form>
+          <div id="catalogSyncMessage" class="small" role="status"></div>
+        </div>
+
         <div class="lead-section">
           <h2>Incoming leads</h2>
           <p>Track the companies and partners who are showing interest in TEYO so you can follow up quickly.</p>
@@ -206,6 +221,37 @@
         const companyKey = document.getElementById('companyKey').value.trim();
         const params = new URLSearchParams({ companyName, ownerEmail, companyKey });
         window.location.href = `/inventory.html?${params.toString()}`;
+      });
+
+      document.getElementById('catalogSyncForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const message = document.getElementById('catalogSyncMessage');
+        const ownerEmail = document.getElementById('catalogOwnerEmail').value.trim();
+        const ownerKey = document.getElementById('catalogOwnerKey').value;
+        const payload = {
+          companyName: document.getElementById('catalogCompanyName').value.trim(),
+          ownerEmail,
+          sourceUrl: document.getElementById('catalogSourceUrl').value.trim()
+        };
+
+        message.textContent = 'Syncing catalog...';
+        try {
+          const response = await fetch('/api/admin/store-sync', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-owner-email': ownerEmail,
+              'x-owner-key': ownerKey
+            },
+            body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          message.textContent = response.ok
+            ? `${result.message} Imported ${result.importedCount} products.`
+            : (result.message || 'Catalog sync failed.');
+        } catch (error) {
+          message.textContent = 'Catalog sync failed. Check the server and feed URL.';
+        }
       });
 
       loadLeads();

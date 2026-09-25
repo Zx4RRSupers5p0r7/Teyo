@@ -12,6 +12,11 @@ const sanitizeHtml = require('sanitize-html');
 const Stripe = require('stripe');
 const nodemailer = require('nodemailer');
 
+// ==========================================================
+// Teyo Server
+// This is the main backend for the marketplace app.
+// It handles security, routes, Stripe checkout, storage, and APIs.
+// ==========================================================
 const app = express();
 const port = process.env.PORT || 3000;
 const storageDir = path.join(__dirname, 'storage');
@@ -24,6 +29,9 @@ const appBaseUrl = String(process.env.APP_BASE_URL || '').trim();
 const adminApiKey = String(process.env.ADMIN_API_KEY || '').trim();
 const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
 const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
+const openAiApiKey = String(process.env.OPENAI_API_KEY || '').trim();
+const openAiModel = String(process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
+const googleClientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
 
 // In-memory live viewer tracking (resets on server restart — intentional)
 const _activeSessions = new Map();
@@ -74,7 +82,9 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'guard-dashboard.html',
   'styles.css',
   'script.js',
+  'teyo-taxonomy.js',
   'favicon.svg',
+  'teyo-custom-logo.svg',
   'teyo-watermark.svg',
   'teyo-watermark-secondary.svg',
   'site.webmanifest',
@@ -115,6 +125,21 @@ app.use(helmet({
     preload: true
   }
 }));
+
+// LOCAL LIVE SERVER ACCESS
+// Allow the development page at port 5500 to call the API on port 3000.
+app.use((req, res, next) => {
+  const origin = String(req.headers.origin || '');
+  if (origin === 'http://127.0.0.1:5500' || origin === 'http://localhost:5500') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-owner-email, x-owner-key');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  }
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(204);
+  }
+  next();
+});
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -2774,6 +2799,162 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
 
 app.use(express.json({ limit: '2mb' }));
 
+async function callOpenAiJson({ system, prompt, temperature = 0.2 }) {
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiApiKey}` },
+    body: JSON.stringify({
+      model: openAiModel,
+      temperature,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: prompt }
+      ]
+    })
+  });
+  if (!response.ok) {
+    const err = new Error(response.status === 429 ? 'AI quota or rate limit reached.' : 'AI provider request failed.');
+    err.status = response.status === 429 ? 429 : 502;
+    throw err;
+  }
+  const payload = await response.json();
+  const content = payload.choices?.[0]?.message?.content;
+  return JSON.parse(content || '{}');
+}
+
+// Open-ended AI search: understands ANY query (not just a fixed topic list)
+// and returns a normalized category, a short interpretation, and suggested
+// search keywords the client can use to match/rank its catalog.
+app.post('/api/ai/search', async (req, res) => {
+  const query = sanitizePlainText(req.body?.query, 300);
+  if (!query) return res.status(400).json({ success: false, message: 'A search query is required.' });
+  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI search is not configured.' });
+
+  const prompt = [
+    'A shopper typed this into a universal marketplace search box that can match anything sold anywhere.',
+    'Return JSON only, describing how to interpret and match this search.',
+    'Fields: category (short lowercase slug like "shoes", "electronics", "furniture", "collectibles", etc — invent one if needed),',
+    'entity (the specific thing being searched for, e.g. "Nike Air Max" or "Optimus Prime action figure"),',
+    'keywords (array of up to 10 lowercase search terms/synonyms useful for text matching),',
+    'intent (one short sentence describing what the shopper wants),',
+    'summary (one short friendly sentence to display as the results headline).',
+    `Search: ${query}`
+  ].join('\n');
+
+  try {
+    const data = await callOpenAiJson({
+      system: 'You are Teyo\'s universal search interpreter. You must be able to understand and categorize ANY product search, not just a fixed set of topics.',
+      prompt
+    });
+    return res.json({
+      success: true,
+      category: sanitizePlainText(data.category || 'general', 60).toLowerCase().replace(/\s+/g, '-'),
+      entity: sanitizePlainText(data.entity || query, 160),
+      keywords: Array.isArray(data.keywords) ? data.keywords.slice(0, 10).map((k) => sanitizePlainText(k, 60)).filter(Boolean) : [],
+      intent: sanitizePlainText(data.intent, 300),
+      summary: sanitizePlainText(data.summary, 200)
+    });
+  } catch (error) {
+    return res.status(error.status || 502).json({ success: false, message: error.message || 'AI search failed.' });
+  }
+});
+
+// AI-generated custom product description for the product detail view.
+app.post('/api/ai/describe-product', async (req, res) => {
+  const name = sanitizePlainText(req.body?.name, 160);
+  const brand = sanitizePlainText(req.body?.brand, 100);
+  const category = sanitizePlainText(req.body?.category, 80);
+  const detail = sanitizePlainText(req.body?.detail, 200);
+  const query = sanitizePlainText(req.body?.query, 200);
+  if (!name) return res.status(400).json({ success: false, message: 'A product name is required.' });
+  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI descriptions are not configured.' });
+
+  const prompt = [
+    'Write a short, appealing, factual-sounding marketplace product description for this listing.',
+    'Return JSON only with fields: description (2-3 sentences, no exaggerated claims, no pricing),',
+    'highlights (array of up to 5 short bullet-point strings about features/specs based only on the given details).',
+    `Product name: ${name}`,
+    brand ? `Brand: ${brand}` : '',
+    category ? `Category: ${category}` : '',
+    detail ? `Known details: ${detail}` : '',
+    query ? `Shopper searched for: ${query}` : ''
+  ].filter(Boolean).join('\n');
+
+  try {
+    const data = await callOpenAiJson({
+      system: 'You are Teyo\'s product copywriter. Only describe what is plausible from the given details. Never invent stock, price, or store names.',
+      prompt,
+      temperature: 0.5
+    });
+    return res.json({
+      success: true,
+      description: sanitizePlainText(data.description, 600),
+      highlights: Array.isArray(data.highlights) ? data.highlights.slice(0, 5).map((h) => sanitizePlainText(h, 140)).filter(Boolean) : []
+    });
+  } catch (error) {
+    return res.status(error.status || 502).json({ success: false, message: error.message || 'AI description failed.' });
+  }
+});
+
+app.post('/api/preferences/discover', async (req, res) => {
+  const query = sanitizePlainText(req.body?.query, 500);
+  if (!query) return res.status(400).json({ success: false, message: 'A search query is required.' });
+  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI discovery is not configured.' });
+
+  const prompt = [
+    'Analyze this marketplace search and return JSON only.',
+    'Identify the entity, category, subcategory, intent, extracted requirements, and only relevant preference attributes.',
+    'Do not invent actual product values. Attribute options may be omitted when catalog values are unknown.',
+    'Each attribute must include id, name, description, type, relevance, confidence, recommended, searchable, multiSelect, and source.',
+    'Supported types: searchable-single-select, searchable-multi-select, checkbox, toggle, range, numeric-input, text-input, date-range, rating, size, color, location, boolean, custom-value.',
+    `Search: ${query}`
+  ].join('\n');
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiApiKey}` },
+      body: JSON.stringify({
+        model: openAiModel,
+        temperature: 0.1,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: 'You are Teyo\'s marketplace search analyzer. Be conservative and never use unrelated attributes.' },
+          { role: 'user', content: prompt }
+        ]
+      })
+    });
+    if (!response.ok) {
+      const status = response.status === 429 ? 429 : 502;
+      const message = response.status === 429 ? 'AI discovery quota or rate limit reached.' : 'AI discovery provider failed.';
+      return res.status(status).json({ success: false, message });
+    }
+    const payload = await response.json();
+    const content = payload.choices?.[0]?.message?.content;
+    const discovered = JSON.parse(content || '{}');
+    const attributes = Array.isArray(discovered.attributes) ? discovered.attributes.slice(0, 100).map((field, index) => ({
+      id: sanitizePlainText(field.id || `attribute-${index + 1}`, 80).replace(/\s+/g, '-').toLowerCase(),
+      name: sanitizePlainText(field.name, 120),
+      description: sanitizePlainText(field.description, 300),
+      type: sanitizePlainText(field.type || 'custom-value', 40),
+      relevance: Number(field.relevance) || index + 1,
+      confidence: Math.min(1, Math.max(0, Number(field.confidence) || 0)),
+      recommended: Boolean(field.recommended),
+      searchable: Boolean(field.searchable),
+      multiSelect: Boolean(field.multiSelect),
+      options: Array.isArray(field.options) ? field.options.slice(0, 100).map((option) => sanitizePlainText(option, 120)).filter(Boolean) : [],
+      unit: sanitizePlainText(field.unit, 30),
+      min: Number.isFinite(Number(field.min)) ? Number(field.min) : undefined,
+      max: Number.isFinite(Number(field.max)) ? Number(field.max) : undefined,
+      source: 'openai-discovery'
+    })).filter((field) => field.name && field.confidence >= 0.55) : [];
+    return res.json({ success: true, context: { entity: discovered.entity, category: discovered.category, subcategory: discovered.subcategory, intent: discovered.intent, extractedRequirements: discovered.extractedRequirements || {} }, attributes });
+  } catch (error) {
+    return res.status(502).json({ success: false, message: 'AI discovery response was invalid.' });
+  }
+});
+
 app.post('/api/heartbeat', express.json({ limit: '512b' }), (req, res) => {
   const raw = String(req.body?.s || '').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64);
   if (raw.length >= 8) {
@@ -3814,6 +3995,69 @@ app.post('/api/products', (req, res) => {
   res.json({
     success: true,
     message: 'Your product submission has been received. It will stay hidden until it is reviewed and approved.'
+  });
+});
+
+// GOOGLE SIGN-IN OWNER CHECK
+// Confirms the signed-in Google account belongs to the configured site owner before any owner tool is shown.
+app.post('/api/admin/google-verify', express.json({ limit: '20kb' }), async (req, res) => {
+  const credential = String(req.body?.credential || '').trim();
+  if (!credential || !googleClientId) {
+    return res.status(401).json({ success: false, message: 'Google sign-in is not configured.' });
+  }
+
+  try {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
+    if (!response.ok) {
+      return res.status(401).json({ success: false, message: 'Invalid Google sign-in token.' });
+    }
+
+    const tokenInfo = await response.json();
+    const emailVerified = tokenInfo.email_verified === true || tokenInfo.email_verified === 'true';
+    const audienceMatches = secureEquals(String(tokenInfo.aud || ''), googleClientId);
+    const isOwnerEmail = hasOwnerAccess(tokenInfo.email);
+
+    if (!audienceMatches || !emailVerified || !isOwnerEmail) {
+      return res.status(403).json({ success: false, message: 'This Google account is not the site owner.' });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(401).json({ success: false, message: 'Unable to verify Google sign-in.' });
+  }
+});
+
+// OWNER CATALOG IMPORT
+// Lets the site owner paste an authorized store feed URL and sync its products.
+app.post('/api/admin/store-sync', requireAdmin, async (req, res) => {
+  const companyName = sanitizePlainText(req.body.companyName, 120);
+  const ownerEmail = sanitizeEmail(req.body.ownerEmail);
+  const sourceUrl = normalizeWebsite(req.body.sourceUrl);
+
+  if (!companyName || !ownerEmail || !isSafeHttpUrl(sourceUrl)) {
+    return res.status(400).json({ success: false, message: 'Company name, owner email, and a valid catalog URL are required.' });
+  }
+
+  const data = loadData();
+  const partner = ensurePartnerRecord(companyName, ownerEmail);
+  partner.websiteUrl = partner.websiteUrl || sourceUrl;
+  partner.storeCatalogUrl = sourceUrl;
+  partner.paid = true;
+  partner.activeListing = true;
+  partner.paymentConfirmed = true;
+  partner.requestStatus = 'approved';
+  partner.claimStatus = 'claimed';
+  partner.storeSync = createDefaultStoreSyncConfig(sourceUrl);
+
+  const result = await runPartnerStoreSync(partner, data, { reason: 'manual' });
+  saveData(data);
+
+  return res.status(result.success ? 200 : 422).json({
+    success: result.success,
+    message: result.message,
+    importedCount: result.importedCount,
+    changedCount: result.changedCount,
+    syncWarning: partner.storeSync.lastError || ''
   });
 });
 

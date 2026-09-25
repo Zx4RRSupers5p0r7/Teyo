@@ -1,10 +1,10 @@
 {
-  "name": "Teyo",
+  "name": "Teyo | Find Anything. Buy Smarter",
   "short_name": "Teyo",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#05060a",
-  "theme_color": "#7c7cff",
+  "theme_color": "#0c1918",
   "icons": [
     {
       "src": "/favicon-48x48.png",

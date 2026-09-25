@@ -14,6 +14,8 @@ Production-hardened Node.js marketplace with Stripe checkout, admin approvals, a
 
 - `APP_BASE_URL` (public URL for checkout redirects)
 - `DATABASE_URL` (Postgres connection string for production-scale persistence)
+- `OPENAI_API_KEY` (optional server-side key for open-world preference discovery)
+- `OPENAI_MODEL` (optional OpenAI model name, default `gpt-4o-mini`)
 - `ADMIN_API_KEY` (minimum 32 random characters)
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`

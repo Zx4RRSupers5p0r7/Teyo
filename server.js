@@ -31,7 +31,9 @@ const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
 const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
 const openAiApiKey = String(process.env.OPENAI_API_KEY || '').trim();
 const openAiModel = String(process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
-const googleClientId = String(process.env.GOOGLE_CLIENT_ID || '').trim();
+const googleClientId = String(
+  process.env.GOOGLE_CLIENT_ID || '902032103838-k6q5oi67vmn6grp562mh1bcbjta1eiml.apps.googleusercontent.com'
+).trim();
 
 // In-memory live viewer tracking (resets on server restart — intentional)
 const _activeSessions = new Map();
@@ -4066,7 +4068,7 @@ app.post('/api/admin/google-verify', express.json({ limit: '20kb' }), async (req
       return res.status(403).json({ success: false, message: 'This Google account is not the site owner.' });
     }
 
-    return res.json({ success: true });
+    return res.json({ success: true, email: sanitizeEmail(tokenInfo.email) });
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Unable to verify Google sign-in.' });
   }

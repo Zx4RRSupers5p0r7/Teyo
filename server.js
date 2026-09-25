@@ -539,6 +539,10 @@ function buildStoreSyncAttemptUrls(sourceUrl) {
   attempts.push(normalized);
   try {
     const parsed = new URL(normalized);
+    const cleanPath = parsed.pathname.replace(/\/+$/, '');
+    if (cleanPath.startsWith('/collections/')) {
+      attempts.push(`${parsed.origin}${cleanPath}/products.json?limit=250`);
+    }
     if (parsed.pathname === '/' || parsed.pathname === '') {
       attempts.push(`${parsed.origin}/products.json?limit=250`);
       attempts.push(`${parsed.origin}/collections/all/products.json?limit=250`);
@@ -706,6 +710,46 @@ function normalizeGenericProducts(payload, sourceUrl, partner = null) {
       physicalStoreLocation
     };
   }).filter(Boolean);
+}
+
+function normalizeJsonLdStoreProducts(html, sourceUrl, partner) {
+  const scripts = [...String(html || '').matchAll(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  const products = [];
+
+  scripts.forEach((match) => {
+    try {
+      const parsed = JSON.parse(match[1].trim());
+      const nodes = Array.isArray(parsed) ? parsed : (Array.isArray(parsed?.['@graph']) ? parsed['@graph'] : [parsed]);
+      nodes.forEach((node) => {
+        const type = Array.isArray(node?.['@type']) ? node['@type'] : [node?.['@type']];
+        if (type.includes('Product')) {
+          products.push(node);
+        }
+        if (type.includes('ItemList') && Array.isArray(node.itemListElement)) {
+          node.itemListElement.forEach((entry) => {
+            const item = entry?.item;
+            const itemType = Array.isArray(item?.['@type']) ? item['@type'] : [item?.['@type']];
+            if (item && (itemType.includes('Product') || item.name)) products.push(item);
+          });
+        }
+      });
+    } catch (error) {
+      // Ignore malformed JSON-LD blocks and continue with the other page data.
+    }
+  });
+
+  return normalizeGenericProducts({
+    products: products.map((product) => ({
+      id: product.sku || product.mpn || product.url || product.name,
+      name: product.name,
+      url: product.url,
+      image: Array.isArray(product.image) ? product.image[0] : product.image,
+      price: product.offers?.price || product.offers?.lowPrice || '',
+      category: product.category || 'general',
+      description: product.description || '',
+      status: product.offers?.availability || 'In stock'
+    }))
+  }, sourceUrl, partner);
 }
 
 function normalizeStoreFeedProducts(payload, partner, sourceUrl, format = 'auto') {
@@ -2463,6 +2507,7 @@ async function runPartnerStoreSync(partner, data, options = {}) {
     }
 
     let payload = null;
+    let importedProducts = [];
     let selectedUrl = '';
     let lastError = 'Store source could not be reached.';
     for (const candidate of attempts) {
@@ -2475,16 +2520,23 @@ async function runPartnerStoreSync(partner, data, options = {}) {
       }
     }
 
-    if (!payload) {
-      partner.storeSync.lastError = lastError;
-      partner.storeSync.lastImportedCount = 0;
-      partner.storeSync.lastChangedCount = 0;
-      return { success: false, message: lastError, importedCount: 0, changedCount: 0 };
+    if (payload) {
+      importedProducts = normalizeStoreFeedProducts(payload, partner, selectedUrl, sync.format)
+        .filter((entry) => entry && entry.productName && entry.websiteUrl)
+        .slice(0, STORE_SYNC_MAX_PRODUCTS);
+    } else {
+      try {
+        const html = await fetchTextWithTimeout(sync.sourceUrl);
+        importedProducts = normalizeJsonLdStoreProducts(html, sync.sourceUrl, partner)
+          .filter((entry) => entry && entry.productName && entry.websiteUrl)
+          .slice(0, STORE_SYNC_MAX_PRODUCTS);
+        if (importedProducts.length) {
+          selectedUrl = sync.sourceUrl;
+        }
+      } catch (error) {
+        lastError = `${sync.sourceUrl}: ${sanitizePlainText(error.message, 240) || 'fetch failed'}`;
+      }
     }
-
-    const importedProducts = normalizeStoreFeedProducts(payload, partner, selectedUrl, sync.format)
-      .filter((entry) => entry && entry.productName && entry.websiteUrl)
-      .slice(0, STORE_SYNC_MAX_PRODUCTS);
 
     if (!importedProducts.length) {
       partner.storeSync.lastError = 'No supported products were found in the provided feed.';

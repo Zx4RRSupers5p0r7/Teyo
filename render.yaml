@@ -19,6 +19,8 @@ services:
         value: chazmiller872@gmail.com
       - key: OWNER_ACCESS_KEY
         value: "^ty8e(%uI98dYhfgjeHDg0adj$#$"
+      - key: GOOGLE_CLIENT_ID
+        value: 902032103838-k6q5oi67vmn6grp562mh1bcbjta1eiml.apps.googleusercontent.com
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET

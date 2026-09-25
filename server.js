@@ -107,12 +107,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", 'https://unpkg.com', "'unsafe-inline'"],
+      scriptSrc: ["'self'", 'https://unpkg.com', 'https://accounts.google.com', "'unsafe-inline'"],
       styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com', "'unsafe-inline'"],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'https:', 'data:'],
       connectSrc: ["'self'", 'https://api.stripe.com', 'https://nominatim.openstreetmap.org', 'https://overpass-api.de'],
-      frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com'],
+      frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com', 'https://accounts.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'", 'https://checkout.stripe.com']
@@ -3998,8 +3998,10 @@ app.post('/api/products', (req, res) => {
   });
 });
 
-// GOOGLE SIGN-IN OWNER CHECK
+// ==========================================================
+// SECTION: GOOGLE SIGN-IN OWNER CHECK
 // Confirms the signed-in Google account belongs to the configured site owner before any owner tool is shown.
+// ==========================================================
 app.post('/api/admin/google-verify', express.json({ limit: '20kb' }), async (req, res) => {
   const credential = String(req.body?.credential || '').trim();
   if (!credential || !googleClientId) {
@@ -4025,6 +4027,21 @@ app.post('/api/admin/google-verify', express.json({ limit: '20kb' }), async (req
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Unable to verify Google sign-in.' });
   }
+});
+
+app.post('/api/admin/owner-verify', express.json({ limit: '20kb' }), (req, res) => {
+  const email = sanitizeEmail(req.body?.email);
+  const accessKey = String(req.body?.accessKey || '').trim();
+
+  if (!email || !accessKey) {
+    return res.status(400).json({ success: false, message: 'Owner email and access key are required.' });
+  }
+
+  if (!hasOwnerKeyAccess(email, accessKey)) {
+    return res.status(403).json({ success: false, message: 'This email or access key is not authorized for the owner account.' });
+  }
+
+  return res.json({ success: true, email });
 });
 
 // OWNER CATALOG IMPORT

@@ -8,6 +8,8 @@
       name="description"
       content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience."
     />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://teyo.ca/" />
     <meta property="og:title" content="Teyo | Find Anything. Buy Smarter" />
     <meta
       property="og:description"
@@ -33,6 +35,10 @@
       crossorigin=""
     />
     <link rel="stylesheet" href="styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      window.TEYO_GOOGLE_CLIENT_ID = '902032103838-k6q5oi67vmn6grp562mh1bcbjta1eiml.apps.googleusercontent.com';
+    </script>
   </head>
   <body class="home-page marketplace-page">
     <div class="page-shell">
@@ -52,7 +58,7 @@
           <a href="partners.html">Partners</a>
           <a href="inventory.html">Stock insights</a>
           <a href="admin.html">Company admin</a>
-          <a href="guard-landing.html">TEYO Guard</a>
+          <a href="guard-landing.html">Teyo</a>
           <a href="contact.html">Contact</a>
         </nav>
       </header>
@@ -90,8 +96,8 @@
 
         <section class="hero">
           <div class="hero-copy">
-            <p class="eyebrow">Original marketplace, restored</p>
-            <h1>Black-and-white TEYO marketplace with live products, maps, and member plans.</h1>
+            <p class="eyebrow">Marketplace, restored</p>
+            <h1>Teyo marketplace with live products, maps, and smarter shopping tools.</h1>
             <p class="hero-text">
               Search size-aware stock, inspect nearby store locations, and keep the marketplace feel you built while we
               add membership tiers, theme controls, and the map view for company store locations.
@@ -438,6 +444,41 @@
         const resultsList = document.getElementById('resultsList');
         const syncMessage = document.getElementById('marketplaceCatalogMessage');
         let products = [];
+        let verifiedOwnerEmail = '';
+
+        const verifyGoogleCredential = async (credentialResponse) => {
+          try {
+            const response = await fetch('/api/admin/google-verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credential: credentialResponse.credential })
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) return;
+
+            const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+            verifiedOwnerEmail = String(payload.email || '').toLowerCase();
+            ownerButton.classList.add('owner-tools-visible');
+            document.getElementById('marketplaceCatalogOwnerEmail').value = verifiedOwnerEmail;
+          } catch (error) {
+            console.warn('Google owner verification is unavailable.', error);
+          }
+        };
+
+        const initializeGoogleSignIn = () => {
+          if (!window.google?.accounts?.id || !window.TEYO_GOOGLE_CLIENT_ID) return false;
+          window.google.accounts.id.initialize({
+            client_id: window.TEYO_GOOGLE_CLIENT_ID,
+            auto_select: true,
+            callback: verifyGoogleCredential
+          });
+          window.google.accounts.id.prompt();
+          return true;
+        };
+
+        if (!initializeGoogleSignIn()) {
+          window.addEventListener('load', initializeGoogleSignIn, { once: true });
+        }
 
         const escapeHtml = (value) => String(value || '').replace(/[&<>"']/g, (character) => ({
           '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -469,6 +510,7 @@
         };
 
         ownerButton.addEventListener('click', () => {
+          if (!verifiedOwnerEmail) return;
           ownerPanel.hidden = !ownerPanel.hidden;
           ownerButton.setAttribute('aria-expanded', String(!ownerPanel.hidden));
         });

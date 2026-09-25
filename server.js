@@ -63,7 +63,7 @@ const PRICING = {
 };
 const STORE_SYNC_INTERVAL_MS = Math.max(60 * 1000, Number.parseInt(process.env.STORE_SYNC_INTERVAL_MS || '300000', 10) || (5 * 60 * 1000));
 const STORE_SYNC_TIMEOUT_MS = Math.max(3000, Number.parseInt(process.env.STORE_SYNC_TIMEOUT_MS || '12000', 10) || 12000);
-const STORE_SYNC_MAX_PRODUCTS = 250;
+const STORE_SYNC_MAX_PRODUCTS = Math.max(1, Number.parseInt(process.env.STORE_SYNC_MAX_PRODUCTS || '5000', 10) || 5000);
 const PARTNER_REMINDER_INTERVAL_MS = Math.max(30 * 60 * 1000, Number.parseInt(process.env.PARTNER_REMINDER_INTERVAL_MS || '21600000', 10) || (6 * 60 * 60 * 1000));
 const PARTNER_REMINDER_COOLDOWN_MS = Math.max(60 * 60 * 1000, Number.parseInt(process.env.PARTNER_REMINDER_COOLDOWN_MS || '604800000', 10) || (7 * 24 * 60 * 60 * 1000));
 const CUSTOMER_THEME_ENTITLEMENT_DAYS = 30;

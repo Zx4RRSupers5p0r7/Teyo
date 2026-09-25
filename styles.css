@@ -396,6 +396,15 @@ body {
   margin-top: 0;
 }
 
+.owner-tools-panel h2,
+.owner-tools-panel p,
+.owner-tools-panel label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .owner-tools-panel form {
   display: grid;
   gap: 10px;
@@ -409,12 +418,17 @@ body {
 }
 
 .owner-tools-panel input {
+  box-sizing: border-box;
+  min-width: 0;
   width: 100%;
   padding: 9px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .popular-searches-list li span {

@@ -1220,6 +1220,7 @@ function ensureDataShape(parsed) {
     partnerAnalytics: Array.isArray(parsed.partnerAnalytics) ? parsed.partnerAnalytics : [],
     partnerReminderLog: Array.isArray(parsed.partnerReminderLog) ? parsed.partnerReminderLog : [],
     leads: Array.isArray(parsed.leads) ? parsed.leads : [],
+    popularSearches: parsed.popularSearches && typeof parsed.popularSearches === 'object' && !Array.isArray(parsed.popularSearches) ? parsed.popularSearches : {},
     totalVisitors: Number.isInteger(parsed.totalVisitors) ? parsed.totalVisitors : 0
   };
 
@@ -2871,6 +2872,35 @@ app.post('/api/ai/search', async (req, res) => {
   } catch (error) {
     return res.status(error.status || 502).json({ success: false, message: error.message || 'AI search failed.' });
   }
+});
+
+app.get('/api/popular-searches', (req, res) => {
+  const data = loadData();
+  const searches = Object.entries(data.popularSearches || {})
+    .filter(([term, count]) => term && Number.isFinite(Number(count)) && Number(count) > 0)
+    .sort((first, second) => Number(second[1]) - Number(first[1]) || first[0].localeCompare(second[0]))
+    .slice(0, 5)
+    .map(([term, count]) => ({ term, count: Number(count) }));
+
+  res.json({ success: true, searches });
+});
+
+app.post('/api/popular-searches', express.json({ limit: '2kb' }), (req, res) => {
+  const term = sanitizePlainText(req.body?.query, 120).trim().toLowerCase();
+  if (!term) {
+    return res.status(400).json({ success: false, message: 'A search query is required.' });
+  }
+
+  const data = loadData();
+  data.popularSearches[term] = (Number(data.popularSearches[term]) || 0) + 1;
+  saveData(data);
+
+  const searches = Object.entries(data.popularSearches)
+    .sort((first, second) => Number(second[1]) - Number(first[1]) || first[0].localeCompare(second[0]))
+    .slice(0, 5)
+    .map(([entry, count]) => ({ term: entry, count: Number(count) }));
+
+  return res.json({ success: true, searches });
 });
 
 // AI-generated custom product description for the product detail view.

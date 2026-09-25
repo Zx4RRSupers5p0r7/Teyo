@@ -301,7 +301,7 @@ body {
    Google Sign-In for the configured owner email.
    ========================================================== */
 .owner-tools-button {
-  display: grid;
+  display: none;
   position: fixed;
   right: 20px;
   bottom: 20px;

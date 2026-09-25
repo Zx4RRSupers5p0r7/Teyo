@@ -51,28 +51,11 @@
     const moreFilterGroups = document.getElementById('moreFilterGroups');
     const clearPreferences = document.getElementById('clearPreferences');
     const selectedPreferencesPanel = document.getElementById('selectedPreferences');
-    const searchHistoryKey = 'teyoSearchHistoryV2';
-    const seededPopularSearches = [
-      'wireless earbuds',
-      'smartwatches',
-      'electric vehicles',
-      'home office gear',
-      'new laptop models'
-    ];
     const apiBaseUrl = window.location.port === '5500' ? 'http://localhost:3000' : '';
 
     if (!searchInput || !blankStage || !popularSearches || !popularList || !productGrid || !searchResults) {
       return;
     }
-
-    let searchHistory = {};
-    try {
-      searchHistory = JSON.parse(window.localStorage.getItem(searchHistoryKey) || '{}');
-    } catch (error) {
-      searchHistory = {};
-    }
-    seededPopularSearches.forEach((term) => delete searchHistory[term]);
-    window.localStorage.setItem(searchHistoryKey, JSON.stringify(searchHistory));
 
     // =========================================
     // SECTION 02: SEARCH CATEGORIES + FILTER LABELS
@@ -826,23 +809,44 @@
       return Math.round((matchedWeight / totalWeight) * 100);
     }
 
-    function updatePopularSearches(query) {
-      const items = Object.entries(searchHistory)
-        .sort((first, second) => second[1] - first[1])
-        .map(([item]) => item)
-        .slice(0, 5);
+    function updatePopularSearches(items) {
+      const terms = Array.isArray(items) ? items : [];
 
-      if (!items.length) {
+      if (!terms.length) {
         popularSearches.classList.add('hidden');
         popularList.innerHTML = '';
         return;
       }
 
-      popularList.innerHTML = items.map((item, index) => `
-        <li><span></span><span>${item}</span></li>
+      popularList.innerHTML = terms.map((item) => `
+        <li><span></span><span>${item.term}</span></li>
       `).join('');
 
       popularSearches.classList.remove('hidden');
+    }
+
+    async function loadPopularSearches() {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/popular-searches`, { cache: 'no-store' });
+        const result = await response.json();
+        if (response.ok && result.success) updatePopularSearches(result.searches);
+      } catch (error) {
+        updatePopularSearches([]);
+      }
+    }
+
+    async function recordPopularSearch(query) {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/popular-searches`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query })
+        });
+        const result = await response.json();
+        if (response.ok && result.success) updatePopularSearches(result.searches);
+      } catch (error) {
+        // Search results should still work if ranking storage is temporarily unavailable.
+      }
     }
 
     let searchRequest = 0;
@@ -871,19 +875,12 @@
       }, 850);
     }
 
-    searchInput.addEventListener('input', (event) => {
-      updatePopularSearches(event.target.value);
-    });
-
     searchInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         event.preventDefault();
         const value = event.target.value.trim();
         if (!value) return;
-        const normalized = value.toLowerCase();
-        searchHistory[normalized] = (searchHistory[normalized] || 0) + 1;
-        window.localStorage.setItem(searchHistoryKey, JSON.stringify(searchHistory));
-        updatePopularSearches(value);
+        recordPopularSearch(value);
         triggerSearchAnimation(value);
       }
     });
@@ -1061,7 +1058,7 @@
       getMatchScore: (product) => calculateMatchScore(product)
     };
 
-    updatePopularSearches('');
+    loadPopularSearches();
   });
 })();
 

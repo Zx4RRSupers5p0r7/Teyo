@@ -7,9 +7,34 @@
    - product card content
    - search behavior and result display
    ========================================================== */
+(function enableLocalLiveReload() {
+  const localHosts = new Set(['localhost', '127.0.0.1']);
+  if (!localHosts.has(window.location.hostname)) return;
+
+  let currentVersion = null;
+
+  async function checkForChanges() {
+    try {
+      const response = await fetch('/__teyo_live_version', { cache: 'no-store' });
+      if (!response.ok) return;
+      const { version } = await response.json();
+      if (currentVersion === null) {
+        currentVersion = version;
+      } else if (version !== currentVersion) {
+        window.location.reload();
+      }
+    } catch (error) {
+      // Keep the preview usable while the local server is restarting.
+    }
+  }
+
+  checkForChanges();
+  window.setInterval(checkForChanges, 750);
+})();
+
 (function () {
   // =========================================
-  // DOM ELEMENTS / PAGE STRUCTURE
+  // SECTION 01: DOM ELEMENTS / PAGE STRUCTURE
   // These are the HTML parts this script reads and updates.
   // =========================================
   document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +51,14 @@
     const moreFilterGroups = document.getElementById('moreFilterGroups');
     const clearPreferences = document.getElementById('clearPreferences');
     const selectedPreferencesPanel = document.getElementById('selectedPreferences');
-    const searchHistoryKey = 'teyoSearchHistory';
+    const searchHistoryKey = 'teyoSearchHistoryV2';
+    const seededPopularSearches = [
+      'wireless earbuds',
+      'smartwatches',
+      'electric vehicles',
+      'home office gear',
+      'new laptop models'
+    ];
     const apiBaseUrl = window.location.port === '5500' ? 'http://localhost:3000' : '';
 
     if (!searchInput || !blankStage || !popularSearches || !popularList || !productGrid || !searchResults) {
@@ -39,9 +71,11 @@
     } catch (error) {
       searchHistory = {};
     }
+    seededPopularSearches.forEach((term) => delete searchHistory[term]);
+    window.localStorage.setItem(searchHistoryKey, JSON.stringify(searchHistory));
 
     // =========================================
-    // SEARCH CATEGORIES + FILTER LABELS
+    // SECTION 02: SEARCH CATEGORIES + FILTER LABELS
     // Edit here to change category names, visible filter groups,
     // and the option names users can choose from.
     // =========================================
@@ -184,7 +218,7 @@
     };
 
     // =========================================
-    // CATEGORY FILTERS
+    // SECTION 03: CATEGORY FILTERS
     // These define filter groups by item type.
     // =========================================
     const filterKeywords = {
@@ -207,11 +241,11 @@
     };
 
     // =========================================
-    // PREFERENCE SCHEMAS
+    // SECTION 04: PREFERENCE SCHEMAS
     // These define all the option fields shown in the search filters.
     // =========================================
     // =========================================
-    // PREFERENCE CHECKBOXES / SEARCH FIELDS
+    // SECTION 05: PREFERENCE CHECKBOXES / SEARCH FIELDS
     // Change these values to edit visible text labels, price ranges,
     // and the default filter options shown in the sidebar.
     // =========================================
@@ -870,8 +904,10 @@
       renderProducts(resultsQuery.textContent);
     });
 
-    // OWNER CATALOG IMPORT
+    // =========================================
+    // SECTION 06: OWNER CATALOG IMPORT
     // The button stays invisible until Google Sign-In confirms the owner's account, verified server-side.
+    // =========================================
     const ownerToolsButton = document.getElementById('ownerToolsButton');
     const ownerToolsPanel = document.getElementById('ownerToolsPanel');
     const ownerCatalogSyncForm = document.getElementById('ownerCatalogSyncForm');
@@ -893,25 +929,84 @@
             verifiedOwnerEmail = String(payload.email || '').toLowerCase();
             ownerToolsButton.classList.add('owner-tools-visible');
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
+            ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {
             ownerToolsButton.classList.remove('owner-tools-visible');
+            ownerCatalogMessage.textContent = result?.message || 'Google sign-in did not match the owner account.';
           }
         } catch (error) {
           ownerToolsButton.classList.remove('owner-tools-visible');
+          ownerCatalogMessage.textContent = 'Google sign-in is unavailable. Enter the owner email and access key instead.';
         }
       }
 
-      if (window.google?.accounts?.id && window.TEYO_GOOGLE_CLIENT_ID) {
+      async function verifyManualOwnerAccess() {
+        const emailValue = String(document.getElementById('ownerCatalogEmail').value || '').trim();
+        const keyValue = String(document.getElementById('ownerCatalogKey').value || '').trim();
+
+        if (!emailValue || !keyValue) {
+          ownerCatalogMessage.textContent = 'Enter the owner email and access key to unlock the owner tools.';
+          return false;
+        }
+
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/admin/owner-verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: emailValue, accessKey: keyValue })
+          });
+          const result = await response.json();
+
+          if (response.ok && result.success) {
+            verifiedOwnerEmail = String(emailValue).toLowerCase();
+            ownerToolsButton.classList.add('owner-tools-visible');
+            ownerCatalogMessage.textContent = 'Owner access confirmed.';
+            return true;
+          }
+
+          ownerToolsButton.classList.remove('owner-tools-visible');
+          ownerCatalogMessage.textContent = result?.message || 'Owner access was denied.';
+          return false;
+        } catch (error) {
+          ownerToolsButton.classList.remove('owner-tools-visible');
+          ownerCatalogMessage.textContent = 'Unable to verify owner access. Check the owner email and key.';
+          return false;
+        }
+      }
+
+      let googleSignInInitialized = false;
+
+      function initializeGoogleSignIn() {
+        if (googleSignInInitialized || !window.google?.accounts?.id || !window.TEYO_GOOGLE_CLIENT_ID) {
+          return googleSignInInitialized;
+        }
+
         window.google.accounts.id.initialize({
           client_id: window.TEYO_GOOGLE_CLIENT_ID,
           auto_select: true,
           callback: verifyGoogleCredential
         });
         window.google.accounts.id.prompt();
+        googleSignInInitialized = true;
+        return true;
       }
 
-      ownerToolsButton.addEventListener('click', () => {
-        if (!verifiedOwnerEmail) return;
+      if (!initializeGoogleSignIn()) {
+        window.addEventListener('load', initializeGoogleSignIn, { once: true });
+        let googleAttempts = 0;
+        const googleRetryTimer = window.setInterval(() => {
+          googleAttempts += 1;
+          if (initializeGoogleSignIn() || googleAttempts >= 20) {
+            window.clearInterval(googleRetryTimer);
+          }
+        }, 250);
+      }
+
+      ownerToolsButton.addEventListener('click', async () => {
+        if (!verifiedOwnerEmail) {
+          const manualVerified = await verifyManualOwnerAccess();
+          if (!manualVerified) return;
+        }
         ownerToolsPanel.hidden = !ownerToolsPanel.hidden;
         ownerToolsButton.setAttribute('aria-expanded', String(!ownerToolsPanel.hidden));
       });
@@ -969,3 +1064,4 @@
     updatePopularSearches('');
   });
 })();
+

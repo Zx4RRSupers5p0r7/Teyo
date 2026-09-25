@@ -1,6 +1,6 @@
 ﻿/* ==========================================================
-   Teyo Styles - GLOBAL THEME / COLORS / DEFAULT VISUAL LOOK
-   Change colors, default text color, spacing, and page skin here.
+   SECTION 01: DESIGN TOKENS / COLORS / THEME SETTINGS
+   Change the base colors, spacing values, and page skin here.
    ========================================================== */
 :root {
   --bg: #050505;
@@ -17,7 +17,7 @@
 * { box-sizing: border-box; }
 
 /* ==========================================================
-   GLOBAL PAGE / BODY STYLING
+   SECTION 02: GLOBAL PAGE LAYOUT / BODY STYLING
    Controls the full-page background and default text styling.
    ========================================================== */
 
@@ -26,17 +26,17 @@ html, body {
   width: 100%;
   min-height: 100%;
   height: 100%;
-  background: var(--bg);
+  background: #060606;
   font-family: 'Inter', 'Segoe UI', sans-serif;
 }
 
 body {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.14), transparent 30%),
-    radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.1), transparent 32%),
-    radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.08), transparent 25%),
-    linear-gradient(135deg, #020202 0%, #050505 35%, #0a0a0a 100%);
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,0.12), transparent 24%),
+    radial-gradient(circle at 78% 24%, rgba(255,255,255,0.08), transparent 28%),
+    radial-gradient(circle at 50% 80%, rgba(255,255,255,0.05), transparent 26%),
+    linear-gradient(135deg, #020202 0%, #070707 38%, #0d0d0d 100%);
   color: var(--text);
 }
 
@@ -57,8 +57,8 @@ body {
   overflow: hidden;
   padding-top: 34px;
   background:
-    linear-gradient(rgba(255,255,255,0.02), rgba(255,255,255,0.01)),
-    radial-gradient(circle at center, rgba(255,255,255,0.08), transparent 40%);
+    linear-gradient(rgba(255,255,255,0.018), rgba(255,255,255,0.006)),
+    radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 44%);
 }
 
 .blank-stage::before {
@@ -66,11 +66,11 @@ body {
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 72px 72px;
-  mask-image: radial-gradient(circle at center, black 25%, transparent 85%);
-  opacity: 0.45;
+    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: 68px 68px;
+  mask-image: radial-gradient(circle at center, black 20%, transparent 82%);
+  opacity: 0.42;
 }
 
 .ambient {
@@ -119,7 +119,7 @@ body {
 }
 
 /* ==========================================================
-   SEARCH BAR / HERO TEXT AREA
+   SECTION 03: SEARCH BAR / HERO TEXT AREA
    Change width, height, border radius, font size, and placeholder text style here.
    This controls the main search box and top landing layout.
    ========================================================== */
@@ -214,7 +214,7 @@ body {
 }
 
 /* ==========================================================
-   POPULAR SEARCHES BOX SIZE + POSITION
+   SECTION 04: POPULAR SEARCHES BOX
    Change width, height, padding, and position here if you want to resize
    the box that shows trending/popular search terms.
    ========================================================== */
@@ -223,7 +223,7 @@ body {
   top: 0;
   left: 0;
   width: 150px;
-  height: 205px;
+  height: 300px;
   padding: 14px 18px 12px;
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -238,7 +238,7 @@ body {
 }
 
 /* ==========================================================
-   RESULTS AREA / MAIN SEARCH CONTENT AREA
+   SECTION 05: RESULTS AREA / MAIN SEARCH CONTENT AREA
    This controls the results panel and content width after search.
    ========================================================== */
 .search-results {
@@ -287,7 +287,7 @@ body {
 }
 
 /* ==========================================================
-   SEARCH PREFERENCES PANEL
+   SECTION 06: SEARCH PREFERENCES PANEL
    The panel is hidden here while the popular searches box stays visible.
    Remove this rule if you want the preferences panel to appear again.
    ========================================================== */
@@ -296,12 +296,12 @@ body {
 }
 
 /* ==========================================================
-   OWNER CATALOG BUTTON + IMPORT PANEL
+   SECTION 07: OWNER CATALOG BUTTON + IMPORT PANEL
    Invisible by default. Only revealed after the server confirms
    Google Sign-In for the configured owner email.
    ========================================================== */
 .owner-tools-button {
-  display: none;
+  display: grid;
   position: fixed;
   right: 20px;
   bottom: 20px;

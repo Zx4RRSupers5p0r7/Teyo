@@ -90,6 +90,19 @@ const PUBLIC_FILE_ALLOWLIST = new Set([
   'site.webmanifest',
   'teyo-logo-1024.png'
 ]);
+const liveReloadFiles = [
+  'index.html',
+  'marketplace.html',
+  'partners.html',
+  'admin.html',
+  'inventory.html',
+  'contact.html',
+  'guard-landing.html',
+  'guard-dashboard.html',
+  'styles.css',
+  'script.js',
+  'teyo-taxonomy.js'
+];
 
 let inMemoryData = null;
 let writeQueue = Promise.resolve();
@@ -108,10 +121,10 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", 'https://unpkg.com', 'https://accounts.google.com', "'unsafe-inline'"],
-      styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com', "'unsafe-inline'"],
+      styleSrc: ["'self'", 'https://fonts.googleapis.com', 'https://unpkg.com', 'https://accounts.google.com', "'unsafe-inline'"],
       fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
       imgSrc: ["'self'", 'https:', 'data:'],
-      connectSrc: ["'self'", 'https://api.stripe.com', 'https://nominatim.openstreetmap.org', 'https://overpass-api.de'],
+      connectSrc: ["'self'", 'https://api.stripe.com', 'https://accounts.google.com', 'https://nominatim.openstreetmap.org', 'https://overpass-api.de'],
       frameSrc: ["'self'", 'https://www.google.com', 'https://maps.google.com', 'https://accounts.google.com'],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -5139,6 +5152,23 @@ app.get('/guard-dashboard', (req, res) => {
 
 app.get('/guard-dashboard.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'guard-dashboard.html'));
+});
+
+app.get('/__teyo_live_version', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.sendStatus(404);
+  }
+
+  const version = liveReloadFiles.reduce((latest, fileName) => {
+    try {
+      return Math.max(latest, fs.statSync(path.join(__dirname, fileName)).mtimeMs);
+    } catch (error) {
+      return latest;
+    }
+  }, 0);
+
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({ version });
 });
 
 app.get('/:fileName', (req, res, next) => {

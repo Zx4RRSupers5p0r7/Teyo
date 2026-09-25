@@ -752,6 +752,31 @@ function normalizeJsonLdStoreProducts(html, sourceUrl, partner) {
   }, sourceUrl, partner);
 }
 
+async function normalizeStorePageWithAi(html, sourceUrl, partner) {
+  if (!openAiApiKey) {
+    return [];
+  }
+
+  const pageText = sanitizePlainText(stripHtml(String(html || '')).replace(/\s+/g, ' '), 80000);
+  if (!pageText) {
+    return [];
+  }
+
+  const result = await callOpenAiJson({
+    system: 'You extract real product listings from public store pages for a marketplace importer. Return JSON only. Never invent products, prices, URLs, images, or stock. Only use facts present in the page text.',
+    prompt: [
+      'Extract every product listing you can identify from this store page.',
+      'Return an object with a products array. Each product may contain: id, name, category, price, url, imageUrl, description, stockStatus, rating, reviewCount.',
+      'Use the store page URL as the fallback URL when an item URL is not available.',
+      `Store page URL: ${sourceUrl}`,
+      `Page text:\n${pageText}`
+    ].join('\n'),
+    temperature: 0
+  });
+
+  return normalizeGenericProducts({ products: Array.isArray(result.products) ? result.products : [] }, sourceUrl, partner);
+}
+
 function normalizeStoreFeedProducts(payload, partner, sourceUrl, format = 'auto') {
   const normalizedFormat = normalizeFeedFormat(format);
   if (normalizedFormat === 'shopify-json') {
@@ -1291,9 +1316,111 @@ function seedDemoMarketplaceData(data) {
       approved: true,
       visible: true,
       createdAt: new Date().toISOString()
+    },
+    {
+      id: 'demo-product-4',
+      productName: 'Harbor Wool Scarf',
+      companyName: demoPartner.companyName,
+      ownerEmail: demoPartner.ownerEmail,
+      category: 'accessories',
+      price: '$49',
+      websiteUrl: demoPartner.websiteUrl,
+      description: 'Soft wool scarf designed for cool waterfront walks and everyday layering.',
+      imageUrl: '',
+      stockStatus: 'In stock',
+      safetyNote: 'Customers can see online availability and nearby store stock before purchasing.',
+      stores: ['Toronto Flagship', 'Online'],
+      sizeOptions: ['OS'],
+      sizeInventory: [
+        { storeName: 'Toronto Flagship', size: 'OS', stockStatus: 'In stock', restockDate: '' },
+        { storeName: 'Online', size: 'OS', stockStatus: 'In stock', restockDate: '' }
+      ],
+      rating: '4.7',
+      reviewCount: '31',
+      verifiedSeller: true,
+      verificationStatus: 'Verified seller',
+      trustSummary: 'Online and nearby store availability are shown together for easier shopping.',
+      hasPhysicalStore: true,
+      physicalStoreLocation: 'Toronto, ON',
+      approved: true,
+      visible: true,
+      createdAt: new Date().toISOString()
     }
   ];
 
+  return true;
+}
+
+function ensureDemoHarborScarf(data) {
+  if (!Array.isArray(data?.products)) {
+    return false;
+  }
+
+  const existingBeanie = data.products.find((entry) => entry.id === 'demo-product-3');
+  const source = existingBeanie || data.products[0] || data.partners?.[0] || {};
+  const companyName = source.companyName || 'Northstar Outfitters';
+  const ownerEmail = source.ownerEmail || 'demo@teyo.ca';
+  const websiteUrl = source.websiteUrl || 'https://northstar.example.com';
+  let changed = false;
+
+  if (!existingBeanie) {
+    data.products.push({
+      id: 'demo-product-3',
+      productName: 'Harbor Knit Beanie',
+      companyName,
+      ownerEmail,
+      category: 'accessories',
+      price: '$39',
+      websiteUrl,
+      description: 'Merino knit accessory with quick online shipping and in-store pickup.',
+      imageUrl: '',
+      stockStatus: 'Back soon',
+      stores: ['Toronto Flagship', 'Online'],
+      sizeOptions: ['OS'],
+      sizeInventory: [{ storeName: 'Online', size: 'OS', stockStatus: 'In stock', restockDate: '' }],
+      rating: '4.9',
+      reviewCount: '42',
+      verifiedSeller: true,
+      verificationStatus: 'Verified seller',
+      trustSummary: 'Restock events and stock status are surfaced across channels.',
+      approved: true,
+      visible: true,
+      createdAt: new Date().toISOString()
+    });
+    changed = true;
+  }
+
+  if (data.products.some((entry) => entry.id === 'demo-product-4')) return changed;
+
+  data.products.push({
+    id: 'demo-product-4',
+    productName: 'Harbor Wool Scarf',
+    companyName,
+    ownerEmail,
+    category: 'accessories',
+    price: '$49',
+    websiteUrl,
+    description: 'Soft wool scarf designed for cool waterfront walks and everyday layering.',
+    imageUrl: '',
+    stockStatus: 'In stock',
+    safetyNote: 'Customers can see online availability and nearby store stock before purchasing.',
+    stores: ['Toronto Flagship', 'Online'],
+    sizeOptions: ['OS'],
+    sizeInventory: [
+      { storeName: 'Toronto Flagship', size: 'OS', stockStatus: 'In stock', restockDate: '' },
+      { storeName: 'Online', size: 'OS', stockStatus: 'In stock', restockDate: '' }
+    ],
+    rating: '4.7',
+    reviewCount: '31',
+    verifiedSeller: true,
+    verificationStatus: 'Verified seller',
+    trustSummary: 'Online and nearby store availability are shown together for easier shopping.',
+    hasPhysicalStore: true,
+    physicalStoreLocation: 'Toronto, ON',
+    approved: true,
+    visible: true,
+    createdAt: new Date().toISOString()
+  });
   return true;
 }
 
@@ -1886,10 +2013,12 @@ async function initializeStorage() {
 
 function loadData() {
   if (inMemoryData) {
+    if (ensureDemoHarborScarf(inMemoryData)) saveData(inMemoryData);
     return inMemoryData;
   }
 
   inMemoryData = readLocalDataFallback();
+  if (ensureDemoHarborScarf(inMemoryData)) saveData(inMemoryData);
   return inMemoryData;
 }
 
@@ -2508,6 +2637,7 @@ async function runPartnerStoreSync(partner, data, options = {}) {
 
     let payload = null;
     let importedProducts = [];
+    let pageHtml = '';
     let selectedUrl = '';
     let lastError = 'Store source could not be reached.';
     for (const candidate of attempts) {
@@ -2526,8 +2656,8 @@ async function runPartnerStoreSync(partner, data, options = {}) {
         .slice(0, STORE_SYNC_MAX_PRODUCTS);
     } else {
       try {
-        const html = await fetchTextWithTimeout(sync.sourceUrl);
-        importedProducts = normalizeJsonLdStoreProducts(html, sync.sourceUrl, partner)
+        pageHtml = await fetchTextWithTimeout(sync.sourceUrl);
+        importedProducts = normalizeJsonLdStoreProducts(pageHtml, sync.sourceUrl, partner)
           .filter((entry) => entry && entry.productName && entry.websiteUrl)
           .slice(0, STORE_SYNC_MAX_PRODUCTS);
         if (importedProducts.length) {
@@ -2535,6 +2665,16 @@ async function runPartnerStoreSync(partner, data, options = {}) {
         }
       } catch (error) {
         lastError = `${sync.sourceUrl}: ${sanitizePlainText(error.message, 240) || 'fetch failed'}`;
+      }
+    }
+
+    if (!importedProducts.length && pageHtml && openAiApiKey) {
+      try {
+        importedProducts = (await normalizeStorePageWithAi(pageHtml, sync.sourceUrl, partner))
+          .filter((entry) => entry && entry.productName && entry.websiteUrl)
+          .slice(0, STORE_SYNC_MAX_PRODUCTS);
+      } catch (error) {
+        lastError = `AI catalog extraction failed: ${sanitizePlainText(error.message, 240) || 'provider error'}`;
       }
     }
 
@@ -5296,6 +5436,10 @@ app.get('/guard-dashboard', (req, res) => {
 
 app.get('/guard-dashboard.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'guard-dashboard.html'));
+});
+
+app.get('/marketplace.html', (req, res) => {
+  res.redirect('/');
 });
 
 app.get('/__teyo_live_version', (req, res) => {

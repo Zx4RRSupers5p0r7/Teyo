@@ -985,12 +985,8 @@
           auto_select: true,
           callback: verifyGoogleCredential
         });
-        window.google.accounts.id.prompt();
-        window.google.accounts.id.renderButton(ownerGoogleSignIn, {
-          type: 'standard',
-          theme: 'outline',
-          size: 'medium',
-          text: 'signin_with'
+        ownerGoogleSignIn.addEventListener('click', () => {
+          window.google.accounts.id.prompt();
         });
         googleSignInInitialized = true;
         return true;

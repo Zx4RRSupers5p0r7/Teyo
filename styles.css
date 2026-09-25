@@ -323,8 +323,18 @@ body {
   right: 20px;
   bottom: 20px;
   z-index: 20;
-  min-height: 40px;
+  width: 68px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid #444;
+  border-radius: 3px;
+  background: #050505;
+  color: #fff;
+  font-size: 11px;
+  cursor: pointer;
 }
+
+.owner-google-signin:hover { border-color: #888; }
 
 .owner-tools-button.owner-tools-visible {
   display: grid;

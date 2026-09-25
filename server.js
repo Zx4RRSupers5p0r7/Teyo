@@ -934,6 +934,48 @@ function hasOwnerAccess(customerEmail) {
   return Boolean(ownerEmail && email && normalizeName(email) === normalizeName(ownerEmail));
 }
 
+const OWNER_SESSION_COOKIE = 'teyo_owner_session';
+const OWNER_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
+
+function ownerSessionSecret() {
+  return ownerAccessKey || googleClientId;
+}
+
+function createOwnerSession(email) {
+  const payload = Buffer.from(JSON.stringify({
+    email: sanitizeEmail(email),
+    expiresAt: Date.now() + OWNER_SESSION_MAX_AGE * 1000
+  })).toString('base64url');
+  const signature = crypto.createHmac('sha256', ownerSessionSecret()).update(payload).digest('base64url');
+  return `${payload}.${signature}`;
+}
+
+function getCookieValue(req, name) {
+  const cookies = String(req.headers.cookie || '').split(';');
+  const entry = cookies.find((value) => value.trim().startsWith(`${name}=`));
+  return entry ? decodeURIComponent(entry.trim().slice(name.length + 1)) : '';
+}
+
+function verifyOwnerSession(req) {
+  const token = getCookieValue(req, OWNER_SESSION_COOKIE);
+  const [payload, signature] = token.split('.');
+  if (!payload || !signature || !ownerSessionSecret()) {
+    return '';
+  }
+
+  const expected = crypto.createHmac('sha256', ownerSessionSecret()).update(payload).digest('base64url');
+  if (!secureEquals(signature, expected)) {
+    return '';
+  }
+
+  try {
+    const session = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
+    return session.expiresAt > Date.now() && hasOwnerAccess(session.email) ? sanitizeEmail(session.email) : '';
+  } catch (error) {
+    return '';
+  }
+}
+
 function hasOwnerKeyAccess(customerEmail, accessKey = '') {
   return hasOwnerAccess(customerEmail) && Boolean(ownerAccessKey && secureEquals(String(accessKey || '').trim(), ownerAccessKey));
 }
@@ -4068,10 +4110,28 @@ app.post('/api/admin/google-verify', express.json({ limit: '20kb' }), async (req
       return res.status(403).json({ success: false, message: 'This Google account is not the site owner.' });
     }
 
+    const cookieParts = [
+      `${OWNER_SESSION_COOKIE}=${encodeURIComponent(createOwnerSession(tokenInfo.email))}`,
+      'HttpOnly',
+      'SameSite=Lax',
+      'Path=/',
+      `Max-Age=${OWNER_SESSION_MAX_AGE}`
+    ];
+    if (process.env.NODE_ENV === 'production') cookieParts.push('Secure');
+    res.setHeader('Set-Cookie', cookieParts.join('; '));
     return res.json({ success: true, email: sanitizeEmail(tokenInfo.email) });
   } catch (error) {
     return res.status(401).json({ success: false, message: 'Unable to verify Google sign-in.' });
   }
+});
+
+app.get('/api/admin/google-session', (req, res) => {
+  const email = verifyOwnerSession(req);
+  if (!email) {
+    return res.status(401).json({ success: false });
+  }
+
+  return res.json({ success: true, email });
 });
 
 app.post('/api/admin/owner-verify', express.json({ limit: '20kb' }), (req, res) => {

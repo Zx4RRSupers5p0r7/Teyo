@@ -975,6 +975,26 @@
 
       let googleSignInInitialized = false;
 
+      async function restoreOwnerSession() {
+        try {
+          const response = await fetch(`${apiBaseUrl}/api/admin/google-session`, { credentials: 'same-origin', cache: 'no-store' });
+          const result = await response.json();
+          const restoredEmail = String(result.email || '').trim().toLowerCase();
+          if (!response.ok || !result.success || restoredEmail !== configuredOwnerEmail) {
+            return false;
+          }
+
+          verifiedOwnerEmail = restoredEmail;
+          ownerToolsButton.classList.add('owner-tools-visible');
+          ownerGoogleSignIn.hidden = true;
+          document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
+          ownerCatalogMessage.textContent = 'Owner access restored.';
+          return true;
+        } catch (error) {
+          return false;
+        }
+      }
+
       function initializeGoogleSignIn() {
         if (googleSignInInitialized || !window.google?.accounts?.id || !window.TEYO_GOOGLE_CLIENT_ID) {
           return googleSignInInitialized;
@@ -996,7 +1016,8 @@
         return true;
       }
 
-      if (!initializeGoogleSignIn()) {
+      function startGoogleSignIn() {
+        if (initializeGoogleSignIn()) return;
         window.addEventListener('load', initializeGoogleSignIn, { once: true });
         let googleAttempts = 0;
         const googleRetryTimer = window.setInterval(() => {
@@ -1006,6 +1027,10 @@
           }
         }, 250);
       }
+
+      restoreOwnerSession().then((restored) => {
+        if (!restored) startGoogleSignIn();
+      });
 
       ownerToolsButton.addEventListener('click', async () => {
         if (!verifiedOwnerEmail) {

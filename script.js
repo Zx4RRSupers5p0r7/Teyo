@@ -908,6 +908,7 @@
     const ownerToolsButton = document.getElementById('ownerToolsButton');
     const ownerToolsPanel = document.getElementById('ownerToolsPanel');
     const ownerGoogleSignIn = document.getElementById('ownerGoogleSignIn');
+    const ownerGoogleMessage = document.getElementById('ownerGoogleMessage');
     const ownerCatalogSyncForm = document.getElementById('ownerCatalogSyncForm');
     const ownerCatalogMessage = document.getElementById('ownerCatalogMessage');
     const configuredOwnerEmail = 'chazmiller872@gmail.com';
@@ -916,7 +917,6 @@
       let verifiedOwnerEmail = '';
 
       async function verifyGoogleCredential(credentialResponse) {
-        ownerGoogleSignIn.hidden = true;
         try {
           const response = await fetch(`${apiBaseUrl}/api/admin/google-verify`, {
             method: 'POST',
@@ -928,15 +928,19 @@
           if (response.ok && result.success && verifiedEmail === configuredOwnerEmail) {
             verifiedOwnerEmail = verifiedEmail;
             ownerToolsButton.classList.add('owner-tools-visible');
+            ownerGoogleSignIn.hidden = true;
+            ownerGoogleMessage.textContent = '';
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
             ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {
             ownerToolsButton.classList.remove('owner-tools-visible');
-            ownerCatalogMessage.textContent = result?.message || 'Google sign-in did not match the owner account.';
+            ownerGoogleSignIn.hidden = false;
+            ownerGoogleMessage.textContent = result?.message || 'Google sign-in did not match the owner account.';
           }
         } catch (error) {
           ownerToolsButton.classList.remove('owner-tools-visible');
-          ownerCatalogMessage.textContent = 'Google sign-in is unavailable. Enter the owner email and access key instead.';
+          ownerGoogleSignIn.hidden = false;
+          ownerGoogleMessage.textContent = 'Google sign-in is unavailable. Check the Google account and try again.';
         }
       }
 

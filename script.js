@@ -910,11 +910,13 @@
     const ownerGoogleSignIn = document.getElementById('ownerGoogleSignIn');
     const ownerCatalogSyncForm = document.getElementById('ownerCatalogSyncForm');
     const ownerCatalogMessage = document.getElementById('ownerCatalogMessage');
+    const configuredOwnerEmail = 'chazmiller872@gmail.com';
 
     if (ownerToolsButton && ownerToolsPanel && ownerCatalogSyncForm && ownerCatalogMessage) {
       let verifiedOwnerEmail = '';
 
       async function verifyGoogleCredential(credentialResponse) {
+        ownerGoogleSignIn.hidden = true;
         try {
           const response = await fetch(`${apiBaseUrl}/api/admin/google-verify`, {
             method: 'POST',
@@ -922,11 +924,10 @@
             body: JSON.stringify({ credential: credentialResponse.credential })
           });
           const result = await response.json();
-          if (response.ok && result.success) {
-            const payload = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
-            verifiedOwnerEmail = String(payload.email || '').toLowerCase();
+          const verifiedEmail = String(result.email || '').trim().toLowerCase();
+          if (response.ok && result.success && verifiedEmail === configuredOwnerEmail) {
+            verifiedOwnerEmail = verifiedEmail;
             ownerToolsButton.classList.add('owner-tools-visible');
-            ownerGoogleSignIn.hidden = true;
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
             ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {
@@ -986,6 +987,9 @@
           callback: verifyGoogleCredential
         });
         ownerGoogleSignIn.addEventListener('click', () => {
+          ownerGoogleSignIn.classList.remove('signin-burst');
+          void ownerGoogleSignIn.offsetWidth;
+          ownerGoogleSignIn.classList.add('signin-burst');
           window.google.accounts.id.prompt();
         });
         googleSignInInitialized = true;

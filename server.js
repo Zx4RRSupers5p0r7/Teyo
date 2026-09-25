@@ -191,7 +191,7 @@ function secureEquals(a, b) {
 }
 
 function requireAdmin(req, res, next) {
-  if (!hasOwnerHeader(req)) {
+  if (!hasOwnerHeader(req) && !verifyOwnerSession(req)) {
     return res.status(401).json({ success: false, message: 'Unauthorized admin request.' });
   }
 

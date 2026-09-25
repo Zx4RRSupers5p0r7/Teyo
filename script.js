@@ -939,40 +939,6 @@
         }
       }
 
-      async function verifyManualOwnerAccess() {
-        const emailValue = String(document.getElementById('ownerCatalogEmail').value || '').trim();
-        const keyValue = String(document.getElementById('ownerCatalogKey').value || '').trim();
-
-        if (!emailValue || !keyValue) {
-          ownerCatalogMessage.textContent = 'Enter the owner email and access key to unlock the owner tools.';
-          return false;
-        }
-
-        try {
-          const response = await fetch(`${apiBaseUrl}/api/admin/owner-verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: emailValue, accessKey: keyValue })
-          });
-          const result = await response.json();
-
-          if (response.ok && result.success) {
-            verifiedOwnerEmail = String(emailValue).toLowerCase();
-            ownerToolsButton.classList.add('owner-tools-visible');
-            ownerCatalogMessage.textContent = 'Owner access confirmed.';
-            return true;
-          }
-
-          ownerToolsButton.classList.remove('owner-tools-visible');
-          ownerCatalogMessage.textContent = result?.message || 'Owner access was denied.';
-          return false;
-        } catch (error) {
-          ownerToolsButton.classList.remove('owner-tools-visible');
-          ownerCatalogMessage.textContent = 'Unable to verify owner access. Check the owner email and key.';
-          return false;
-        }
-      }
-
       let googleSignInInitialized = false;
 
       async function restoreOwnerSession() {
@@ -1033,10 +999,6 @@
       });
 
       ownerToolsButton.addEventListener('click', async () => {
-        if (!verifiedOwnerEmail) {
-          const manualVerified = await verifyManualOwnerAccess();
-          if (!manualVerified) return;
-        }
         ownerToolsPanel.hidden = !ownerToolsPanel.hidden;
         ownerToolsButton.setAttribute('aria-expanded', String(!ownerToolsPanel.hidden));
       });
@@ -1044,7 +1006,6 @@
       ownerCatalogSyncForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const ownerEmail = document.getElementById('ownerCatalogEmail').value.trim();
-        const ownerKey = document.getElementById('ownerCatalogKey').value;
         ownerCatalogMessage.textContent = 'Importing products...';
 
         try {
@@ -1052,8 +1013,7 @@
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-owner-email': ownerEmail,
-              'x-owner-key': ownerKey
+              'x-owner-email': ownerEmail
             },
             body: JSON.stringify({
               companyName: document.getElementById('ownerCatalogCompanyName').value.trim(),

@@ -337,18 +337,6 @@ body {
 
 .owner-google-signin:hover { border-color: #888; }
 
-.owner-google-message {
-  position: fixed;
-  right: 20px;
-  bottom: 58px;
-  z-index: 20;
-  max-width: 220px;
-  color: #d6d6d6;
-  font-size: 10px;
-  line-height: 1.4;
-  text-align: right;
-}
-
 .owner-google-signin::before,
 .owner-google-signin::after {
   position: absolute;

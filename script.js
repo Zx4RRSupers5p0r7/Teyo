@@ -908,7 +908,6 @@
     const ownerToolsButton = document.getElementById('ownerToolsButton');
     const ownerToolsPanel = document.getElementById('ownerToolsPanel');
     const ownerGoogleSignIn = document.getElementById('ownerGoogleSignIn');
-    const ownerGoogleMessage = document.getElementById('ownerGoogleMessage');
     const ownerCatalogSyncForm = document.getElementById('ownerCatalogSyncForm');
     const ownerCatalogMessage = document.getElementById('ownerCatalogMessage');
     const configuredOwnerEmail = 'chazmiller872@gmail.com';
@@ -928,19 +927,13 @@
           if (response.ok && result.success && verifiedEmail === configuredOwnerEmail) {
             verifiedOwnerEmail = verifiedEmail;
             ownerToolsButton.classList.add('owner-tools-visible');
-            ownerGoogleSignIn.hidden = true;
-            ownerGoogleMessage.textContent = '';
             document.getElementById('ownerCatalogEmail').value = verifiedOwnerEmail;
             ownerCatalogMessage.textContent = 'Owner access confirmed.';
           } else {
             ownerToolsButton.classList.remove('owner-tools-visible');
-            ownerGoogleSignIn.hidden = false;
-            ownerGoogleMessage.textContent = result?.message || 'Google sign-in did not match the owner account.';
           }
         } catch (error) {
           ownerToolsButton.classList.remove('owner-tools-visible');
-          ownerGoogleSignIn.hidden = false;
-          ownerGoogleMessage.textContent = 'Google sign-in is unavailable. Check the Google account and try again.';
         }
       }
 
@@ -988,6 +981,7 @@
         window.google.accounts.id.initialize({
           client_id: window.TEYO_GOOGLE_CLIENT_ID,
           auto_select: true,
+          use_fedcm_for_prompt: true,
           callback: verifyGoogleCredential
         });
         ownerGoogleSignIn.addEventListener('click', () => {

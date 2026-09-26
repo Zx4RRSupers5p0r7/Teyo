@@ -136,10 +136,10 @@
         </div>
 
         <div class="lead-section">
-          <h2>Pending products</h2>
-          <p>Imported or submitted products stay hidden from the marketplace until you approve them here.</p>
+          <h2>Products</h2>
+          <p>Imported or submitted products stay hidden from the marketplace until you approve them here. "Orient image" is a paid, opt-in OpenAI action (roughly $0.02-$0.19 per image) that redraws the product photo facing the same direction on a plain background - it never runs automatically.</p>
           <div id="pendingProductList" class="lead-list">
-            <div class="list-item">Loading pending products…</div>
+            <div class="list-item">Loading products…</div>
           </div>
         </div>
 
@@ -280,12 +280,14 @@
           }
 
           const pending = products.filter((product) => !product.approved || !product.visible);
-          if (pending.length === 0) {
-            listEl.innerHTML = '<div class="list-item">No products waiting for approval.</div>';
+          const rest = products.filter((product) => product.approved && product.visible);
+          const ordered = [...pending, ...rest];
+          if (ordered.length === 0) {
+            listEl.innerHTML = '<div class="list-item">No products yet.</div>';
             return;
           }
 
-          listEl.innerHTML = pending.map((product) => `
+          listEl.innerHTML = ordered.map((product) => `
             <div class="lead-card">
               <div class="lead-meta">
                 <strong>${(product.productName || 'Untitled product').replace(/</g, '&lt;')}</strong>
@@ -293,9 +295,12 @@
               </div>
               <div class="lead-meta">
                 <span>${(product.price || '').replace(/</g, '&lt;')}</span>
-                <span>${new Date(product.createdAt || Date.now()).toLocaleString()}</span>
+                <span>${product.approved && product.visible ? 'Live' : 'Pending approval'}</span>
               </div>
-              <button class="contact-btn" type="button" data-approve-id="${product.id}">Approve</button>
+              <div class="lead-meta">
+                ${!product.approved || !product.visible ? `<button class="contact-btn" type="button" data-approve-id="${product.id}">Approve</button>` : ''}
+                ${product.imageUrl ? `<button class="contact-btn" type="button" data-orient-id="${product.id}">${product.orientedImageUrl ? 'Re-orient image ($)' : 'Orient image ($)'}</button>` : ''}
+              </div>
             </div>
           `).join('');
 
@@ -317,6 +322,36 @@
                 } else {
                   button.disabled = false;
                   button.textContent = 'Try again';
+                }
+              } catch (error) {
+                button.disabled = false;
+                button.textContent = 'Try again';
+              }
+            });
+          });
+
+          listEl.querySelectorAll('[data-orient-id]').forEach((button) => {
+            button.addEventListener('click', async () => {
+              const productId = button.getAttribute('data-orient-id');
+              if (!window.confirm('This calls OpenAI\'s paid image API (roughly $0.02-$0.19). Continue?')) {
+                return;
+              }
+              button.disabled = true;
+              button.textContent = 'Generating...';
+              try {
+                const response = await fetch(`/api/products/${productId}/orient-image`, {
+                  method: 'POST',
+                  headers: {
+                    'x-owner-email': 'chazmiller872@gmail.com',
+                    'x-owner-key': '^ty8e(%uI98dYhfgjeHDg0adj$#$'
+                  }
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                  await loadPendingProducts();
+                } else {
+                  button.disabled = false;
+                  button.textContent = result.message || 'Try again';
                 }
               } catch (error) {
                 button.disabled = false;

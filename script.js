@@ -736,8 +736,8 @@
         stock: product.stockStatus || 'Check availability',
         stockQuantity: Number.isFinite(Number(product.stockQuantity)) ? Number(product.stockQuantity) : null,
         price: product.price || 'Price pending',
-        thumb: product.imageUrl
-          ? `url("${product.imageUrl}") right center / contain no-repeat`
+        thumb: (product.orientedImageUrl || product.imageUrl)
+          ? `url("${product.orientedImageUrl || product.imageUrl}") right center / contain no-repeat`
           : productPalettes[Number(product.id || 0) % productPalettes.length]
       };
     }

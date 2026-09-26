@@ -2250,6 +2250,7 @@ function serializePublicProduct(entry) {
     websiteUrl: entry.websiteUrl,
     description: entry.description,
     imageUrl: entry.imageUrl,
+    orientedImageUrl: entry.orientedImageUrl || '',
     stockStatus: entry.stockStatus,
     stockQuantity: Number.isFinite(Number(entry.stockQuantity)) ? Number(entry.stockQuantity) : null,
     safetyNote: entry.safetyNote,
@@ -3206,7 +3207,66 @@ async function callOpenAiJson({ system, prompt, temperature = 0.2 }) {
   return JSON.parse(content || '{}');
 }
 
-// Open-ended AI search: understands ANY query (not just a fixed topic list)
+// Paid feature: uses OpenAI's image-edit endpoint (gpt-image-1) to redraw a product photo
+// facing a consistent direction on a plain dark background. Costs money per call (OpenAI-billed),
+// so this only runs when explicitly requested by the owner, never automatically during import.
+async function generateOrientedProductImage(sourceImageUrl) {
+  if (!openAiApiKey) {
+    const err = new Error('Image orientation requires OPENAI_API_KEY (this feature is not free).');
+    err.status = 503;
+    throw err;
+  }
+  if (!isSafeHttpUrl(sourceImageUrl)) {
+    const err = new Error('Product has no valid image to process.');
+    err.status = 400;
+    throw err;
+  }
+
+  const imageResponse = await fetch(sourceImageUrl);
+  if (!imageResponse.ok) {
+    const err = new Error(`Could not download the source image (HTTP ${imageResponse.status}).`);
+    err.status = 502;
+    throw err;
+  }
+  const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+  const imageContentType = imageResponse.headers.get('content-type') || 'image/png';
+
+  const form = new FormData();
+  form.append('model', 'gpt-image-1');
+  form.append('image', new Blob([imageBuffer], { type: imageContentType }), 'product.png');
+  form.append('prompt', [
+    'Redraw this exact product on a plain dark neutral background, catalog style.',
+    'Position and angle the product so it faces to the right, like items in a video game inventory catalog.',
+    'Keep the product\'s real shape, colors, text, and details accurate. Do not invent a different product.',
+    'Do not add extra objects, people, or text overlays.'
+  ].join(' '));
+  form.append('size', '1024x1024');
+
+  const response = await fetch('https://api.openai.com/v1/images/edits', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${openAiApiKey}` },
+    body: form
+  });
+  if (!response.ok) {
+    const errorPayload = await response.json().catch(() => null);
+    const code = errorPayload?.error?.code || '';
+    const isQuota = response.status === 429 || code === 'insufficient_quota' || code === 'credit_balance_exhausted';
+    const err = new Error(isQuota
+      ? 'Your OpenAI account has no credits left. Add billing credits at platform.openai.com to use image orientation.'
+      : (errorPayload?.error?.message || 'Image orientation request failed.'));
+    err.status = isQuota ? 429 : 502;
+    throw err;
+  }
+  const payload = await response.json();
+  const base64 = payload.data?.[0]?.b64_json;
+  if (!base64) {
+    const err = new Error('Image orientation response was invalid.');
+    err.status = 502;
+    throw err;
+  }
+  return `data:image/png;base64,${base64}`;
+}
+
 // and returns a normalized category, a short interpretation, and suggested
 // search keywords the client can use to match/rank its catalog.
 app.post('/api/ai/search', async (req, res) => {
@@ -4534,6 +4594,26 @@ app.post('/api/products/:id/approve', requireAdmin, (req, res) => {
   saveData(data);
 
   res.json({ success: true, product });
+});
+
+// Paid, opt-in only: redraws the product photo facing a consistent direction via OpenAI.
+// Never runs automatically — the owner must click this per product because it costs money.
+app.post('/api/products/:id/orient-image', requireAdmin, async (req, res) => {
+  const data = loadData();
+  const product = data.products.find((entry) => String(entry.id) === String(req.params.id));
+
+  if (!product) {
+    return res.status(404).json({ success: false, message: 'Product not found.' });
+  }
+
+  try {
+    const orientedImageUrl = await generateOrientedProductImage(product.imageUrl);
+    product.orientedImageUrl = orientedImageUrl;
+    saveData(data);
+    res.json({ success: true, product });
+  } catch (error) {
+    res.status(error.status || 502).json({ success: false, message: error.message || 'Image orientation failed.' });
+  }
 });
 
 app.delete('/api/products/:id', requireAdmin, (req, res) => {

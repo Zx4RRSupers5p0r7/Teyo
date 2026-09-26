@@ -31,6 +31,12 @@ const ownerEmail = sanitizeEmail(process.env.OWNER_EMAIL || '');
 const ownerAccessKey = String(process.env.OWNER_ACCESS_KEY || '').trim();
 const openAiApiKey = String(process.env.OPENAI_API_KEY || '').trim();
 const openAiModel = String(process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
+// Groq gives a free API key (console.groq.com) with no billing required and runs open models like Llama.
+const groqApiKey = String(process.env.GROQ_API_KEY || '').trim();
+const groqModel = String(process.env.GROQ_MODEL || 'llama-3.3-70b-versatile').trim();
+function hasAiProvider() {
+  return Boolean(groqApiKey || openAiApiKey);
+}
 const googleClientId = String(
   process.env.GOOGLE_CLIENT_ID || '902032103838-k6q5oi67vmn6grp562mh1bcbjta1eiml.apps.googleusercontent.com'
 ).trim();
@@ -859,7 +865,7 @@ function normalizeOpenGraphStoreProduct(html, sourceUrl, partner) {
 }
 
 async function normalizeStorePageWithAi(html, sourceUrl, partner) {
-  if (!openAiApiKey) {
+  if (!hasAiProvider()) {
     return [];
   }
 
@@ -2785,7 +2791,7 @@ async function runPartnerStoreSync(partner, data, options = {}) {
       }
     }
 
-    if (!importedProducts.length && pageHtml && openAiApiKey) {
+    if (!importedProducts.length && pageHtml && hasAiProvider()) {
       try {
         importedProducts = (await normalizeStorePageWithAi(pageHtml, sync.sourceUrl, partner))
           .filter((entry) => entry && entry.productName && entry.websiteUrl)
@@ -2795,7 +2801,7 @@ async function runPartnerStoreSync(partner, data, options = {}) {
       }
     }
 
-    if (!importedProducts.length && pageHtml && !openAiApiKey) {
+    if (!importedProducts.length && pageHtml && !hasAiProvider()) {
       lastError = 'That page blocked automatic reading (no product tags found). Paste a CSV row instead, or use a store with a public product feed.';
     }
 
@@ -3171,11 +3177,17 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json', limit: '
 app.use(express.json({ limit: '2mb' }));
 
 async function callOpenAiJson({ system, prompt, temperature = 0.2 }) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  // Prefer Groq since it's free with no billing; fall back to OpenAI if only that key is set.
+  const useGroq = Boolean(groqApiKey);
+  const endpoint = useGroq ? 'https://api.groq.com/openai/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
+  const apiKey = useGroq ? groqApiKey : openAiApiKey;
+  const model = useGroq ? groqModel : openAiModel;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiApiKey}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({
-      model: openAiModel,
+      model,
       temperature,
       response_format: { type: 'json_object' },
       messages: [
@@ -3200,7 +3212,7 @@ async function callOpenAiJson({ system, prompt, temperature = 0.2 }) {
 app.post('/api/ai/search', async (req, res) => {
   const query = sanitizePlainText(req.body?.query, 300);
   if (!query) return res.status(400).json({ success: false, message: 'A search query is required.' });
-  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI search is not configured.' });
+  if (!hasAiProvider()) return res.status(503).json({ success: false, message: 'AI search is not configured.' });
 
   const prompt = [
     'A shopper typed this into a universal marketplace search box that can match anything sold anywhere.',
@@ -3268,7 +3280,7 @@ app.post('/api/ai/describe-product', async (req, res) => {
   const detail = sanitizePlainText(req.body?.detail, 200);
   const query = sanitizePlainText(req.body?.query, 200);
   if (!name) return res.status(400).json({ success: false, message: 'A product name is required.' });
-  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI descriptions are not configured.' });
+  if (!hasAiProvider()) return res.status(503).json({ success: false, message: 'AI descriptions are not configured.' });
 
   const prompt = [
     'Write a short, appealing, factual-sounding marketplace product description for this listing.',
@@ -3300,7 +3312,7 @@ app.post('/api/ai/describe-product', async (req, res) => {
 app.post('/api/preferences/discover', async (req, res) => {
   const query = sanitizePlainText(req.body?.query, 500);
   if (!query) return res.status(400).json({ success: false, message: 'A search query is required.' });
-  if (!openAiApiKey) return res.status(503).json({ success: false, message: 'AI discovery is not configured.' });
+  if (!hasAiProvider()) return res.status(503).json({ success: false, message: 'AI discovery is not configured.' });
 
   const prompt = [
     'Analyze this marketplace search and return JSON only.',
@@ -3312,27 +3324,11 @@ app.post('/api/preferences/discover', async (req, res) => {
   ].join('\n');
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openAiApiKey}` },
-      body: JSON.stringify({
-        model: openAiModel,
-        temperature: 0.1,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: 'You are Teyo\'s marketplace search analyzer. Be conservative and never use unrelated attributes.' },
-          { role: 'user', content: prompt }
-        ]
-      })
+    const discovered = await callOpenAiJson({
+      system: 'You are Teyo\'s marketplace search analyzer. Be conservative and never use unrelated attributes.',
+      prompt,
+      temperature: 0.1
     });
-    if (!response.ok) {
-      const status = response.status === 429 ? 429 : 502;
-      const message = response.status === 429 ? 'AI discovery quota or rate limit reached.' : 'AI discovery provider failed.';
-      return res.status(status).json({ success: false, message });
-    }
-    const payload = await response.json();
-    const content = payload.choices?.[0]?.message?.content;
-    const discovered = JSON.parse(content || '{}');
     const attributes = Array.isArray(discovered.attributes) ? discovered.attributes.slice(0, 100).map((field, index) => ({
       id: sanitizePlainText(field.id || `attribute-${index + 1}`, 80).replace(/\s+/g, '-').toLowerCase(),
       name: sanitizePlainText(field.name, 120),
@@ -3347,11 +3343,11 @@ app.post('/api/preferences/discover', async (req, res) => {
       unit: sanitizePlainText(field.unit, 30),
       min: Number.isFinite(Number(field.min)) ? Number(field.min) : undefined,
       max: Number.isFinite(Number(field.max)) ? Number(field.max) : undefined,
-      source: 'openai-discovery'
+      source: 'ai-discovery'
     })).filter((field) => field.name && field.confidence >= 0.55) : [];
     return res.json({ success: true, context: { entity: discovered.entity, category: discovered.category, subcategory: discovered.subcategory, intent: discovered.intent, extractedRequirements: discovered.extractedRequirements || {} }, attributes });
   } catch (error) {
-    return res.status(502).json({ success: false, message: 'AI discovery response was invalid.' });
+    return res.status(error.status || 502).json({ success: false, message: error.message || 'AI discovery response was invalid.' });
   }
 });
 

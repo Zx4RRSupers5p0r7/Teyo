@@ -452,7 +452,7 @@ async function fetchTextWithTimeout(urlValue, timeoutMs = 9000) {
       method: 'GET',
       headers: {
         'Accept': 'text/html, text/css;q=0.9, */*;q=0.8',
-        'User-Agent': 'TeyoColorAnalyzer/1.0'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36'
       },
       signal: controller.signal
     });
@@ -808,6 +808,53 @@ function normalizeJsonLdStoreProducts(html, sourceUrl, partner) {
       description: product.description || '',
       status: product.offers?.availability || 'In stock'
     }))
+  }, sourceUrl, partner);
+}
+
+function extractMetaContent(html, names) {
+  for (const name of names) {
+    const match = String(html || '').match(
+      new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]+content=["']([^"']*)["']`, 'i')
+    ) || String(html || '').match(
+      new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]+(?:property|name)=["']${name}["']`, 'i')
+    );
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return '';
+}
+
+// Free fallback: reads Open Graph / meta tags so a single product link can work without an AI key.
+function normalizeOpenGraphStoreProduct(html, sourceUrl, partner) {
+  const source = String(html || '');
+  const name = extractMetaContent(source, ['og:title', 'twitter:title'])
+    || stripHtml((source.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || '');
+  if (!name) {
+    return [];
+  }
+
+  const image = extractMetaContent(source, ['og:image', 'og:image:secure_url', 'twitter:image'])
+    || (source.match(/itemprop=["']image["'][^>]+(?:src|content)=["']([^"']+)["']/i) || [])[1]
+    || '';
+  const priceRaw = extractMetaContent(source, [
+    'product:price:amount',
+    'og:price:amount',
+    'twitter:data1'
+  ]) || (source.match(/itemprop=["']price["'][^>]+content=["']([^"']+)["']/i) || [])[1] || '';
+  const description = extractMetaContent(source, ['og:description', 'twitter:description']);
+  const availability = extractMetaContent(source, ['product:availability', 'og:availability']);
+
+  return normalizeGenericProducts({
+    products: [{
+      id: sourceUrl,
+      name,
+      url: sourceUrl,
+      image,
+      price: priceRaw ? sanitizePlainText(priceRaw, 40) : '',
+      description,
+      status: availability || 'In stock'
+    }]
   }, sourceUrl, partner);
 }
 
@@ -2729,6 +2776,15 @@ async function runPartnerStoreSync(partner, data, options = {}) {
       }
     }
 
+    if (!importedProducts.length && pageHtml) {
+      importedProducts = normalizeOpenGraphStoreProduct(pageHtml, sync.sourceUrl, partner)
+        .filter((entry) => entry && entry.productName && entry.websiteUrl)
+        .slice(0, STORE_SYNC_MAX_PRODUCTS);
+      if (importedProducts.length) {
+        selectedUrl = sync.sourceUrl;
+      }
+    }
+
     if (!importedProducts.length && pageHtml && openAiApiKey) {
       try {
         importedProducts = (await normalizeStorePageWithAi(pageHtml, sync.sourceUrl, partner))
@@ -2740,7 +2796,7 @@ async function runPartnerStoreSync(partner, data, options = {}) {
     }
 
     if (!importedProducts.length && pageHtml && !openAiApiKey) {
-      lastError = 'This store page needs OPENAI_API_KEY on the Render service or an official JSON product feed.';
+      lastError = 'That page blocked automatic reading (no product tags found). Paste a CSV row instead, or use a store with a public product feed.';
     }
 
     if (!importedProducts.length) {

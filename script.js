@@ -737,7 +737,7 @@
         stockQuantity: Number.isFinite(Number(product.stockQuantity)) ? Number(product.stockQuantity) : null,
         price: product.price || 'Price pending',
         thumb: product.imageUrl
-          ? `url("${product.imageUrl}") center / cover no-repeat`
+          ? `url("${product.imageUrl}") right center / contain no-repeat`
           : productPalettes[Number(product.id || 0) % productPalettes.length]
       };
     }
@@ -775,8 +775,12 @@
         <article class="product-card" aria-label="${escapeHTML(product.name)}">
           <div class="product-thumb" style="--thumb-gradient: ${product.thumb};"></div>
           <div class="product-color-layer">
-            <span>${escapeHTML(product.price)}</span>
-            <span>${product.stockQuantity === null ? escapeHTML(product.stock) : `${product.stockQuantity} in stock`}</span>
+            <strong>${escapeHTML(product.name)}</strong>
+            <div class="product-card-details">
+              <span>${escapeHTML(product.price)}</span>
+              <span>${escapeHTML(product.size)}</span>
+              <span>${product.stockQuantity === null ? escapeHTML(product.stock) : `${product.stockQuantity} in stock`}</span>
+            </div>
           </div>
         </article>
       `).join('');

@@ -515,12 +515,10 @@ html::-webkit-scrollbar-thumb:hover { background: #777; }
 }
 
 .product-color-layer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  height: 100px;
-  flex: 0 0 100px;
+  display: grid;
+  gap: 6px;
+  min-height: 100px;
+  flex: 0 0 auto;
   padding: 0 16px;
   border-top: 1px solid #4b4b4b;
   background:
@@ -528,6 +526,15 @@ html::-webkit-scrollbar-thumb:hover { background: #777; }
   color: #fff;
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.product-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: #d0d0d0;
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 
 .stock-badge {

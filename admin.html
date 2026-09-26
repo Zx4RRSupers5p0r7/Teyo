@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Teyo | Find Anything. Buy Smarter</title>
     <meta name="description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="canonical" href="https://teyo.ca/" />
     <meta property="og:title" content="Teyo | Find Anything. Buy Smarter" />
     <meta property="og:description" content="Teyo helps you find products, compare options, and buy smarter with a faster, more social shopping experience." />
     <meta property="og:image" content="/teyo-logo-1024.png" />
@@ -134,6 +136,14 @@
         </div>
 
         <div class="lead-section">
+          <h2>Pending products</h2>
+          <p>Imported or submitted products stay hidden from the marketplace until you approve them here.</p>
+          <div id="pendingProductList" class="lead-list">
+            <div class="list-item">Loading pending products…</div>
+          </div>
+        </div>
+
+        <div class="lead-section">
           <h2>Incoming leads</h2>
           <p>Track the companies and partners who are showing interest in TEYO so you can follow up quickly.</p>
           <div id="leadList" class="lead-list">
@@ -254,7 +264,73 @@
         }
       });
 
+      async function loadPendingProducts() {
+        const listEl = document.getElementById('pendingProductList');
+        try {
+          const response = await fetch('/api/products', {
+            headers: {
+              'x-owner-email': 'chazmiller872@gmail.com',
+              'x-owner-key': '^ty8e(%uI98dYhfgjeHDg0adj$#$'
+            }
+          });
+          const products = await response.json();
+          if (!response.ok || !Array.isArray(products)) {
+            listEl.innerHTML = '<div class="list-item">Unable to load products right now.</div>';
+            return;
+          }
+
+          const pending = products.filter((product) => !product.approved || !product.visible);
+          if (pending.length === 0) {
+            listEl.innerHTML = '<div class="list-item">No products waiting for approval.</div>';
+            return;
+          }
+
+          listEl.innerHTML = pending.map((product) => `
+            <div class="lead-card">
+              <div class="lead-meta">
+                <strong>${(product.productName || 'Untitled product').replace(/</g, '&lt;')}</strong>
+                <span class="status-pill">${(product.companyName || 'Unknown company').replace(/</g, '&lt;')}</span>
+              </div>
+              <div class="lead-meta">
+                <span>${(product.price || '').replace(/</g, '&lt;')}</span>
+                <span>${new Date(product.createdAt || Date.now()).toLocaleString()}</span>
+              </div>
+              <button class="contact-btn" type="button" data-approve-id="${product.id}">Approve</button>
+            </div>
+          `).join('');
+
+          listEl.querySelectorAll('[data-approve-id]').forEach((button) => {
+            button.addEventListener('click', async () => {
+              const productId = button.getAttribute('data-approve-id');
+              button.disabled = true;
+              button.textContent = 'Approving...';
+              try {
+                const response = await fetch(`/api/products/${productId}/approve`, {
+                  method: 'POST',
+                  headers: {
+                    'x-owner-email': 'chazmiller872@gmail.com',
+                    'x-owner-key': '^ty8e(%uI98dYhfgjeHDg0adj$#$'
+                  }
+                });
+                if (response.ok) {
+                  await loadPendingProducts();
+                } else {
+                  button.disabled = false;
+                  button.textContent = 'Try again';
+                }
+              } catch (error) {
+                button.disabled = false;
+                button.textContent = 'Try again';
+              }
+            });
+          });
+        } catch (error) {
+          listEl.innerHTML = '<div class="list-item">Unable to load products right now.</div>';
+        }
+      }
+
       loadLeads();
+      loadPendingProducts();
     </script>
   </body>
 </html>

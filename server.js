@@ -642,6 +642,7 @@ function normalizeShopifyProducts(payload, partner, sourceUrl) {
       description: sanitizePlainText(stripHtml(product?.body_html || product?.description || ''), 3000),
       imageUrl: isSafeHttpUrl(imageUrl) ? imageUrl : '',
       stockStatus: inStock ? 'In stock' : 'Out of stock',
+      stockQuantity: variants.reduce((total, variant) => total + (Number(variant?.inventory_quantity) || 0), 0),
       stores,
       sizeOptions,
       sizeInventory,
@@ -678,6 +679,9 @@ function normalizeGenericProducts(payload, sourceUrl, partner = null) {
     const websiteUrl = normalizeWebsite(product?.websiteUrl || product?.url || product?.link || websiteFallback);
     const imageUrl = normalizeWebsite(product?.imageUrl || product?.image || product?.thumbnail || '');
     const price = formatPrice(product?.price || product?.amount || product?.cost || '');
+    const stockQuantity = Number.isFinite(Number(product?.stockQuantity ?? product?.inventory_quantity ?? product?.quantity ?? product?.stock ?? product?.inventory))
+      ? Number(product?.stockQuantity ?? product?.inventory_quantity ?? product?.quantity ?? product?.stock ?? product?.inventory)
+      : null;
     const sizeOptions = sanitizeSizeOptions(product?.sizeOptions || product?.sizes || []);
     const sizeInventory = sanitizeSizeInventory(product?.sizeInventory || [], product?.stockStatus || product?.status || 'In stock');
     const stockStatus = sanitizePlainText(product?.stockStatus || product?.status || (sizeInventory.length ? '' : 'In stock'), 120)
@@ -696,6 +700,7 @@ function normalizeGenericProducts(payload, sourceUrl, partner = null) {
       description: sanitizePlainText(stripHtml(product?.description || product?.summary || ''), 3000),
       imageUrl: isSafeHttpUrl(imageUrl) ? imageUrl : '',
       stockStatus,
+      stockQuantity,
       stores,
       sizeOptions,
       sizeInventory,
@@ -710,6 +715,60 @@ function normalizeGenericProducts(payload, sourceUrl, partner = null) {
       physicalStoreLocation
     };
   }).filter(Boolean);
+}
+
+function parseCatalogCsv(csvText) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let quoted = false;
+
+  for (let index = 0; index < String(csvText || '').length; index += 1) {
+    const character = csvText[index];
+    const next = csvText[index + 1];
+    if (character === '"' && quoted && next === '"') {
+      value += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (!quoted && character === ',') {
+      row.push(value.trim());
+      value = '';
+    } else if (!quoted && (character === '\n' || character === '\r')) {
+      if (character === '\r' && next === '\n') index += 1;
+      row.push(value.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      value = '';
+    } else {
+      value += character;
+    }
+  }
+
+  row.push(value.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
+
+function normalizeCsvProducts(csvText, sourceUrl, partner) {
+  const rows = parseCatalogCsv(csvText);
+  const headers = (rows.shift() || []).map((header) => normalizeName(header).replace(/[^a-z0-9]+/g, ''));
+  const products = rows.map((row) => headers.reduce((product, header, index) => {
+    product[header] = row[index] || '';
+    return product;
+  }, {}));
+  return normalizeGenericProducts({ products: products.map((product) => ({
+    id: product.id || product.sku,
+    name: product.name || product.productname || product.title,
+    price: product.price || product.amount,
+    stockQuantity: product.stock || product.stockquantity || product.quantity || product.inventory,
+    sizeOptions: product.size || product.sizes,
+    imageUrl: product.image || product.imageurl || product.thumbnail,
+    url: product.url || product.link,
+    description: product.description,
+    category: product.category || 'general',
+    stockStatus: product.stockstatus || 'In stock'
+  })) }, sourceUrl || partner?.websiteUrl || '', partner);
 }
 
 function normalizeJsonLdStoreProducts(html, sourceUrl, partner) {
@@ -866,6 +925,7 @@ function applyStoreSyncProducts(data, partner, importedProducts) {
       description: sanitizePlainText(product.description || '', 3000),
       imageUrl: isSafeHttpUrl(product.imageUrl) ? product.imageUrl : '',
       stockStatus: sanitizePlainText(product.stockStatus || 'In stock', 120),
+        stockQuantity: Number.isFinite(Number(product.stockQuantity)) ? Number(product.stockQuantity) : null,
       safetyNote: resolvedSafetyNote,
       stores: Array.isArray(product.stores) ? product.stores.map((value) => sanitizePlainText(value, 120)).filter(Boolean).slice(0, 20) : [],
       sizeOptions: sanitizeSizeOptions(product.sizeOptions || []),
@@ -2138,6 +2198,7 @@ function serializePublicProduct(entry) {
     description: entry.description,
     imageUrl: entry.imageUrl,
     stockStatus: entry.stockStatus,
+    stockQuantity: Number.isFinite(Number(entry.stockQuantity)) ? Number(entry.stockQuantity) : null,
     safetyNote: entry.safetyNote,
     stores: Array.isArray(entry.stores) ? entry.stores : [],
     sizeOptions: Array.isArray(entry.sizeOptions) ? entry.sizeOptions : [],
@@ -4351,9 +4412,10 @@ app.post('/api/admin/store-sync', requireAdmin, async (req, res) => {
   const companyName = sanitizePlainText(req.body.companyName, 120);
   const ownerEmail = sanitizeEmail(req.body.ownerEmail);
   const sourceUrl = normalizeWebsite(req.body.sourceUrl);
+  const csvData = String(req.body.csvData || '').slice(0, 500000);
 
-  if (!companyName || !ownerEmail || !isSafeHttpUrl(sourceUrl)) {
-    return res.status(400).json({ success: false, message: 'Company name, owner email, and a valid catalog URL are required.' });
+  if (!companyName || !ownerEmail || (!isSafeHttpUrl(sourceUrl) && !csvData.trim())) {
+    return res.status(400).json({ success: false, message: 'Company name, owner email, and either a catalog URL or CSV data are required.' });
   }
 
   const data = loadData();
@@ -4366,6 +4428,18 @@ app.post('/api/admin/store-sync', requireAdmin, async (req, res) => {
   partner.requestStatus = 'approved';
   partner.claimStatus = 'claimed';
   partner.storeSync = createDefaultStoreSyncConfig(sourceUrl);
+
+  if (csvData.trim()) {
+    const importedProducts = normalizeCsvProducts(csvData, sourceUrl, partner)
+      .filter((entry) => entry && entry.productName && entry.websiteUrl)
+      .slice(0, STORE_SYNC_MAX_PRODUCTS);
+    if (!importedProducts.length) {
+      return res.status(422).json({ success: false, message: 'CSV did not contain supported product rows.' });
+    }
+    const result = applyStoreSyncProducts(data, partner, importedProducts);
+    saveData(data);
+    return res.json({ success: true, message: 'CSV catalog imported successfully.', importedCount: result.importedCount, changedCount: result.changedCount });
+  }
 
   const result = await runPartnerStoreSync(partner, data, { reason: 'manual' });
   saveData(data);

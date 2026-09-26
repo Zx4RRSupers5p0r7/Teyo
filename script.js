@@ -734,8 +734,11 @@
         color: product.category || 'Product',
         size,
         stock: product.stockStatus || 'Check availability',
+        stockQuantity: Number.isFinite(Number(product.stockQuantity)) ? Number(product.stockQuantity) : null,
         price: product.price || 'Price pending',
-        thumb: productPalettes[Number(product.id || 0) % productPalettes.length]
+        thumb: product.imageUrl
+          ? `url("${product.imageUrl}") center / cover no-repeat`
+          : productPalettes[Number(product.id || 0) % productPalettes.length]
       };
     }
 
@@ -769,24 +772,11 @@
       }
 
       productGrid.innerHTML = products.map((product) => `
-        <article class="product-card">
-          <div class="product-thumb" style="--thumb-gradient: ${product.thumb};">
-            <span class="stock-badge">${escapeHTML(product.stock)}</span>
-          </div>
-          <div class="product-meta">
-            <div class="meta-top">
-              <span>${escapeHTML(product.brand)}</span>
-              <span>${escapeHTML(product.color)}</span>
-            </div>
-            <h3 class="product-name">${escapeHTML(product.name)}</h3>
-            <div class="product-meta-row">
-              <span>${escapeHTML(product.size)}</span>
-              <span>Verified</span>
-            </div>
-            <div class="product-price">
-              <strong>${escapeHTML(product.price)}</strong>
-              <button type="button">View</button>
-            </div>
+        <article class="product-card" aria-label="${escapeHTML(product.name)}">
+          <div class="product-thumb" style="--thumb-gradient: ${product.thumb};"></div>
+          <div class="product-color-layer">
+            <span>${escapeHTML(product.price)}</span>
+            <span>${product.stockQuantity === null ? escapeHTML(product.stock) : `${product.stockQuantity} in stock`}</span>
           </div>
         </article>
       `).join('');
@@ -1018,7 +1008,8 @@
             body: JSON.stringify({
               companyName: document.getElementById('ownerCatalogCompanyName').value.trim(),
               ownerEmail,
-              sourceUrl: document.getElementById('ownerCatalogSourceUrl').value.trim()
+              sourceUrl: document.getElementById('ownerCatalogSourceUrl').value.trim(),
+              csvData: document.getElementById('ownerCatalogCsv').value
             })
           });
           const result = await response.json();

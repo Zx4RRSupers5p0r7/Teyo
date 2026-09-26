@@ -187,6 +187,8 @@ body {
 
 .blank-stage.searching {
   justify-content: flex-start;
+  min-height: 100vh;
+  overflow: visible;
 }
 
 .blank-stage.searching .logo-mark {
@@ -431,9 +433,137 @@ body {
   white-space: nowrap;
 }
 
+.owner-tools-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+}
+
 .popular-searches-list li span {
   font-family: Arial, san;
   font-size: 0.8rem;
   font-weight: 600;
   text-transform: uppercase;
+}
+
+/* ==========================================================
+   SECTION 06: NEW MARKETPLACE PRODUCT GRID
+   Four large black cards sit in the center and continue down the page.
+   ========================================================== */
+.search-results {
+  width: min(1180px, calc(100% - 300px));
+  margin: 72px auto 80px;
+  max-height: none;
+  overflow: visible;
+}
+
+.results-panel {
+  width: 100%;
+}
+
+.results-header {
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(220px, 1fr));
+  grid-auto-rows: minmax(310px, auto);
+  gap: 18px;
+  align-items: stretch;
+}
+
+html {
+  overflow-y: scroll;
+  scrollbar-color: #555 #090909;
+  scrollbar-width: thin;
+}
+
+html::-webkit-scrollbar { width: 10px; }
+html::-webkit-scrollbar-track { background: #090909; }
+html::-webkit-scrollbar-thumb { border-radius: 999px; background: #555; }
+html::-webkit-scrollbar-thumb:hover { background: #777; }
+
+.product-card {
+  display: flex;
+  width: 100%;
+  min-height: 300px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #242424;
+  border-radius: 18px;
+  background: #464646;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+}
+
+.product-thumb {
+  position: relative;
+  flex: 1;
+  min-height: 230px;
+  background: var(--thumb-gradient, linear-gradient(135deg, #171717, #030303));
+}
+
+.product-color-layer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 100px;
+  flex: 0 0 100px;
+  padding: 0 16px;
+  border-top: 1px solid #4b4b4b;
+  background:
+    linear-gradient(90deg, #181818 0%, #3a3a3a 50%, #101010 100%);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.stock-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 5px 7px;
+  border: 1px solid #3c3c3c;
+  border-radius: 3px;
+  background: #050505;
+  color: #ddd;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.results-empty {
+  grid-column: 1 / -1;
+  padding: 48px 20px;
+  border: 1px dashed #333;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 1100px) {
+  .search-results { width: min(900px, calc(100% - 220px)); }
+  .product-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 760px) {
+  .search-results { width: calc(100% - 32px); margin-top: 48px; }
+  .product-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .product-card { min-height: 270px; }
+  .product-thumb { min-height: 210px; }
+}
+
+@media (max-width: 480px) {
+  .product-grid { grid-template-columns: 1fr; }
 }
